@@ -12,14 +12,8 @@ import {
   Radio,
   ArrowLeft,
   Flame,
-  Volume2,
-  VolumeX,
-  Grid3X3,
-  AlertTriangle,
-  Zap,
 } from "lucide-react";
 import { TiltInclinometer3D } from "@/components/industrial/TiltInclinometer3D";
-import { LedMatrixDisplay } from "@/components/industrial/LedMatrixDisplay";
 import { generateTelemetryHistory } from "@/data/mock-engine";
 import {
   LineChart,
@@ -36,7 +30,7 @@ export default function NodeDetailPage({ params }: { params: Promise<{ id: strin
   const resolvedParams = use(params);
   const nodeId = resolvedParams.id;
 
-  const { nodes, telemetry, thresholds, triggerActuatorTest } = useTelemetryContext();
+  const { nodes, telemetry } = useTelemetryContext();
 
   const node = nodes.find((n) => n.id === nodeId) || nodes[0];
   const tel = telemetry[nodeId] || (node ? telemetry[node.id] : null);
@@ -44,7 +38,6 @@ export default function NodeDetailPage({ params }: { params: Promise<{ id: strin
   const isCritical = node?.riskSeverity === "CRITICAL";
   const isWatch = node?.riskSeverity === "WATCH";
 
-  // Historical telemetry curves for this node
   const historyData = generateTelemetryHistory(nodeId, 30);
 
   if (!node) {
@@ -70,14 +63,14 @@ export default function NodeDetailPage({ params }: { params: Promise<{ id: strin
           </Link>
           <div>
             <div className="flex items-center gap-2.5">
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900 font-mono">{node.id}</h1>
+              <h1 className="text-2xl font-bold tracking-tight text-slate-900">{node.id}</h1>
               <Badge
                 variant={isCritical ? "destructive" : isWatch ? "outline" : "secondary"}
                 className={isWatch ? "bg-amber-100 text-amber-900 border-amber-300" : ""}
               >
                 {node.riskSeverity}
               </Badge>
-              <Badge variant="outline" className="font-mono text-xs">
+              <Badge variant="outline" className="font-semibold text-xs">
                 {node.location}
               </Badge>
             </div>
@@ -98,12 +91,12 @@ export default function NodeDetailPage({ params }: { params: Promise<{ id: strin
           </CardHeader>
           <CardContent>
             <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-bold font-mono text-slate-900">
+              <span className="text-3xl font-bold tracking-tight text-slate-900">
                 {tel?.gas.mq2Ppm ?? "—"}
               </span>
-              <span className="text-xs font-bold text-slate-500">ppm</span>
+              <span className="text-xs font-semibold text-slate-500">ppm</span>
             </div>
-            <div className="mt-2 text-xs text-slate-500 space-y-0.5 font-mono">
+            <div className="mt-2 text-xs text-slate-500 space-y-0.5 font-medium">
               <div>Status: {tel?.gas.status}</div>
               <div>Raw ADC: {tel?.gas.rawAdc} / 4095</div>
             </div>
@@ -120,12 +113,12 @@ export default function NodeDetailPage({ params }: { params: Promise<{ id: strin
           </CardHeader>
           <CardContent>
             <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-bold font-mono text-slate-900">
+              <span className="text-3xl font-bold tracking-tight text-slate-900">
                 {tel ? `${tel.ultrasound.distanceCm.toFixed(1)}` : "—"}
               </span>
-              <span className="text-xs font-bold text-slate-500">cm</span>
+              <span className="text-xs font-semibold text-slate-500">cm</span>
             </div>
-            <div className="mt-2 text-xs text-slate-500 space-y-0.5 font-mono">
+            <div className="mt-2 text-xs text-slate-500 space-y-0.5 font-medium">
               <div>Baseline: {tel?.ultrasound.baselineCm} cm</div>
               <div>Delta: -{tel?.ultrasound.deltaCm} cm</div>
             </div>
@@ -142,12 +135,12 @@ export default function NodeDetailPage({ params }: { params: Promise<{ id: strin
           </CardHeader>
           <CardContent>
             <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-bold font-mono text-slate-900">
+              <span className="text-3xl font-bold tracking-tight text-slate-900">
                 {tel ? `${tel.mpu1.totalTiltDeg.toFixed(2)}` : "—"}
               </span>
-              <span className="text-xs font-bold text-slate-500">°</span>
+              <span className="text-xs font-semibold text-slate-500">°</span>
             </div>
-            <div className="mt-2 text-xs text-slate-500 space-y-0.5 font-mono">
+            <div className="mt-2 text-xs text-slate-500 space-y-0.5 font-medium">
               <div>Roll: {tel?.mpu1.rollDeg.toFixed(1)}° · Pitch: {tel?.mpu1.pitchDeg.toFixed(1)}°</div>
               <div>Accel Z: {tel?.mpu1.accelZ.toFixed(2)} m/s²</div>
             </div>
@@ -164,12 +157,12 @@ export default function NodeDetailPage({ params }: { params: Promise<{ id: strin
           </CardHeader>
           <CardContent>
             <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-bold font-mono text-slate-900">
+              <span className="text-3xl font-bold tracking-tight text-slate-900">
                 {tel ? `${tel.mpu2.totalTiltDeg.toFixed(2)}` : "—"}
               </span>
-              <span className="text-xs font-bold text-slate-500">°</span>
+              <span className="text-xs font-semibold text-slate-500">°</span>
             </div>
-            <div className="mt-2 text-xs text-slate-500 space-y-0.5 font-mono">
+            <div className="mt-2 text-xs text-slate-500 space-y-0.5 font-medium">
               <div>Roll: {tel?.mpu2.rollDeg.toFixed(1)}° · Pitch: {tel?.mpu2.pitchDeg.toFixed(1)}°</div>
               <div>Accel Z: {tel?.mpu2.accelZ.toFixed(2)} m/s²</div>
             </div>
@@ -222,7 +215,7 @@ export default function NodeDetailPage({ params }: { params: Promise<{ id: strin
                 <XAxis dataKey="time" tick={{ fontSize: 10 }} />
                 <YAxis yAxisId="left" tick={{ fontSize: 10 }} unit="ppm" />
                 <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} unit="cm" />
-                <Tooltip contentStyle={{ fontSize: "11px", fontFamily: "monospace", borderRadius: "8px" }} />
+                <Tooltip contentStyle={{ fontSize: "11px", borderRadius: "8px" }} />
                 <Legend wrapperStyle={{ fontSize: "11px" }} />
                 <Line
                   yAxisId="left"

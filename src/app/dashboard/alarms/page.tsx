@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { useTelemetryContext } from "@/components/layout/telemetry-provider";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,10 +26,9 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { AlertCircle, AlertTriangle, Filter, CheckCircle2, MessageSquare, Bell } from "lucide-react";
+import { AlertTriangle, MessageSquare, Bell } from "lucide-react";
 import type { Alarm, AlarmSeverity, AlarmState } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -41,7 +40,6 @@ export default function AlarmsPage() {
   const [categoryFilter, setCategoryFilter] = useState<string>("ALL");
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Acknowledge Dialog State
   const [selectedAlarm, setSelectedAlarm] = useState<Alarm | null>(null);
   const [ackNotes, setAckNotes] = useState("");
 
@@ -183,7 +181,7 @@ export default function AlarmsPage() {
             <TableBody>
               {filteredAlarms.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-slate-400 text-xs">
+                  <TableCell colSpan={9} className="text-center py-8 text-slate-400 text-xs font-medium">
                     No hazard alerts match the specified filter criteria.
                   </TableCell>
                 </TableRow>
@@ -200,10 +198,10 @@ export default function AlarmsPage() {
                         : "hover:bg-slate-50"
                     )}
                   >
-                    <TableCell className="font-mono font-bold text-slate-900">
+                    <TableCell className="font-bold text-slate-900">
                       {alarm.id}
                     </TableCell>
-                    <TableCell className="text-slate-500 font-mono text-[11px]">
+                    <TableCell className="text-slate-500 text-[11px] font-medium">
                       {new Date(alarm.timestamp).toLocaleString()}
                     </TableCell>
                     <TableCell>
@@ -223,13 +221,13 @@ export default function AlarmsPage() {
                         {alarm.severity}
                       </Badge>
                     </TableCell>
-                    <TableCell className="font-mono text-slate-600 font-semibold">
+                    <TableCell className="text-slate-700 font-semibold">
                       {alarm.category}
                     </TableCell>
                     <TableCell className="font-medium text-slate-800">
                       {alarm.sourceLabel}
                     </TableCell>
-                    <TableCell className="font-mono font-bold text-rose-700">
+                    <TableCell className="font-bold text-rose-700">
                       {alarm.value}
                     </TableCell>
                     <TableCell className="font-medium text-slate-700">
@@ -272,7 +270,7 @@ export default function AlarmsPage() {
                               <span className="font-bold block text-slate-700">Officer Notes:</span>
                               <p className="mt-1 text-slate-600 font-sans leading-relaxed">{alarm.notes}</p>
                               {alarm.acknowledgedBy && (
-                                <span className="text-[10px] text-slate-400 block mt-1.5 font-mono">
+                                <span className="text-[10px] text-slate-400 block mt-1.5 font-medium">
                                   Ack by {alarm.acknowledgedBy}
                                 </span>
                               )}
@@ -316,7 +314,7 @@ export default function AlarmsPage() {
               </div>
               <div>
                 <span className="text-slate-500">Trigger Reading:</span>{" "}
-                <span className="font-mono font-bold text-rose-700">{selectedAlarm?.value}</span>
+                <span className="font-bold text-rose-700">{selectedAlarm?.value}</span>
               </div>
             </div>
 

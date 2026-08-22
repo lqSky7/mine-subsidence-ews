@@ -5,7 +5,7 @@ import { useTelemetryContext } from "@/components/layout/telemetry-provider";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Volume2, VolumeX, Grid3X3, Zap, BellRing, CheckCircle2, AlertTriangle, Shield } from "lucide-react";
+import { Volume2, VolumeX, Grid3X3, Zap, CheckCircle2, AlertTriangle, Shield } from "lucide-react";
 import { LedMatrixDisplay } from "@/components/industrial/LedMatrixDisplay";
 import type { LedMatrixPattern } from "@/types";
 
@@ -62,7 +62,7 @@ export default function OutputsPage() {
                 size="sm"
                 variant={selectedNodeId === n.id ? "default" : "ghost"}
                 onClick={() => setSelectedNodeId(n.id)}
-                className={`h-7 px-3 text-xs font-mono font-bold rounded-lg ${
+                className={`h-7 px-3 text-xs font-bold rounded-lg ${
                   selectedNodeId === n.id ? "bg-orange-600 hover:bg-orange-700 text-white" : "text-slate-700"
                 }`}
               >
@@ -89,7 +89,7 @@ export default function OutputsPage() {
                     MAX7219 / SPI 64-LED Visual Beacon on {node?.id}
                   </CardDescription>
                 </div>
-                <Badge variant="outline" className="font-mono text-xs">
+                <Badge variant="outline" className="font-semibold text-xs">
                   GPIO DIN/CS/CLK
                 </Badge>
               </div>
@@ -188,7 +188,7 @@ export default function OutputsPage() {
                     <span className="text-sm font-bold text-slate-900 block">
                       {tel?.actuators.buzzerActive ? "SIREN SOUNDING" : "Buzzer Inactive"}
                     </span>
-                    <span className="text-xs text-slate-500 font-mono">
+                    <span className="text-xs text-slate-500 font-medium">
                       {tel?.actuators.buzzerActive ? "Tone: 2.8 kHz @ 85 dB" : "Armed & Ready"}
                     </span>
                   </div>
@@ -206,7 +206,7 @@ export default function OutputsPage() {
               {/* Automatic Safety Linkage Details */}
               <div className="p-4 bg-slate-50/70 rounded-xl border border-slate-200/70 space-y-2 text-xs">
                 <span className="font-bold text-slate-900 block">Automatic Alarm Triggers:</span>
-                <ul className="space-y-1.5 text-slate-600 pl-4 list-disc">
+                <ul className="space-y-1.5 text-slate-600 pl-4 list-disc font-medium">
                   <li>
                     <span className="font-semibold text-slate-800">MQ2 Gas &gt; 800 ppm:</span> Buzzer continuous + LED DANGER_FLASH
                   </li>

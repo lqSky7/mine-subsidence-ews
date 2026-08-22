@@ -1,172 +1,162 @@
+"use client";
+
 import Link from "next/link";
-import { ArrowRight, Shield, Cpu, Activity, Radio, Compass, MapPin, Sparkles, Flame } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Flame,
+  ArrowRight,
+  ShieldCheck,
+  Compass,
+  Radio,
+  Activity,
+  Volume2,
+  Cpu,
+} from "lucide-react";
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-slate-950 text-white font-sans selection:bg-orange-500 selection:text-white">
-      {/* Navigation */}
-      <nav className="absolute inset-x-0 top-4 z-50 mx-auto w-full lg:max-w-[calc(100%-4rem)]">
-        <div className="mx-auto max-w-7xl px-4 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="flex size-9 items-center justify-center rounded-xl bg-orange-600 shadow-md">
-                <Flame className="size-5 text-white fill-current" />
-              </div>
-              <div className="flex flex-col leading-none">
-                <span className="font-bold text-base tracking-tight">Mine EWS Platform</span>
-                <span className="text-[10px] text-slate-400 font-medium">Wireless Surface Mesh Subsidence AI</span>
-              </div>
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-orange-500 selection:text-white">
+      {/* Navigation Header */}
+      <header className="border-b border-slate-800 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="size-9 rounded-xl bg-orange-600 flex items-center justify-center text-white shadow-lg shadow-orange-500/20">
+              <Flame className="size-5" />
             </div>
-            <div className="hidden md:flex items-center gap-8">
-              <a href="#problem" className="text-xs font-semibold text-slate-300 hover:text-white transition-colors">Problem Statement</a>
-              <a href="#architecture" className="text-xs font-semibold text-slate-300 hover:text-white transition-colors">Mesh Architecture</a>
-              <a href="#sensors" className="text-xs font-semibold text-slate-300 hover:text-white transition-colors">Low-Cost BOM</a>
-              <Link
-                href="/dashboard"
-                className="group relative flex items-center gap-2 rounded-xl border border-orange-500/40 bg-orange-600/20 px-4 py-2 text-xs font-bold tracking-tight hover:bg-orange-600 hover:text-white transition-all shadow-xs"
-              >
-                <span>Launch EWS Dashboard</span>
-                <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
-              </Link>
+            <div>
+              <span className="font-bold text-base tracking-tight block text-white">Mine EWS</span>
+              <span className="text-[10px] text-slate-400 font-medium block -mt-1">
+                Multi-Node Sensor System
+              </span>
             </div>
           </div>
+
+          <div className="flex items-center gap-3">
+            <Link href="/dashboard">
+              <Button size="sm" className="bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-xl text-xs h-9 px-4">
+                Launch Command Center <ArrowRight className="size-3.5 ml-1.5" />
+              </Button>
+            </Link>
+          </div>
         </div>
-      </nav>
+      </header>
 
       {/* Hero Section */}
-      <section className="relative flex min-h-screen flex-col items-center justify-center px-6 lg:px-16 pt-24 overflow-hidden">
-        {/* Glow backdrop */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="size-[600px] rounded-full bg-orange-600/15 blur-[140px] pointer-events-none" />
-        </div>
+      <section className="relative pt-20 pb-24 overflow-hidden">
+        <div className="max-w-5xl mx-auto px-4 text-center space-y-6">
+          <Badge className="bg-orange-500/10 text-orange-400 border-orange-500/30 px-3 py-1 text-xs font-semibold rounded-full">
+            ESP32 Multi-Sensor Early Warning Platform
+          </Badge>
 
-        <div className="relative z-10 max-w-5xl mx-auto text-center space-y-6">
-          <div className="inline-flex items-center gap-2 rounded-full bg-orange-500/10 border border-orange-500/20 px-3.5 py-1.5 shadow-inner">
-            <span className="size-2 rounded-full bg-orange-500 animate-pulse" />
-            <span className="text-xs font-bold text-orange-400 uppercase tracking-wide">
-              Made in India · Smart Mining Safety Initiative
-            </span>
-          </div>
-
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-balance leading-[1.1]">
-            Real-Time Mine Subsidence{" "}
-            <span className="bg-gradient-to-r from-orange-400 via-amber-300 to-orange-500 bg-clip-text text-transparent">
-              Prediction & Early Warning
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight">
+            Next-Gen Multi-Node <br className="hidden sm:inline" />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-300 to-rose-400">
+              Mine Safety Monitoring System
             </span>
           </h1>
 
-          <p className="max-w-2xl mx-auto text-base sm:text-lg text-slate-400 leading-relaxed text-balance">
-            An indigenous, low-cost AI/ML platform powered by localized wireless surface mesh sensor networks deployed above underground coal mine panels in India. Continuous micro-deformation sensing before critical ground failure occurs.
+          <p className="text-base sm:text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed font-normal">
+            Real-time hazard detection integrating Dual Gy87 AXL385 Inclinometers, Ultrasound wall clearance, MQ2 flammable gas sensors, micro-vibration detection, and automated emergency sirens.
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center gap-2 rounded-xl bg-orange-600 px-6 py-3 text-sm font-bold text-white hover:bg-orange-500 shadow-lg shadow-orange-600/30 transition-all"
-            >
-              Enter Command Center
-              <ArrowRight className="size-4" />
+            <Link href="/dashboard">
+              <Button size="lg" className="bg-orange-600 hover:bg-orange-500 text-white font-bold h-11 px-6 rounded-xl shadow-lg shadow-orange-600/25 text-sm">
+                Open Command Center <ArrowRight className="size-4 ml-2" />
+              </Button>
             </Link>
-            <Link
-              href="/dashboard/map"
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900/60 px-6 py-3 text-sm font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition-all"
-            >
-              Interactive Deformation Map
+            <Link href="/dashboard/hardware">
+              <Button size="lg" variant="outline" className="border-slate-800 text-slate-300 hover:bg-slate-900 font-semibold h-11 px-6 rounded-xl text-sm">
+                Hardware Architecture
+              </Button>
             </Link>
           </div>
         </div>
       </section>
 
-      {/* Problem & Background Section */}
-      <section id="problem" className="bg-slate-900/60 border-y border-slate-800 py-24">
-        <div className="max-w-6xl mx-auto px-6">
-          <p className="text-xs font-mono uppercase tracking-widest text-orange-400 mb-3">Background & Industry Gap</p>
-          <h2 className="text-3xl lg:text-4xl font-bold tracking-tight mb-12">
-            Why Indian Underground Coal Mines Need Real-Time Mesh Sensing
-          </h2>
+      {/* Sensor Array Grid */}
+      <section className="max-w-6xl mx-auto px-4 pb-24">
+        <div className="text-center mb-12">
+          <p className="text-xs uppercase tracking-widest text-orange-400 font-semibold mb-2">Sensor Architecture</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Standardized Multi-Sensor Suite</h2>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="p-6 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-3">
-              <h3 className="text-base font-bold text-white">Post-Facto Damage Surveys</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Conventional monitoring relies on periodic manual levelling and optical surveys that fail to provide early warning before sudden surface collapse occurs over active goaf panels.
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <Card className="bg-slate-900/60 border-slate-800 rounded-2xl text-slate-200 shadow-sm">
+            <CardContent className="p-6 space-y-3">
+              <div className="size-10 rounded-xl bg-orange-500/10 text-orange-400 flex items-center justify-center">
+                <Flame className="size-5" />
+              </div>
+              <h3 className="text-base font-bold text-white">MQ2 Flammable Gas Sensor</h3>
+              <p className="text-xs text-slate-400 leading-relaxed font-normal">
+                Continuous ppm monitoring for methane, LPG, combustible gas accumulation, and smoke in underground galleries.
               </p>
-            </div>
+            </CardContent>
+          </Card>
 
-            <div className="p-6 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-3">
-              <h3 className="text-base font-bold text-white">High-Cost Import Barriers</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Commercial imported robotic total stations and satellite InSAR platforms cost millions, making dense sensor deployment across hundreds of Indian coalfields cost-prohibitive.
+          <Card className="bg-slate-900/60 border-slate-800 rounded-2xl text-slate-200 shadow-sm">
+            <CardContent className="p-6 space-y-3">
+              <div className="size-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center">
+                <Radio className="size-5" />
+              </div>
+              <h3 className="text-base font-bold text-white">Ultrasound Wall Distance</h3>
+              <p className="text-xs text-slate-400 leading-relaxed font-normal">
+                Real-time distance clearance measurement to detect convergence, sidewall deformation, and rock displacement.
               </p>
-            </div>
+            </CardContent>
+          </Card>
 
-            <div className="p-6 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-3">
-              <h3 className="text-base font-bold text-white">Surface Infrastructure Hazards</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Underground extraction triggers ground tilt, tension fractures, and vertical subsidence endangering public roads, railways, power lines, and forest reserves.
+          <Card className="bg-slate-900/60 border-slate-800 rounded-2xl text-slate-200 shadow-sm">
+            <CardContent className="p-6 space-y-3">
+              <div className="size-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center">
+                <Compass className="size-5" />
+              </div>
+              <h3 className="text-base font-bold text-white">Dual Gy87 Inclinometers</h3>
+              <p className="text-xs text-slate-400 leading-relaxed font-normal">
+                Two orthogonal sensors measuring horizontal (lateral) and vertical (longitudinal) tilt angles and acceleration.
               </p>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-slate-900/60 border-slate-800 rounded-2xl text-slate-200 shadow-sm">
+            <CardContent className="p-6 space-y-3">
+              <div className="size-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
+                <Activity className="size-5" />
+              </div>
+              <h3 className="text-base font-bold text-white">Micro-Vibration Sensor</h3>
+              <p className="text-xs text-slate-400 leading-relaxed font-normal">
+                High-sensitivity shockwave detection capturing micro-seismic vibrations and rock fracture tremors.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-slate-900/60 border-slate-800 rounded-2xl text-slate-200 shadow-sm">
+            <CardContent className="p-6 space-y-3">
+              <div className="size-10 rounded-xl bg-rose-500/10 text-rose-400 flex items-center justify-center">
+                <Volume2 className="size-5" />
+              </div>
+              <h3 className="text-base font-bold text-white">Audible Siren Actuator</h3>
+              <p className="text-xs text-slate-400 leading-relaxed font-normal">
+                High-decibel emergency siren activated automatically when critical safety thresholds are breached.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-slate-900/60 border-slate-800 rounded-2xl text-slate-200 shadow-sm">
+            <CardContent className="p-6 space-y-3">
+              <div className="size-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+                <Cpu className="size-5" />
+              </div>
+              <h3 className="text-base font-bold text-white">8x8 Flash LED Matrix</h3>
+              <p className="text-xs text-slate-400 leading-relaxed font-normal">
+                Visual beacon displaying real-time warning patterns, evacuation arrows, and system health status.
+              </p>
+            </CardContent>
+          </Card>
         </div>
       </section>
-
-      {/* 4 Multi-Sensor Subsystems */}
-      <section id="sensors" className="py-24 max-w-6xl mx-auto px-6">
-        <p className="text-xs font-mono uppercase tracking-widest text-orange-400 mb-3">Low-Cost Hardware Innovation</p>
-        <h2 className="text-3xl lg:text-4xl font-bold tracking-tight mb-12">
-          4-in-1 Geotechnical Micro-Sensor Surface Nodes (&lt; ₹1,150 / Node)
-        </h2>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
-            <div className="size-10 rounded-xl bg-orange-500/10 text-orange-400 flex items-center justify-center">
-              <Compass className="size-5" />
-            </div>
-            <h3 className="text-sm font-bold text-white">MPU6050 Dual-Axis Tilt</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Measures continuous ground slope inclination, roll/pitch angles, and dynamic terrain tilt rates (&gt; 2.0°).
-            </p>
-          </div>
-
-          <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
-            <div className="size-10 rounded-xl bg-orange-500/10 text-orange-400 flex items-center justify-center">
-              <Activity className="size-5" />
-            </div>
-            <h3 className="text-sm font-bold text-white">HC-SR04 Displacement</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Millimeter-precision vertical ground sag monitoring calculating vertical subsidence delta against baseline pillars.
-            </p>
-          </div>
-
-          <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
-            <div className="size-10 rounded-xl bg-orange-500/10 text-orange-400 flex items-center justify-center">
-              <Shield className="size-5" />
-            </div>
-            <h3 className="text-sm font-bold text-white">Tension Crack Aperture</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Fabricated conductive resistive grid detecting early surface tension cracks and aperture widening before catastrophic shear.
-            </p>
-          </div>
-
-          <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
-            <div className="size-10 rounded-xl bg-orange-500/10 text-orange-400 flex items-center justify-center">
-              <Radio className="size-5" />
-            </div>
-            <h3 className="text-sm font-bold text-white">SW420 Micro-Seismic</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              High-sensitivity vibration pulse sensor capturing pre-collapse rock fracturing acoustic bursts and fault slips.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-slate-950 border-t border-slate-800/80 py-8">
-        <div className="max-w-7xl mx-auto px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-          <span>AI-Enabled Mine Subsidence Early Warning System (EWS) © 2026</span>
-          <span>Made in India · Student Prototype & Industry Scalable Architecture</span>
-        </div>
-      </footer>
     </div>
   );
 }

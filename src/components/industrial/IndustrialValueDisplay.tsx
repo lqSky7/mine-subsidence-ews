@@ -54,7 +54,7 @@ export function IndustrialValueDisplay({
         "border-2 rounded px-4 py-3 flex items-baseline justify-center gap-2",
         getStatusStyles()
       )}>
-        <span className="text-2xl font-bold font-mono tabular-nums">
+        <span className="text-2xl font-bold  tabular-nums">
           {typeof value === "number" ? numericValue.toFixed(decimals) : value}
         </span>
         {unit && (

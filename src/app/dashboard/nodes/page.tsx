@@ -17,21 +17,15 @@ import {
 } from "@/components/ui/table";
 import {
   Cpu,
-  Radio,
-  Compass,
-  Activity,
   Search,
   LayoutGrid,
   List,
   ArrowUpRight,
-  Flame,
-  Volume2,
-  Grid3X3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function MeshFleetPage() {
-  const { nodes, telemetry, thresholds } = useTelemetryContext();
+  const { nodes, telemetry } = useTelemetryContext();
   const [searchTerm, setSearchTerm] = useState("");
   const [severityFilter, setSeverityFilter] = useState("ALL");
   const [viewMode, setViewMode] = useState<"table" | "grid">("table");
@@ -140,7 +134,7 @@ export default function MeshFleetPage() {
                 <CardHeader className="pb-3 border-b border-slate-100">
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle className="text-base font-bold font-mono text-slate-900">{node.id}</CardTitle>
+                      <CardTitle className="text-base font-bold text-slate-900">{node.id}</CardTitle>
                       <p className="text-xs text-slate-500 truncate">{node.label}</p>
                     </div>
                     <Badge
@@ -157,31 +151,31 @@ export default function MeshFleetPage() {
                 <CardContent className="p-4 space-y-3 text-xs">
                   <div className="grid grid-cols-2 gap-2">
                     <div className="p-2 bg-slate-50 rounded-lg">
-                      <span className="text-[10px] text-slate-400 block uppercase">MQ2 Gas</span>
-                      <span className="font-mono font-bold text-slate-900">{tel?.gas.mq2Ppm ?? "—"} ppm</span>
+                      <span className="text-[10px] text-slate-400 block uppercase font-medium">MQ2 Gas</span>
+                      <span className="font-bold text-slate-900">{tel?.gas.mq2Ppm ?? "—"} ppm</span>
                     </div>
                     <div className="p-2 bg-slate-50 rounded-lg">
-                      <span className="text-[10px] text-slate-400 block uppercase">Wall Clearance</span>
-                      <span className="font-mono font-bold text-slate-900">{tel?.ultrasound.distanceCm.toFixed(1) ?? "—"} cm</span>
+                      <span className="text-[10px] text-slate-400 block uppercase font-medium">Wall Clearance</span>
+                      <span className="font-bold text-slate-900">{tel?.ultrasound.distanceCm.toFixed(1) ?? "—"} cm</span>
                     </div>
                     <div className="p-2 bg-slate-50 rounded-lg">
-                      <span className="text-[10px] text-slate-400 block uppercase">MPU-1 Tilt</span>
-                      <span className="font-mono font-bold text-slate-900">{tel?.mpu1.totalTiltDeg.toFixed(1) ?? "—"}°</span>
+                      <span className="text-[10px] text-slate-400 block uppercase font-medium">MPU-1 Tilt</span>
+                      <span className="font-bold text-slate-900">{tel?.mpu1.totalTiltDeg.toFixed(1) ?? "—"}°</span>
                     </div>
                     <div className="p-2 bg-slate-50 rounded-lg">
-                      <span className="text-[10px] text-slate-400 block uppercase">MPU-2 Tilt</span>
-                      <span className="font-mono font-bold text-slate-900">{tel?.mpu2.totalTiltDeg.toFixed(1) ?? "—"}°</span>
+                      <span className="text-[10px] text-slate-400 block uppercase font-medium">MPU-2 Tilt</span>
+                      <span className="font-bold text-slate-900">{tel?.mpu2.totalTiltDeg.toFixed(1) ?? "—"}°</span>
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between pt-2 border-t border-slate-100">
                     <div className="flex items-center gap-2 text-[11px]">
                       {tel?.actuators.buzzerActive && (
-                        <Badge variant="destructive" className="text-[9px] px-1 py-0 h-4 font-mono">
+                        <Badge variant="destructive" className="text-[9px] px-1.5 py-0 h-4 font-semibold">
                           BUZZER
                         </Badge>
                       )}
-                      <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 font-mono">
+                      <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 font-semibold">
                         {tel?.actuators.ledMatrixPattern || "IDLE"}
                       </Badge>
                     </div>
@@ -240,12 +234,12 @@ export default function MeshFleetPage() {
                             : "hover:bg-slate-50"
                         )}
                       >
-                        <TableCell className="font-mono font-bold text-slate-900">
+                        <TableCell className="font-bold text-slate-900">
                           {node.id}
                         </TableCell>
                         <TableCell className="font-medium text-slate-700">
                           <div>{node.label}</div>
-                          <div className="text-[10px] text-slate-400 font-mono">{node.location}</div>
+                          <div className="text-[10px] text-slate-400 font-medium">{node.location}</div>
                         </TableCell>
                         <TableCell>
                           <Badge
@@ -258,29 +252,29 @@ export default function MeshFleetPage() {
                             {node.riskSeverity}
                           </Badge>
                         </TableCell>
-                        <TableCell className="font-mono font-bold text-slate-900">
+                        <TableCell className="font-bold text-slate-900">
                           {tel?.gas.mq2Ppm ?? "—"} ppm
                         </TableCell>
-                        <TableCell className="font-mono font-bold text-slate-900">
+                        <TableCell className="font-bold text-slate-900">
                           {tel?.ultrasound.distanceCm.toFixed(1) ?? "—"} cm
                         </TableCell>
-                        <TableCell className="font-mono font-bold">
+                        <TableCell className="font-bold">
                           {tel ? `${tel.mpu1.totalTiltDeg.toFixed(1)}°` : "—"}
                         </TableCell>
-                        <TableCell className="font-mono font-bold">
+                        <TableCell className="font-bold">
                           {tel ? `${tel.mpu2.totalTiltDeg.toFixed(1)}°` : "—"}
                         </TableCell>
-                        <TableCell className="font-mono">
+                        <TableCell className="font-semibold">
                           {tel?.vibration.intensity ?? 0}%
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
                             {tel?.actuators.buzzerActive && (
-                              <Badge variant="destructive" className="text-[9px] px-1 py-0 h-4 font-mono">
+                              <Badge variant="destructive" className="text-[9px] px-1.5 py-0 h-4 font-semibold">
                                 BUZZER
                               </Badge>
                             )}
-                            <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 font-mono">
+                            <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 font-semibold">
                               {tel?.actuators.ledMatrixPattern || "IDLE"}
                             </Badge>
                           </div>

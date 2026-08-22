@@ -120,7 +120,7 @@ export function SetpointSlider({
               onBlur={handleInputBlur}
               onKeyDown={handleInputKeyDown}
               disabled={isDisabled}
-              className="text-4xl font-bold font-mono text-slate-900 text-center border-0 bg-transparent tabular-nums p-0 h-auto focus-visible:ring-0"
+              className="text-4xl font-bold  text-slate-900 text-center border-0 bg-transparent tabular-nums p-0 h-auto focus-visible:ring-0"
             />
             <div className="text-sm font-semibold text-slate-600 uppercase mt-1">{unit}</div>
           </div>
@@ -173,7 +173,7 @@ export function SetpointSlider({
                 </div>
               )}
             </div>
-            <div className="text-2xl font-bold font-mono text-slate-900 tabular-nums">
+            <div className="text-2xl font-bold  text-slate-900 tabular-nums">
               {currentValue.toFixed(0)} <span className="text-sm text-slate-600">{unit}</span>
             </div>
 

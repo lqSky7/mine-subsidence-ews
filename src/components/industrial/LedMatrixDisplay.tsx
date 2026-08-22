@@ -1,10 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Grid3X3, Zap, AlertTriangle, CheckCircle2, ArrowRight } from "lucide-react";
 import type { LedMatrixPattern } from "@/types";
 
 interface LedMatrixDisplayProps {
@@ -73,7 +70,6 @@ const PATTERNS: Record<LedMatrixPattern, number[][]> = {
 export function LedMatrixDisplay({
   pattern = "IDLE",
   isActive = true,
-  color = "red",
   size = "md",
   interactive = false,
   onPatternChange,
@@ -120,12 +116,12 @@ export function LedMatrixDisplay({
     <div className={`flex flex-col items-center ${className}`}>
       {/* 8x8 Hardware Matrix Shell */}
       <div className="p-3 bg-slate-950 rounded-2xl border-2 border-slate-800 shadow-xl inline-block">
-        <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-800 text-[10px] font-mono text-slate-400">
+        <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-800 text-[10px] text-slate-400 font-semibold">
           <span className="flex items-center gap-1">
             <span className={`size-1.5 rounded-full ${isActive ? "bg-emerald-500 animate-pulse" : "bg-slate-600"}`} />
             8x8 FLASH LED
           </span>
-          <span className="text-slate-500 font-bold uppercase">{pattern}</span>
+          <span className="text-slate-400 font-bold uppercase">{pattern}</span>
         </div>
 
         <div className="grid grid-cols-8 gap-1.5 p-1 bg-black/80 rounded-xl">
@@ -148,7 +144,7 @@ export function LedMatrixDisplay({
               size="sm"
               variant={pattern === pKey ? "default" : "outline"}
               onClick={() => onPatternChange(pKey)}
-              className="h-6 px-2 text-[10px] font-mono font-bold"
+              className="h-6 px-2 text-[10px] font-bold"
             >
               {pKey}
             </Button>

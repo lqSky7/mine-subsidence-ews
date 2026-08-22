@@ -2,8 +2,7 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Layers, Cpu, Radio, Compass, Activity, ShieldCheck, Flame, Volume2, Grid3X3, CheckCircle2 } from "lucide-react";
+import { Layers } from "lucide-react";
 
 export default function HardwarePage() {
   const hardwareBOM = [
@@ -95,7 +94,7 @@ export default function HardwarePage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold font-mono text-emerald-900">₹1,015</div>
+            <div className="text-3xl font-bold tracking-tight text-emerald-900">₹1,015</div>
             <p className="text-xs text-emerald-700 mt-1">&lt; $13 USD · Low-Cost Mine Safety Station</p>
           </CardContent>
         </Card>
@@ -107,7 +106,7 @@ export default function HardwarePage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold font-mono text-slate-900">5 Sensors</div>
+            <div className="text-3xl font-bold tracking-tight text-slate-900">5 Sensors</div>
             <p className="text-xs text-slate-500 mt-1">2x MPU + Ultrasound + MQ2 + Vibration</p>
           </CardContent>
         </Card>
@@ -119,7 +118,7 @@ export default function HardwarePage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold font-mono text-orange-600">2 Outputs</div>
+            <div className="text-3xl font-bold tracking-tight text-orange-600">2 Outputs</div>
             <p className="text-xs text-slate-500 mt-1">Piezo Buzzer + 8x8 Flash LED Matrix</p>
           </CardContent>
         </Card>
@@ -150,9 +149,9 @@ export default function HardwarePage() {
               {hardwareBOM.map((item, idx) => (
                 <tr key={idx} className="hover:bg-slate-50">
                   <td className="py-3 px-4 font-bold text-slate-900">{item.component}</td>
-                  <td className="py-3 px-4 font-mono font-medium text-slate-800">{item.part}</td>
-                  <td className="py-3 px-4 font-mono text-slate-500">{item.interface}</td>
-                  <td className="py-3 px-4 font-mono font-bold text-emerald-700">{item.costInr}</td>
+                  <td className="py-3 px-4 font-semibold text-slate-800">{item.part}</td>
+                  <td className="py-3 px-4 text-slate-600 font-medium">{item.interface}</td>
+                  <td className="py-3 px-4 font-bold text-emerald-700">{item.costInr}</td>
                   <td className="py-3 px-4 text-slate-600 leading-relaxed">{item.role}</td>
                 </tr>
               ))}

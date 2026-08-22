@@ -68,7 +68,7 @@ export function ThermometerWidget({
 
       <svg width="100" height="210" viewBox="0 0 100 210" className="overflow-visible">
         {/* ---- Scale markings (right side of tube) ---- */}
-        <g className="font-mono text-[10px] font-bold fill-slate-600">
+        <g className=" text-[10px] font-bold fill-slate-600">
           {ticks.map((temp) => {
             const y = tubeBot - ((temp - min) / (max - min)) * tubeH;
             return (
@@ -165,7 +165,7 @@ export function ThermometerWidget({
           y={bulbCy + 1}
           textAnchor="middle"
           dominantBaseline="middle"
-          className="text-[9px] font-mono font-bold fill-white"
+          className="text-[9px]  font-bold fill-white"
         >
           {value.toFixed(1)}
         </text>
@@ -186,7 +186,7 @@ export function ThermometerWidget({
         <div className="flex items-baseline justify-center gap-1.5">
           <span
             className={cn(
-              "text-3xl font-mono font-bold tabular-nums",
+              "text-3xl  font-bold tabular-nums",
               isHigh ? "text-rose-600" : isLow ? "text-blue-600" : "text-emerald-600"
             )}
           >

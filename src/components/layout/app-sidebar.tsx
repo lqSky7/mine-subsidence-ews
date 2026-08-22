@@ -7,14 +7,12 @@ import {
   LayoutDashboard,
   Cpu,
   Bell,
-  BarChart3,
   Layers,
   Settings,
   Flame,
   Volume2,
   TrendingUp,
   History,
-  Grid3X3,
 } from "lucide-react";
 import {
   Sidebar,
@@ -179,7 +177,7 @@ export function AppSidebar() {
                 <span className="size-2 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)]" />
                 <span className="font-semibold text-slate-700">Multi-Node Active</span>
               </div>
-              <span className="text-[10px] font-mono text-slate-400">{nodes.length} ESPs</span>
+              <span className="text-[10px] font-semibold text-slate-500">{nodes.length} ESPs</span>
             </div>
           </SidebarMenuItem>
         </SidebarMenu>

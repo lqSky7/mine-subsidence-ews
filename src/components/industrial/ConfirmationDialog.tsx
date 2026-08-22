@@ -109,7 +109,7 @@ export function ConfirmationDialog({
           </div>
 
           {/* Title */}
-          <DialogTitle className="text-2xl font-bold text-center text-slate-900 font-mono uppercase tracking-wider">
+          <DialogTitle className="text-2xl font-bold text-center text-slate-900  uppercase tracking-wider">
             {title}
           </DialogTitle>
 
@@ -123,13 +123,13 @@ export function ConfirmationDialog({
         <DialogFooter className="grid grid-cols-2 gap-3 pt-4 -mx-0 -mb-0 border-t-0 bg-transparent p-0">
           <Button
             onClick={handleCancel}
-            className="h-12 bg-slate-600 hover:bg-slate-700 text-white font-bold font-mono border-2 border-slate-700 shadow-md tracking-widest"
+            className="h-12 bg-slate-600 hover:bg-slate-700 text-white font-bold  border-2 border-slate-700 shadow-md tracking-widest"
           >
             {cancelLabel}
           </Button>
           <Button
             onClick={handleConfirm}
-            className={`h-12 text-white font-bold font-mono border-2 shadow-md tracking-widest ${config.buttonColor}`}
+            className={`h-12 text-white font-bold  border-2 shadow-md tracking-widest ${config.buttonColor}`}
           >
             {confirmLabel}
           </Button>
