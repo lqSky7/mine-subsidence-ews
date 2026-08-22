@@ -59,43 +59,9 @@ export function useTelemetry(): TelemetryState {
   const [recentAlarms, setRecentAlarms] = useState<Alarm[]>([]);
   const [thresholds, setThresholdsState] = useState<AlertThresholdConfig>(activeThresholds);
   const [isConnected, setIsConnected] = useState(false);
-  const [selectedNodeId, setSelectedNodeId] = useState<string>("ESP-NODE-01");
+  const [selectedNodeId, setSelectedNodeId] = useState<string>("");
 
   const socketRef = useRef<Socket | null>(null);
-  const fallbackIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  // Fallback simulator engine
-  const startFallbackSimulation = useCallback(() => {
-    if (fallbackIntervalRef.current) return;
-
-    // Immediate first tick
-    const telMap = generateAllNodesTelemetry();
-    const fleet = generateEspFleet(telMap);
-    setNodes(fleet);
-    setTelemetry(telMap);
-    setAlarms(getAlarmHistory());
-
-    fallbackIntervalRef.current = setInterval(() => {
-      const liveTelMap = generateAllNodesTelemetry();
-      const liveFleet = generateEspFleet(liveTelMap);
-
-      setNodes(liveFleet);
-      setTelemetry(liveTelMap);
-
-      const newAlarms = checkAndGenerateAlarms(liveTelMap);
-      if (newAlarms.length > 0) {
-        setRecentAlarms((prev) => [...newAlarms, ...prev].slice(0, 10));
-      }
-      setAlarms([...getAlarmHistory()]);
-    }, POLL_INTERVAL);
-  }, []);
-
-  const stopFallbackSimulation = useCallback(() => {
-    if (fallbackIntervalRef.current) {
-      clearInterval(fallbackIntervalRef.current);
-      fallbackIntervalRef.current = null;
-    }
-  }, []);
 
   useEffect(() => {
     // 1. Initialize Socket.IO Client connection
@@ -108,17 +74,14 @@ export function useTelemetry(): TelemetryState {
 
     socket.on("connect", () => {
       setIsConnected(true);
-      stopFallbackSimulation();
     });
 
     socket.on("connect_error", () => {
       setIsConnected(false);
-      startFallbackSimulation();
     });
 
     socket.on("disconnect", () => {
       setIsConnected(false);
-      startFallbackSimulation();
     });
 
     // 2. Telemetry Listeners
@@ -145,13 +108,10 @@ export function useTelemetry(): TelemetryState {
       });
     });
 
-    startFallbackSimulation();
-
     return () => {
       socket.close();
-      stopFallbackSimulation();
     };
-  }, [startFallbackSimulation, stopFallbackSimulation]);
+  }, []);
 
   // Acknowledge Alarm Handler
   const handleAcknowledgeAlarm = useCallback(

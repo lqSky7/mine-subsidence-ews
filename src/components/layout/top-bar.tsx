@@ -81,7 +81,7 @@ export function TopBar() {
         <div className="flex items-center gap-1.5 text-xs">
           <Radio className={cn("size-3.5", isConnected ? "text-emerald-600" : "text-slate-400")} />
           <span className="text-slate-600 hidden lg:inline font-medium">
-            ESP Bridge: <strong className="text-slate-800">{isConnected ? "Live Socket" : "Local Telemetry"}</strong> ({onlineNodes}/{nodes.length} Nodes)
+            ESP Bridge: <strong className="text-slate-800">{isConnected ? "Live Socket" : "Disconnected"}</strong> ({nodes.length > 0 ? `${onlineNodes}/${nodes.length} Nodes` : "-"})
           </span>
         </div>
 
@@ -95,7 +95,7 @@ export function TopBar() {
               {totalActive} HAZARDS
             </Badge>
           ) : (
-            <span className="text-xs text-muted-foreground">0 Alarms</span>
+            <span className="text-xs text-muted-foreground">-</span>
           )}
         </div>
 

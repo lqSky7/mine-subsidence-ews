@@ -51,24 +51,27 @@ export default function OutputsPage() {
             </div>
           </div>
         </div>
-
         {/* Node Switcher */}
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold text-slate-500">Station:</span>
           <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl">
-            {nodes.map((n) => (
-              <Button
-                key={n.id}
-                size="sm"
-                variant={selectedNodeId === n.id ? "default" : "ghost"}
-                onClick={() => setSelectedNodeId(n.id)}
-                className={`h-7 px-3 text-xs font-bold rounded-lg ${
-                  selectedNodeId === n.id ? "bg-orange-600 hover:bg-orange-700 text-white" : "text-slate-700"
-                }`}
-              >
-                {n.id}
-              </Button>
-            ))}
+            {nodes.length > 0 ? (
+              nodes.map((n) => (
+                <Button
+                  key={n.id}
+                  size="sm"
+                  variant={selectedNodeId === n.id ? "default" : "ghost"}
+                  onClick={() => setSelectedNodeId(n.id)}
+                  className={`h-7 px-3 text-xs font-bold rounded-lg ${
+                    selectedNodeId === n.id ? "bg-orange-600 hover:bg-orange-700 text-white" : "text-slate-700"
+                  }`}
+                >
+                  {n.id}
+                </Button>
+              ))
+            ) : (
+              <span className="text-xs font-semibold text-slate-400 px-2 py-0.5">-</span>
+            )}
           </div>
         </div>
       </div>
@@ -86,7 +89,7 @@ export default function OutputsPage() {
                     8x8 Flash LED Matrix Display
                   </CardTitle>
                   <CardDescription className="text-xs">
-                    MAX7219 / SPI 64-LED Visual Beacon on {node?.id}
+                    MAX7219 / SPI 64-LED Visual Beacon on {node?.id || "-"}
                   </CardDescription>
                 </div>
                 <Badge variant="outline" className="font-semibold text-xs">
@@ -97,8 +100,8 @@ export default function OutputsPage() {
             <CardContent className="p-6 flex flex-col items-center space-y-6">
               {/* Large 8x8 LED Matrix Rendering */}
               <LedMatrixDisplay
-                pattern={tel?.actuators.ledMatrixPattern || testPattern}
-                isActive={tel?.actuators.ledMatrixActive ?? true}
+                pattern={tel?.actuators?.ledMatrixPattern || testPattern}
+                isActive={tel?.actuators?.ledMatrixActive ?? false}
                 size="lg"
               />
 
@@ -109,8 +112,9 @@ export default function OutputsPage() {
                 </span>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   <Button
-                    variant={tel?.actuators.ledMatrixPattern === "NORMAL_CHECK" ? "default" : "outline"}
+                    variant={tel?.actuators?.ledMatrixPattern === "NORMAL_CHECK" ? "default" : "outline"}
                     size="sm"
+                    disabled={!tel}
                     onClick={() => handlePatternSelect("NORMAL_CHECK")}
                     className="text-xs font-semibold justify-start"
                   >
@@ -118,8 +122,9 @@ export default function OutputsPage() {
                     NORMAL_CHECK
                   </Button>
                   <Button
-                    variant={tel?.actuators.ledMatrixPattern === "WARNING_PULSE" ? "default" : "outline"}
+                    variant={tel?.actuators?.ledMatrixPattern === "WARNING_PULSE" ? "default" : "outline"}
                     size="sm"
+                    disabled={!tel}
                     onClick={() => handlePatternSelect("WARNING_PULSE")}
                     className="text-xs font-semibold justify-start"
                   >
@@ -127,8 +132,9 @@ export default function OutputsPage() {
                     WARNING_PULSE
                   </Button>
                   <Button
-                    variant={tel?.actuators.ledMatrixPattern === "DANGER_FLASH" ? "default" : "outline"}
+                    variant={tel?.actuators?.ledMatrixPattern === "DANGER_FLASH" ? "default" : "outline"}
                     size="sm"
+                    disabled={!tel}
                     onClick={() => handlePatternSelect("DANGER_FLASH")}
                     className="text-xs font-semibold justify-start"
                   >
@@ -136,8 +142,9 @@ export default function OutputsPage() {
                     DANGER_FLASH
                   </Button>
                   <Button
-                    variant={tel?.actuators.ledMatrixPattern === "EVACUATE_ARROW" ? "default" : "outline"}
+                    variant={tel?.actuators?.ledMatrixPattern === "EVACUATE_ARROW" ? "default" : "outline"}
                     size="sm"
+                    disabled={!tel}
                     onClick={() => handlePatternSelect("EVACUATE_ARROW")}
                     className="text-xs font-semibold justify-start"
                   >
@@ -145,8 +152,9 @@ export default function OutputsPage() {
                     EVACUATE_ARROW
                   </Button>
                   <Button
-                    variant={tel?.actuators.ledMatrixPattern === "IDLE" ? "default" : "outline"}
+                    variant={tel?.actuators?.ledMatrixPattern === "IDLE" ? "default" : "outline"}
                     size="sm"
+                    disabled={!tel}
                     onClick={() => handlePatternSelect("IDLE")}
                     className="text-xs font-semibold justify-start"
                   >
@@ -169,7 +177,7 @@ export default function OutputsPage() {
                 Audible Piezo Buzzer Siren
               </CardTitle>
               <CardDescription className="text-xs">
-                Emergency evacuation buzzer on {node?.id}
+                Emergency evacuation buzzer on {node?.id || "-"}
               </CardDescription>
             </CardHeader>
             <CardContent className="p-6 space-y-5">
@@ -177,29 +185,30 @@ export default function OutputsPage() {
                 <div className="flex items-center gap-3">
                   <div
                     className={`size-10 rounded-xl flex items-center justify-center ${
-                      tel?.actuators.buzzerActive
+                      tel?.actuators?.buzzerActive
                         ? "bg-rose-100 text-rose-700 animate-pulse"
                         : "bg-slate-200 text-slate-500"
                     }`}
                   >
-                    {tel?.actuators.buzzerActive ? <Volume2 className="size-5" /> : <VolumeX className="size-5" />}
+                    {tel?.actuators?.buzzerActive ? <Volume2 className="size-5" /> : <VolumeX className="size-5" />}
                   </div>
                   <div>
                     <span className="text-sm font-bold text-slate-900 block">
-                      {tel?.actuators.buzzerActive ? "SIREN SOUNDING" : "Buzzer Inactive"}
+                      {tel?.actuators ? (tel.actuators.buzzerActive ? "SIREN SOUNDING" : "Buzzer Inactive") : "-"}
                     </span>
                     <span className="text-xs text-slate-500 font-medium">
-                      {tel?.actuators.buzzerActive ? "Tone: 2.8 kHz @ 85 dB" : "Armed & Ready"}
+                      {tel?.actuators ? (tel.actuators.buzzerActive ? "Tone: 2.8 kHz @ 85 dB" : "Armed & Ready") : "Awaiting backend data"}
                     </span>
                   </div>
                 </div>
                 <Button
-                  variant={tel?.actuators.buzzerActive ? "destructive" : "default"}
+                  disabled={!tel}
+                  variant={tel?.actuators?.buzzerActive ? "destructive" : "default"}
                   size="sm"
                   onClick={() => triggerActuatorTest("buzzer")}
                   className="font-bold text-xs"
                 >
-                  {tel?.actuators.buzzerActive ? "Silence Siren" : "Sound Buzzer Test"}
+                  {tel?.actuators?.buzzerActive ? "Silence Siren" : "Sound Buzzer Test"}
                 </Button>
               </div>
 

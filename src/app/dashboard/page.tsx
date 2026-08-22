@@ -59,19 +59,23 @@ export default function CommandCenterPage() {
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold text-slate-500">Active Node:</span>
           <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl">
-            {nodes.map((n) => (
-              <Button
-                key={n.id}
-                size="sm"
-                variant={selectedNodeId === n.id ? "default" : "ghost"}
-                onClick={() => setSelectedNodeId(n.id)}
-                className={`h-7 px-3 text-xs font-bold rounded-lg ${
-                  selectedNodeId === n.id ? "bg-orange-600 hover:bg-orange-700 text-white" : "text-slate-700"
-                }`}
-              >
-                {n.id}
-              </Button>
-            ))}
+            {nodes.length > 0 ? (
+              nodes.map((n) => (
+                <Button
+                  key={n.id}
+                  size="sm"
+                  variant={selectedNodeId === n.id ? "default" : "ghost"}
+                  onClick={() => setSelectedNodeId(n.id)}
+                  className={`h-7 px-3 text-xs font-bold rounded-lg ${
+                    selectedNodeId === n.id ? "bg-orange-600 hover:bg-orange-700 text-white" : "text-slate-700"
+                  }`}
+                >
+                  {n.id}
+                </Button>
+              ))
+            ) : (
+              <span className="text-xs font-semibold text-slate-400 px-2 py-0.5">-</span>
+            )}
           </div>
         </div>
       </div>
@@ -118,25 +122,27 @@ export default function CommandCenterPage() {
           </div>
           <div className="mt-2.5 flex items-baseline gap-1">
             <span className="text-3xl font-bold tracking-tight text-slate-900">
-              {tel?.gas.mq2Ppm ?? "—"}
+              {tel?.gas?.mq2Ppm != null ? tel.gas.mq2Ppm : "-"}
             </span>
-            <span className="text-xs font-semibold text-slate-500">ppm</span>
+            <span className="text-xs font-semibold text-slate-500">
+              {tel?.gas?.mq2Ppm != null ? "ppm" : ""}
+            </span>
           </div>
           <div className="mt-2 flex items-center justify-between text-[11px]">
             <span className="text-slate-400">Limit: {thresholds.gasPpmCritical} ppm</span>
             <Badge
               variant={
-                tel?.gas.status === "DANGER"
+                tel?.gas?.status === "DANGER"
                   ? "destructive"
-                  : tel?.gas.status === "WARNING"
+                  : tel?.gas?.status === "WARNING"
                   ? "outline"
                   : "secondary"
               }
               className={`text-[9px] font-bold ${
-                tel?.gas.status === "WARNING" ? "bg-amber-100 text-amber-900 border-amber-300" : ""
+                tel?.gas?.status === "WARNING" ? "bg-amber-100 text-amber-900 border-amber-300" : ""
               }`}
             >
-              {tel?.gas.status || "NORMAL"}
+              {tel?.gas?.status || "-"}
             </Badge>
           </div>
         </div>
@@ -151,24 +157,30 @@ export default function CommandCenterPage() {
           </div>
           <div className="mt-2.5 flex items-baseline gap-1">
             <span className="text-3xl font-bold tracking-tight text-slate-900">
-              {tel?.ultrasound.distanceCm.toFixed(1) ?? "—"}
+              {tel?.ultrasound?.distanceCm != null ? tel.ultrasound.distanceCm.toFixed(1) : "-"}
             </span>
-            <span className="text-xs font-semibold text-slate-500">cm</span>
+            <span className="text-xs font-semibold text-slate-500">
+              {tel?.ultrasound?.distanceCm != null ? "cm" : ""}
+            </span>
           </div>
           <div className="mt-2 flex items-center justify-between text-[11px]">
             <span className="text-slate-400">Min: {thresholds.wallDistanceMinCriticalCm} cm</span>
             <span
               className={`font-semibold ${
-                (tel?.ultrasound.distanceCm ?? 100) <= thresholds.wallDistanceMinCriticalCm
-                  ? "text-rose-600 font-bold"
-                  : (tel?.ultrasound.distanceCm ?? 100) <= thresholds.wallDistanceMinWarningCm
-                  ? "text-amber-600 font-bold"
-                  : "text-emerald-600"
+                tel?.ultrasound
+                  ? tel.ultrasound.distanceCm <= thresholds.wallDistanceMinCriticalCm
+                    ? "text-rose-600 font-bold"
+                    : tel.ultrasound.distanceCm <= thresholds.wallDistanceMinWarningCm
+                    ? "text-amber-600 font-bold"
+                    : "text-emerald-600"
+                  : "text-slate-400"
               }`}
             >
-              {(tel?.ultrasound.distanceCm ?? 100) <= thresholds.wallDistanceMinCriticalCm
-                ? "Critical Close"
-                : "Clear"}
+              {tel?.ultrasound
+                ? tel.ultrasound.distanceCm <= thresholds.wallDistanceMinCriticalCm
+                  ? "Critical Close"
+                  : "Clear"
+                : "-"}
             </span>
           </div>
         </div>
@@ -183,13 +195,13 @@ export default function CommandCenterPage() {
           </div>
           <div className="mt-2.5 flex items-baseline gap-1">
             <span className="text-3xl font-bold tracking-tight text-slate-900">
-              {tel?.mpu1.totalTiltDeg.toFixed(1) ?? "—"}°
+              {tel?.mpu1?.totalTiltDeg != null ? `${tel.mpu1.totalTiltDeg.toFixed(1)}°` : "-"}
             </span>
             <span className="text-[10px] text-slate-400 font-medium">Tilt</span>
           </div>
           <div className="mt-2 flex items-center justify-between text-[11px] text-slate-500 font-medium">
-            <span>R: {tel?.mpu1.rollDeg.toFixed(1)}°</span>
-            <span>P: {tel?.mpu1.pitchDeg.toFixed(1)}°</span>
+            <span>R: {tel?.mpu1?.rollDeg != null ? `${tel.mpu1.rollDeg.toFixed(1)}°` : "-"}</span>
+            <span>P: {tel?.mpu1?.pitchDeg != null ? `${tel.mpu1.pitchDeg.toFixed(1)}°` : "-"}</span>
           </div>
         </div>
 
@@ -203,13 +215,13 @@ export default function CommandCenterPage() {
           </div>
           <div className="mt-2.5 flex items-baseline gap-1">
             <span className="text-3xl font-bold tracking-tight text-slate-900">
-              {tel?.mpu2.totalTiltDeg.toFixed(1) ?? "—"}°
+              {tel?.mpu2?.totalTiltDeg != null ? `${tel.mpu2.totalTiltDeg.toFixed(1)}°` : "-"}
             </span>
             <span className="text-[10px] text-slate-400 font-medium">Tilt</span>
           </div>
           <div className="mt-2 flex items-center justify-between text-[11px] text-slate-500 font-medium">
-            <span>R: {tel?.mpu2.rollDeg.toFixed(1)}°</span>
-            <span>P: {tel?.mpu2.pitchDeg.toFixed(1)}°</span>
+            <span>R: {tel?.mpu2?.rollDeg != null ? `${tel.mpu2.rollDeg.toFixed(1)}°` : "-"}</span>
+            <span>P: {tel?.mpu2?.pitchDeg != null ? `${tel.mpu2.pitchDeg.toFixed(1)}°` : "-"}</span>
           </div>
         </div>
 
@@ -223,18 +235,22 @@ export default function CommandCenterPage() {
           </div>
           <div className="mt-2.5 flex items-baseline gap-1">
             <span className="text-3xl font-bold tracking-tight text-slate-900">
-              {tel?.vibration.intensity ?? 0}%
+              {tel?.vibration?.intensity != null ? `${tel.vibration.intensity}%` : "-"}
             </span>
-            <span className="text-xs font-semibold text-slate-500">Intensity</span>
+            <span className="text-xs font-semibold text-slate-500">
+              {tel?.vibration?.intensity != null ? "Intensity" : ""}
+            </span>
           </div>
           <div className="mt-2 flex items-center justify-between text-[11px]">
-            <span className="text-slate-400">{tel?.vibration.eventCount ?? 0} pulses</span>
+            <span className="text-slate-400">
+              {tel?.vibration?.eventCount != null ? `${tel.vibration.eventCount} pulses` : "-"}
+            </span>
             <span
               className={`font-semibold ${
-                tel?.vibration.triggered ? "text-rose-600 font-bold" : "text-emerald-600"
+                tel?.vibration?.triggered ? "text-rose-600 font-bold" : "text-slate-400"
               }`}
             >
-              {tel?.vibration.triggered ? "Active Pulse" : "Quiet"}
+              {tel?.vibration ? (tel.vibration.triggered ? "Active Pulse" : "Quiet") : "-"}
             </span>
           </div>
         </div>
@@ -256,12 +272,12 @@ export default function CommandCenterPage() {
                 </Badge>
               </div>
               <TiltInclinometer3D
-                rollDeg={tel?.mpu1.rollDeg}
-                pitchDeg={tel?.mpu1.pitchDeg}
-                totalTiltDeg={tel?.mpu1.totalTiltDeg}
-                accelX={tel?.mpu1.accelX}
-                accelY={tel?.mpu1.accelY}
-                accelZ={tel?.mpu1.accelZ}
+                rollDeg={tel?.mpu1?.rollDeg}
+                pitchDeg={tel?.mpu1?.pitchDeg}
+                totalTiltDeg={tel?.mpu1?.totalTiltDeg}
+                accelX={tel?.mpu1?.accelX}
+                accelY={tel?.mpu1?.accelY}
+                accelZ={tel?.mpu1?.accelZ}
               />
             </div>
 
@@ -276,12 +292,12 @@ export default function CommandCenterPage() {
                 </Badge>
               </div>
               <TiltInclinometer3D
-                rollDeg={tel?.mpu2.rollDeg}
-                pitchDeg={tel?.mpu2.pitchDeg}
-                totalTiltDeg={tel?.mpu2.totalTiltDeg}
-                accelX={tel?.mpu2.accelX}
-                accelY={tel?.mpu2.accelY}
-                accelZ={tel?.mpu2.accelZ}
+                rollDeg={tel?.mpu2?.rollDeg}
+                pitchDeg={tel?.mpu2?.pitchDeg}
+                totalTiltDeg={tel?.mpu2?.totalTiltDeg}
+                accelX={tel?.mpu2?.accelX}
+                accelY={tel?.mpu2?.accelY}
+                accelZ={tel?.mpu2?.accelZ}
               />
             </div>
           </div>
@@ -306,8 +322,8 @@ export default function CommandCenterPage() {
               {/* 8x8 LED Matrix Live Rendering */}
               <div className="flex flex-col items-center p-3 bg-slate-50 rounded-xl border border-slate-200/80">
                 <LedMatrixDisplay
-                  pattern={tel?.actuators.ledMatrixPattern || "IDLE"}
-                  isActive={tel?.actuators.ledMatrixActive ?? true}
+                  pattern={tel?.actuators?.ledMatrixPattern || "IDLE"}
+                  isActive={tel?.actuators?.ledMatrixActive ?? false}
                   size="sm"
                 />
               </div>
@@ -317,27 +333,28 @@ export default function CommandCenterPage() {
                 <div className="flex items-center gap-2.5">
                   <div
                     className={`size-8 rounded-xl flex items-center justify-center ${
-                      tel?.actuators.buzzerActive
+                      tel?.actuators?.buzzerActive
                         ? "bg-rose-100 text-rose-700 animate-pulse"
                         : "bg-slate-200 text-slate-500"
                     }`}
                   >
-                    {tel?.actuators.buzzerActive ? <Volume2 className="size-4" /> : <VolumeX className="size-4" />}
+                    {tel?.actuators?.buzzerActive ? <Volume2 className="size-4" /> : <VolumeX className="size-4" />}
                   </div>
                   <div>
                     <span className="text-xs font-bold text-slate-900 block">Audible Buzzer</span>
                     <span className="text-[10px] text-slate-500 font-medium">
-                      {tel?.actuators.buzzerActive ? "SIREN SOUNDING (2.8 kHz)" : "Silent / Standby"}
+                      {tel?.actuators ? (tel.actuators.buzzerActive ? "SIREN SOUNDING (2.8 kHz)" : "Silent / Standby") : "-"}
                     </span>
                   </div>
                 </div>
                 <Button
                   size="sm"
-                  variant={tel?.actuators.buzzerActive ? "destructive" : "outline"}
+                  disabled={!tel}
+                  variant={tel?.actuators?.buzzerActive ? "destructive" : "outline"}
                   onClick={() => triggerActuatorTest("buzzer")}
                   className="h-7 text-xs font-bold"
                 >
-                  {tel?.actuators.buzzerActive ? "Silence" : "Test"}
+                  {tel?.actuators?.buzzerActive ? "Silence" : "Test"}
                 </Button>
               </div>
             </CardContent>
@@ -384,7 +401,7 @@ export default function CommandCenterPage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-slate-400 text-center py-3">All sensor channels nominal.</p>
+                <p className="text-xs text-slate-400 text-center py-3">-</p>
               )}
             </CardContent>
           </Card>

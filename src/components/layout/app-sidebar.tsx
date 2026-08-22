@@ -40,7 +40,7 @@ interface NavItem {
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { alarms, nodes } = useTelemetryContext();
+  const { alarms, nodes, isConnected } = useTelemetryContext();
 
   const activeCriticalAlarms = alarms.filter((a) => a.state === "ACTIVE" && a.severity === "CRITICAL").length;
   const activeWarningAlarms = alarms.filter((a) => a.state === "ACTIVE" && a.severity === "WARNING").length;
@@ -174,10 +174,10 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <div className="p-3 bg-slate-50/90 rounded-xl border border-slate-200/80 flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
-                <span className="size-2 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)]" />
-                <span className="font-semibold text-slate-700">Multi-Node Active</span>
+                <span className={cn("size-2 rounded-full", isConnected ? "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)]" : "bg-slate-400")} />
+                <span className="font-semibold text-slate-700">{isConnected ? "Multi-Node Active" : "Disconnected"}</span>
               </div>
-              <span className="text-[10px] font-semibold text-slate-500">{nodes.length} ESPs</span>
+              <span className="text-[10px] font-semibold text-slate-500">{nodes.length > 0 ? `${nodes.length} ESPs` : "-"}</span>
             </div>
           </SidebarMenuItem>
         </SidebarMenu>

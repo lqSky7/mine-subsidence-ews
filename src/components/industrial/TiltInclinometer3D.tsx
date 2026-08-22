@@ -15,26 +15,34 @@ interface TiltInclinometer3DProps {
 }
 
 export function TiltInclinometer3D({
-  rollDeg = 0,
-  pitchDeg = 0,
-  totalTiltDeg = 0,
-  accelX = 0,
-  accelY = 0,
-  accelZ = 9.81,
+  rollDeg,
+  pitchDeg,
+  totalTiltDeg,
+  accelX,
+  accelY,
+  accelZ,
   maxAngle = 15,
   className,
 }: TiltInclinometer3DProps) {
-  // Normalize bubble offset in percentage (-50% to +50%)
-  const clampRoll = Math.max(-maxAngle, Math.min(maxAngle, rollDeg));
-  const clampPitch = Math.max(-maxAngle, Math.min(maxAngle, pitchDeg));
+  const hasData = totalTiltDeg !== undefined && totalTiltDeg !== null;
 
-  const bubbleX = (clampRoll / maxAngle) * 38; // Radius percent offset
-  const bubbleY = (clampPitch / maxAngle) * 38;
+  // Normalize bubble offset in percentage (-50% to +50%)
+  const safeRoll = rollDeg ?? 0;
+  const safePitch = pitchDeg ?? 0;
+  const safeTotalTilt = totalTiltDeg ?? 0;
+
+  const clampRoll = Math.max(-maxAngle, Math.min(maxAngle, safeRoll));
+  const clampPitch = Math.max(-maxAngle, Math.min(maxAngle, safePitch));
+
+  const bubbleX = hasData ? (clampRoll / maxAngle) * 38 : 0;
+  const bubbleY = hasData ? (clampPitch / maxAngle) * 38 : 0;
 
   // Determine hazard color state
-  const isCritical = totalTiltDeg >= 7.0;
-  const isWarning = totalTiltDeg >= 3.0 && !isCritical;
-  const color = isCritical
+  const isCritical = hasData && safeTotalTilt >= 7.0;
+  const isWarning = hasData && safeTotalTilt >= 3.0 && !isCritical;
+  const color = !hasData
+    ? "text-slate-400 border-slate-300 bg-slate-100"
+    : isCritical
     ? "text-rose-600 border-rose-500 bg-rose-500/10"
     : isWarning
     ? "text-amber-600 border-amber-500 bg-amber-500/10"
@@ -79,7 +87,9 @@ export function TiltInclinometer3D({
         <div
           className={cn(
             "relative size-9 rounded-full border-2 shadow-md transition-all duration-200 flex items-center justify-center",
-            isCritical
+            !hasData
+              ? "bg-slate-300 border-slate-400 shadow-slate-200 opacity-50"
+              : isCritical
               ? "bg-rose-500 border-rose-600 shadow-rose-300"
               : isWarning
               ? "bg-amber-400 border-amber-500 shadow-amber-200"
@@ -100,22 +110,28 @@ export function TiltInclinometer3D({
         <div className="p-2.5 bg-slate-50 rounded-xl">
           <span className="text-[10px] text-slate-400 uppercase font-semibold block">Total Tilt</span>
           <span className={cn("text-xl font-extrabold tracking-tight", color)}>
-            {totalTiltDeg.toFixed(2)}°
+            {hasData ? `${safeTotalTilt.toFixed(2)}°` : "-"}
           </span>
           <div className="mt-1 flex justify-between text-[11px] text-slate-500 font-medium">
-            <span>R: {rollDeg.toFixed(1)}°</span>
-            <span>P: {pitchDeg.toFixed(1)}°</span>
+            <span>R: {rollDeg !== undefined && rollDeg !== null ? `${rollDeg.toFixed(1)}°` : "-"}</span>
+            <span>P: {pitchDeg !== undefined && pitchDeg !== null ? `${pitchDeg.toFixed(1)}°` : "-"}</span>
           </div>
         </div>
 
         <div className="p-2.5 bg-slate-50 rounded-xl">
           <span className="text-[10px] text-slate-400 uppercase font-semibold block">Gravity Vector</span>
           <span className="text-xl font-extrabold text-slate-800 tracking-tight block">
-            {accelZ.toFixed(2)} <span className="text-xs text-slate-400 font-normal">m/s²</span>
+            {accelZ !== undefined && accelZ !== null ? (
+              <>
+                {accelZ.toFixed(2)} <span className="text-xs text-slate-400 font-normal">m/s²</span>
+              </>
+            ) : (
+              "-"
+            )}
           </span>
           <div className="mt-1 flex justify-between text-[11px] text-slate-500 font-medium">
-            <span>aX: {accelX.toFixed(2)}</span>
-            <span>aY: {accelY.toFixed(2)}</span>
+            <span>aX: {accelX !== undefined && accelX !== null ? accelX.toFixed(2) : "-"}</span>
+            <span>aY: {accelY !== undefined && accelY !== null ? accelY.toFixed(2) : "-"}</span>
           </div>
         </div>
       </div>
