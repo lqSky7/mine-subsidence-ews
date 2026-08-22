@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+
 import { Icon } from "@/components/ui/icon";
 import {
   Sidebar,
@@ -10,12 +11,12 @@ import {
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuItem,
   SidebarMenuButton,
+  SidebarMenuItem,
   SidebarFooter,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { Badge } from "@/components/ui/badge";
+import { Dot, StatusBadge } from "@/components/uber/dashboard-primitives";
 import { cn } from "@/lib/utils";
 import { useTelemetryContext } from "./telemetry-provider";
 
@@ -26,98 +27,66 @@ interface NavItem {
   badge?: string;
 }
 
+const navigation: { label: string; items: NavItem[] }[] = [
+  {
+    label: "Monitor",
+    items: [
+      { title: "Command", href: "/dashboard", icon: "solar:widget-2-bold-duotone" },
+      { title: "Nodes", href: "/dashboard/nodes", icon: "solar:cpu-bolt-bold-duotone" },
+      { title: "Photos", href: "/dashboard/photos", icon: "solar:camera-bold-duotone" },
+      { title: "Outputs", href: "/dashboard/outputs", icon: "solar:volume-loud-bold-duotone" },
+    ],
+  },
+  {
+    label: "Risk",
+    items: [
+      { title: "Alerts", href: "/dashboard/alarms", icon: "solar:bell-bold-duotone" },
+      { title: "Thresholds", href: "/dashboard/settings/alerts", icon: "solar:settings-bold-duotone" },
+      { title: "AI Logs", href: "/dashboard/ai-logs", icon: "solar:heart-pulse-bold-duotone" },
+    ],
+  },
+  {
+    label: "Review",
+    items: [
+      { title: "Trends", href: "/dashboard/analytics/trends", icon: "solar:chart-2-bold-duotone" },
+      { title: "History", href: "/dashboard/analytics/history", icon: "solar:history-bold-duotone" },
+      { title: "Hardware", href: "/dashboard/hardware", icon: "solar:layers-minimalistic-bold-duotone" },
+    ],
+  },
+];
+
 export function AppSidebar() {
   const pathname = usePathname();
   const { alarms, nodes, isConnected } = useTelemetryContext();
 
-  const activeCriticalAlarms = alarms.filter((a) => a.state === "ACTIVE" && a.severity === "CRITICAL").length;
-  const activeWarningAlarms = alarms.filter((a) => a.state === "ACTIVE" && a.severity === "WARNING").length;
-  const totalActiveAlarms = activeCriticalAlarms + activeWarningAlarms;
+  const activeAlarms = alarms.filter((alarm) => alarm.state === "ACTIVE").length;
+  const onlineNodes = nodes.filter((node) => node.status !== "OFFLINE").length;
 
-  const navigation: { label: string; items: NavItem[] }[] = [
-    {
-      label: "Live Monitoring",
-      items: [
-        {
-          title: "Command Center",
-          href: "/dashboard",
-          icon: "solar:widget-2-bold-duotone",
-        },
-        {
-          title: "ESP Node Fleet",
-          href: "/dashboard/nodes",
-          icon: "solar:cpu-bolt-bold-duotone",
-        },
-        {
-          title: "Visual Inspections",
-          href: "/dashboard/photos",
-          icon: "solar:camera-bold-duotone",
-        },
-        {
-          title: "Actuators & Outputs",
-          href: "/dashboard/outputs",
-          icon: "solar:volume-loud-bold-duotone",
-        },
-      ],
-    },
-    {
-      label: "Hazard Management",
-      items: [
-        {
-          title: "Early Warning Alerts",
-          href: "/dashboard/alarms",
-          icon: "solar:bell-bold-duotone",
-          badge: totalActiveAlarms > 0 ? String(totalActiveAlarms) : undefined,
-        },
-        {
-          title: "Safety Thresholds",
-          href: "/dashboard/settings/alerts",
-          icon: "solar:settings-bold-duotone",
-        },
-      ],
-    },
-    {
-      label: "Analytics & History",
-      items: [
-        {
-          title: "Multi-Sensor Trends",
-          href: "/dashboard/analytics/trends",
-          icon: "solar:chart-2-bold-duotone",
-        },
-        {
-          title: "Event Audit Logs",
-          href: "/dashboard/analytics/history",
-          icon: "solar:history-bold-duotone",
-        },
-        {
-          title: "AI Health & Safety Logs",
-          href: "/dashboard/ai-logs",
-          icon: "solar:heart-pulse-bold-duotone",
-        },
-      ],
-    },
-    {
-      label: "Hardware Specs",
-      items: [
-        {
-          title: "Hardware BOM & Pinout",
-          href: "/dashboard/hardware",
-          icon: "solar:layers-minimalistic-bold-duotone",
-        },
-      ],
-    },
-  ];
+  const nav = navigation.map((group) => ({
+    ...group,
+    items: group.items.map((item) => ({
+      ...item,
+      badge: item.href === "/dashboard/alarms" && activeAlarms > 0 ? String(activeAlarms) : item.badge,
+    })),
+  }));
 
   return (
-    <Sidebar collapsible="icon" variant="sidebar">
-      <SidebarContent className="pt-3">
-        {navigation.map((group) => (
+    <Sidebar collapsible="icon" variant="sidebar" className="border-neutral-200 dark:border-neutral-800">
+      <SidebarContent className="pt-4">
+        <div className="px-4 pb-3 group-data-[collapsible=icon]:hidden">
+          <Link href="/dashboard" className="block">
+            <div className="text-xl font-semibold leading-none text-black dark:text-white">Mine EWS</div>
+            <div className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">Operator console</div>
+          </Link>
+        </div>
+
+        {nav.map((group) => (
           <SidebarGroup key={group.label} className="py-2 group-data-[collapsible=icon]:py-1">
-            <SidebarGroupLabel className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-3 mb-1 group-data-[collapsible=icon]:hidden">
+            <SidebarGroupLabel className="px-4 text-[10px] font-semibold uppercase text-neutral-500 group-data-[collapsible=icon]:hidden dark:text-neutral-500">
               {group.label}
             </SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu className="gap-1.5 px-2 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:items-center">
+              <SidebarMenu className="gap-1 px-2 group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:px-0">
                 {group.items.map((item) => {
                   const isActive = pathname === item.href;
                   return (
@@ -127,27 +96,21 @@ export function AppSidebar() {
                         isActive={isActive}
                         tooltip={item.title}
                         className={cn(
-                          "w-full h-10 px-3 rounded-xl transition-all duration-150 flex items-center gap-3 cursor-pointer text-xs font-semibold group-data-[collapsible=icon]:size-10 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center",
+                          "h-10 w-full cursor-pointer rounded-full px-3 text-sm font-medium transition-colors group-data-[collapsible=icon]:size-10 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0",
                           isActive
-                            ? "bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 font-bold border border-orange-200/70 dark:border-orange-900/50 shadow-2xs"
-                            : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/60 font-medium"
+                            ? "bg-black text-white hover:bg-black dark:bg-white dark:text-black dark:hover:bg-white"
+                            : "text-neutral-700 hover:bg-neutral-100 hover:text-black dark:text-neutral-300 dark:hover:bg-neutral-900 dark:hover:text-white"
                         )}
                       >
                         <Icon
                           icon={item.icon}
-                          className={cn(
-                            "size-5 shrink-0 transition-colors",
-                            isActive ? "text-orange-600 dark:text-orange-400" : "text-slate-500 dark:text-slate-400"
-                          )}
+                          className={cn("size-4 shrink-0", isActive ? "text-current" : "text-neutral-500")}
                         />
                         <span className="truncate group-data-[collapsible=icon]:hidden">{item.title}</span>
                         {item.badge && (
-                          <Badge
-                            variant="destructive"
-                            className="ml-auto h-5 px-1.5 text-[10px] font-bold shrink-0 group-data-[collapsible=icon]:hidden"
-                          >
+                          <span className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 text-[10px] font-semibold text-white group-data-[collapsible=icon]:hidden">
                             {item.badge}
-                          </Badge>
+                          </span>
                         )}
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -160,12 +123,23 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="p-3 group-data-[collapsible=icon]:p-2">
-        <div className="p-3 group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:justify-center bg-slate-50/90 dark:bg-slate-900/60 rounded-xl border border-slate-200/80 dark:border-slate-800 flex items-center justify-between text-xs font-sans">
-          <div className="flex items-center gap-2">
-            <span className={cn("size-2.5 rounded-full shrink-0", isConnected ? "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)]" : "bg-slate-400")} />
-            <span className="font-semibold text-slate-700 dark:text-slate-300 group-data-[collapsible=icon]:hidden">{isConnected ? "Multi-Node Active" : "Disconnected"}</span>
+        <div className="rounded-lg border border-neutral-200 bg-white p-3 text-xs dark:border-neutral-800 dark:bg-neutral-950 group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:rounded-full group-data-[collapsible=icon]:p-2">
+          <div className="flex items-center justify-between gap-2">
+            <span className="flex items-center gap-2 font-medium text-neutral-900 dark:text-neutral-100">
+              <Dot tone={isConnected ? "live" : "neutral"} />
+              <span className="group-data-[collapsible=icon]:hidden">
+                {isConnected ? "Gateway live" : "Gateway offline"}
+              </span>
+            </span>
+            <span className="text-neutral-500 group-data-[collapsible=icon]:hidden dark:text-neutral-400">
+              {onlineNodes}/{nodes.length || 0}
+            </span>
           </div>
-          <span className="text-[10px] font-semibold text-slate-500 group-data-[collapsible=icon]:hidden">{nodes.length > 0 ? `${nodes.length} ESPs` : "-"}</span>
+          {activeAlarms > 0 && (
+            <StatusBadge tone="critical" className="mt-2 group-data-[collapsible=icon]:hidden">
+              {activeAlarms} active
+            </StatusBadge>
+          )}
         </div>
       </SidebarFooter>
       <SidebarRail />

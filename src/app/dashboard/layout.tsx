@@ -16,7 +16,9 @@ export default function DashboardLayout({
         <AppSidebar />
         <SidebarInset>
           <TopBar />
-          <main className="flex-1 overflow-auto p-4 lg:p-6">{children}</main>
+          <main className="flex-1 overflow-auto bg-white p-4 dark:bg-black sm:p-5 lg:p-8">
+            {children}
+          </main>
         </SidebarInset>
       </SidebarProvider>
     </TelemetryProvider>
