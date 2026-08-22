@@ -77,23 +77,20 @@ export function TiltInclinometer3D({
           <div className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
             Dual-Axis Inclinometer Target
           </div>
-          <div className="text-[11px] font-mono text-neutral-400 dark:text-neutral-500">
-            Full Scale: ±{maxAngle}° · Res: 0.05°
+        </div>
+        {hasData && (isCritical || isWarning) && (
+          <div>
+            <span
+              className={cn(
+                "inline-flex h-5 items-center rounded-md border px-2 text-[10px] font-mono font-semibold uppercase tracking-normal",
+                isWarning && "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950/60 dark:text-amber-300",
+                isCritical && "border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/60 dark:text-red-300"
+              )}
+            >
+              {isCritical ? "Limit Breach" : "Drift Warning"}
+            </span>
           </div>
-        </div>
-        <div>
-          <span
-            className={cn(
-              "inline-flex h-5 items-center rounded-md border px-2 text-[10px] font-mono font-semibold uppercase tracking-normal",
-              tone === "live" && "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/60 dark:text-emerald-300",
-              tone === "watch" && "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950/60 dark:text-amber-300",
-              tone === "critical" && "border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/60 dark:text-red-300",
-              tone === "neutral" && "border-neutral-200 bg-neutral-100 text-neutral-600 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400"
-            )}
-          >
-            {hasData ? (isCritical ? "Limit Breach" : isWarning ? "Drift Warning" : "IMU Calibrated") : "Standby"}
-          </span>
-        </div>
+        )}
       </div>
 
       {/* Aerospace Reticle HUD Dial */}
@@ -360,10 +357,6 @@ export function TiltInclinometer3D({
             </span>
             <span className="text-xs font-mono text-neutral-500 dark:text-neutral-400">°</span>
           </div>
-          <div className="mt-1.5 flex items-center justify-between text-[11px] font-mono tabular-nums text-neutral-600 dark:text-neutral-400">
-            <span>R: {rollDeg !== undefined ? `${rollDeg.toFixed(1)}°` : "—"}</span>
-            <span>P: {pitchDeg !== undefined ? `${pitchDeg.toFixed(1)}°` : "—"}</span>
-          </div>
         </div>
 
         {/* Gravity Vector Readout */}
@@ -379,10 +372,6 @@ export function TiltInclinometer3D({
               {netAccel !== undefined ? netAccel.toFixed(2) : "—"}
             </span>
             <span className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400">m/s²</span>
-          </div>
-          <div className="mt-1.5 flex items-center justify-between text-[11px] font-mono tabular-nums text-neutral-600 dark:text-neutral-400">
-            <span>aX: {accelX !== undefined ? accelX.toFixed(2) : "—"}</span>
-            <span>aY: {accelY !== undefined ? accelY.toFixed(2) : "—"}</span>
           </div>
         </div>
       </div>
