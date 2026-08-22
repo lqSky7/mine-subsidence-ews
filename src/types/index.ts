@@ -87,14 +87,25 @@ export interface NodeTelemetry {
   };
 }
 
+export type AlarmCategory =
+  | "GAS"
+  | "TILT_MPU1"
+  | "TILT_MPU2"
+  | "WALL_DISTANCE"
+  | "VIBRATION"
+  | "ENVIRONMENT"
+  | "SYSTEM"
+  | "MANUAL"
+  | string;
+
 // ---- Early Warning Alarm ----
 export interface Alarm {
   id: string;
   timestamp: string;
-  source: string; // e.g. "ESP-NODE-01"
+  source: string; // e.g. "ESP-NODE-01" or "FLEET_WIDE"
   sourceLabel: string;
   severity: AlarmSeverity;
-  category: "GAS" | "TILT_MPU1" | "TILT_MPU2" | "WALL_DISTANCE" | "VIBRATION" | "ENVIRONMENT" | "SYSTEM" | "MANUAL" | string;
+  category: AlarmCategory;
   value: string;
   description: string;
   state: AlarmState;
@@ -103,6 +114,7 @@ export interface Alarm {
   resolvedAt?: string;
   resolvedBy?: string;
   notes?: string;
+  raisedBy?: "SYSTEM" | "TECHNICIAN" | string;
 }
 
 // ---- Safety Alert Thresholds ----
@@ -137,4 +149,40 @@ export interface TelemetryDataPoint {
   timestamp: string;
   time: string;
   [key: string]: string | number | boolean | undefined;
+}
+
+// ---- AI Mine Heartbeat / Risk Score (ML pipeline output) ----
+export interface MineHealthScore {
+  id: string;
+  timestamp: string;
+  overallScore: number; // 0-100, higher = healthier
+  riskLevel: "LOW" | "MODERATE" | "HIGH" | "SEVERE";
+  contributingFactors: Array<{ factor: string; impact: number; nodeId?: string }>;
+  modelVersion: string;
+  summary: string;
+}
+
+// ---- Outbound Remote Command (backend -> Pi4 -> ESP) ----
+export interface RemoteCommand {
+  id: string;
+  type: "RAISE_ALARM" | "CLEAR_ALARM" | "BUZZER_TEST" | "LED_TEST" | string;
+  targetNodeId: string | "ALL";
+  payload?: Record<string, unknown>;
+  issuedBy: string;
+  issuedAt: string;
+  status: "PENDING" | "DELIVERED" | "ACKED" | "FAILED";
+  deliveredAt?: string;
+}
+
+// ---- Mine Tunnel Inspection & Camera Photos ----
+export interface MinePhoto {
+  id: string;
+  timestamp: string;
+  title: string;
+  imageUrl: string;
+  thumbnailUrl?: string;
+  nodeId?: string;
+  location?: string;
+  category?: "TUNNEL" | "WORKING_FACE" | "SUBSIDENCE_SURFACE" | "THERMAL_SCAN" | "INSPECTION";
+  metadata?: Record<string, unknown>;
 }

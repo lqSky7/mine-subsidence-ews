@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 const pathLabels: Record<string, string> = {
   dashboard: "Command Center",
   nodes: "ESP Node Fleet",
+  photos: "Visual Inspections",
   outputs: "Actuators & Outputs",
   alarms: "Early Warning Alerts",
   analytics: "Analytics",

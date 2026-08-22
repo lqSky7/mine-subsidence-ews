@@ -9,7 +9,6 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
-  SidebarHeader,
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
@@ -48,6 +47,11 @@ export function AppSidebar() {
           title: "ESP Node Fleet",
           href: "/dashboard/nodes",
           icon: "solar:cpu-bolt-bold-duotone",
+        },
+        {
+          title: "Visual Inspections",
+          href: "/dashboard/photos",
+          icon: "solar:camera-bold-duotone",
         },
         {
           title: "Actuators & Outputs",
@@ -102,74 +106,65 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" variant="sidebar">
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" render={<Link href="/dashboard" />}>
-              <div className="flex items-center gap-2.5">
-                <div className="flex size-8.5 items-center justify-center rounded-xl bg-orange-600 text-white shadow-xs">
-                  <Icon icon="solar:fire-bold-duotone" className="size-5" />
-                </div>
-                <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-bold text-sm text-slate-900 dark:text-slate-100 tracking-tight">Mine EWS Platform</span>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
-                    ESP Sensor & Early Warning
-                  </span>
-                </div>
-              </div>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader>
-
-      <SidebarContent>
+      <SidebarContent className="pt-3">
         {navigation.map((group) => (
-          <SidebarGroup key={group.label}>
-            <SidebarGroupLabel className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+          <SidebarGroup key={group.label} className="py-2">
+            <SidebarGroupLabel className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-3 mb-1">
               {group.label}
             </SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu>
-                {group.items.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                      render={<Link href={item.href} />}
-                      isActive={pathname === item.href}
-                    >
-                      <Icon icon={item.icon} className="size-4" />
-                      <span>{item.title}</span>
-                      {item.badge && (
-                        <Badge
-                          variant={item.badge === "ACTUATORS" ? "secondary" : "destructive"}
+              <SidebarMenu className="gap-1 px-2">
+                {group.items.map((item) => {
+                  const isActive = pathname === item.href;
+                  return (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton
+                        render={<Link href={item.href} />}
+                        isActive={isActive}
+                        className={cn(
+                          "w-full h-9 px-3 rounded-xl transition-all duration-150 flex items-center gap-2.5 cursor-pointer text-xs font-semibold",
+                          isActive
+                            ? "bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 font-bold border border-orange-200/70 dark:border-orange-900/50 shadow-2xs"
+                            : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/60 font-medium"
+                        )}
+                      >
+                        <Icon
+                          icon={item.icon}
                           className={cn(
-                            "ml-auto h-5 px-1.5 text-[10px] font-bold",
-                            item.badge === "ACTUATORS" && "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-950 dark:text-blue-300"
+                            "size-4 shrink-0 transition-colors",
+                            isActive ? "text-orange-600 dark:text-orange-400" : "text-slate-500 dark:text-slate-400"
                           )}
-                        >
-                          {item.badge}
-                        </Badge>
-                      )}
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                        />
+                        <span className="truncate">{item.title}</span>
+                        {item.badge && (
+                          <Badge
+                            variant={item.badge === "ACTUATORS" ? "secondary" : "destructive"}
+                            className={cn(
+                              "ml-auto h-5 px-1.5 text-[10px] font-bold shrink-0",
+                              item.badge === "ACTUATORS" && "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-950 dark:text-blue-300"
+                            )}
+                          >
+                            {item.badge}
+                          </Badge>
+                        )}
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         ))}
       </SidebarContent>
 
-      <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <div className="p-3 bg-slate-50/90 dark:bg-slate-900/60 rounded-xl border border-slate-200/80 dark:border-slate-800 flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2">
-                <span className={cn("size-2 rounded-full", isConnected ? "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)]" : "bg-slate-400")} />
-                <span className="font-semibold text-slate-700 dark:text-slate-300">{isConnected ? "Multi-Node Active" : "Disconnected"}</span>
-              </div>
-              <span className="text-[10px] font-semibold text-slate-500">{nodes.length > 0 ? `${nodes.length} ESPs` : "-"}</span>
-            </div>
-          </SidebarMenuItem>
-        </SidebarMenu>
+      <SidebarFooter className="p-3">
+        <div className="p-3 bg-slate-50/90 dark:bg-slate-900/60 rounded-xl border border-slate-200/80 dark:border-slate-800 flex items-center justify-between text-xs font-sans">
+          <div className="flex items-center gap-2">
+            <span className={cn("size-2 rounded-full", isConnected ? "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)]" : "bg-slate-400")} />
+            <span className="font-semibold text-slate-700 dark:text-slate-300">{isConnected ? "Multi-Node Active" : "Disconnected"}</span>
+          </div>
+          <span className="text-[10px] font-semibold text-slate-500">{nodes.length > 0 ? `${nodes.length} ESPs` : "-"}</span>
+        </div>
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
