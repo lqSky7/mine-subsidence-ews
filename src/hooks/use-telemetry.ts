@@ -8,29 +8,53 @@ import type {
   Alarm,
   AlertThresholdConfig,
   LedMatrixPattern,
+  TelemetryDataPoint,
 } from "@/types";
-import {
-  generateEspFleet,
-  generateAllNodesTelemetry,
-  checkAndGenerateAlarms,
-  getAlarmHistory,
-  acknowledgeAlarm as mockAcknowledgeAlarm,
-  activeThresholds,
-  updateAlertThresholds,
-} from "@/data/mock-engine";
 
-const getBackendUrl = () => {
+const defaultThresholds: AlertThresholdConfig = {
+  gasPpmWarning: 400,
+  gasPpmCritical: 800,
+  wallDistanceMinWarningCm: 35,
+  wallDistanceMinCriticalCm: 20,
+  tiltDegWarning: 3,
+  tiltDegCritical: 7,
+  vibrationIntensityThreshold: 60,
+  tempCWarning: 38,
+  tempCCritical: 45,
+  buzzerEnabled: true,
+  ledMatrixEnabled: true,
+  autoTriggerActuatorsOnCritical: true,
+};
+
+const getBackendApiUrl = () => {
+  if (process.env.NEXT_PUBLIC_BACKEND_URL) {
+    return process.env.NEXT_PUBLIC_BACKEND_URL;
+  }
   if (typeof window !== "undefined") {
     const hostname = window.location.hostname;
     if (hostname !== "localhost" && hostname !== "127.0.0.1") {
-      return `http://${hostname}:3003`;
+      return `http://${hostname}:4000/api/v1`;
     }
   }
-  return "http://localhost:3003";
+  return "http://localhost:4000/api/v1";
 };
 
-const BACKEND_URL = getBackendUrl();
-const POLL_INTERVAL = 1000;
+const getSocketUrl = () => {
+  if (process.env.NEXT_PUBLIC_SOCKET_URL) {
+    return process.env.NEXT_PUBLIC_SOCKET_URL;
+  }
+  if (typeof window !== "undefined") {
+    const hostname = window.location.hostname;
+    if (hostname !== "localhost" && hostname !== "127.0.0.1") {
+      return `http://${hostname}:4000`;
+    }
+  }
+  return "http://localhost:4000";
+};
+
+const API_BASE = getBackendApiUrl();
+const SOCKET_BASE = getSocketUrl();
+const POLL_INTERVAL_MS = 2000;
 
 export interface TelemetryState {
   nodes: EspNode[];
@@ -47,9 +71,10 @@ export interface TelemetryState {
 
   // Actions
   setSelectedNodeId: (id: string) => void;
-  acknowledgeAlarm: (alarmId: string, notes?: string) => void;
-  setThresholds: (thresholds: Partial<AlertThresholdConfig>) => void;
-  triggerActuatorTest: (actuator: "buzzer" | "ledMatrix", pattern?: LedMatrixPattern) => void;
+  acknowledgeAlarm: (alarmId: string, notes?: string) => Promise<void>;
+  setThresholds: (thresholds: Partial<AlertThresholdConfig>) => Promise<void>;
+  triggerActuatorTest: (actuator: "buzzer" | "ledMatrix", pattern?: LedMatrixPattern) => Promise<void>;
+  fetchNodeHistory: (nodeId: string, points?: number) => Promise<TelemetryDataPoint[]>;
 }
 
 export function useTelemetry(): TelemetryState {
@@ -57,17 +82,71 @@ export function useTelemetry(): TelemetryState {
   const [telemetry, setTelemetry] = useState<Record<string, NodeTelemetry>>({});
   const [alarms, setAlarms] = useState<Alarm[]>([]);
   const [recentAlarms, setRecentAlarms] = useState<Alarm[]>([]);
-  const [thresholds, setThresholdsState] = useState<AlertThresholdConfig>(activeThresholds);
+  const [thresholds, setThresholdsState] = useState<AlertThresholdConfig>(defaultThresholds);
   const [isConnected, setIsConnected] = useState(false);
-  const [selectedNodeId, setSelectedNodeId] = useState<string>("");
+  const [selectedNodeId, setSelectedNodeId] = useState<string>("ESP-NODE-01");
 
   const socketRef = useRef<Socket | null>(null);
+  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Poll backend REST endpoints for live real data
+  const pollBackendData = useCallback(async () => {
+    try {
+      // 1. Fetch nodes
+      const nodesRes = await fetch(`${API_BASE}/nodes`, { cache: "no-store" });
+      if (nodesRes.ok) {
+        const json = await nodesRes.json();
+        if (json.ok && Array.isArray(json.data)) {
+          setNodes(json.data);
+          setIsConnected(true);
+        }
+      }
+
+      // 2. Fetch live telemetry
+      const telRes = await fetch(`${API_BASE}/telemetry/live`, { cache: "no-store" });
+      if (telRes.ok) {
+        const json = await telRes.json();
+        if (json.ok && json.data) {
+          setTelemetry(json.data);
+        }
+      }
+
+      // 3. Fetch active alarms
+      const alarmsRes = await fetch(`${API_BASE}/alarms`, { cache: "no-store" });
+      if (alarmsRes.ok) {
+        const json = await alarmsRes.json();
+        if (json.ok && Array.isArray(json.data)) {
+          setAlarms(json.data);
+          setRecentAlarms(json.data.slice(0, 10));
+        }
+      }
+
+      // 4. Fetch thresholds
+      const threshRes = await fetch(`${API_BASE}/thresholds`, { cache: "no-store" });
+      if (threshRes.ok) {
+        const json = await threshRes.json();
+        if (json.ok && json.data) {
+          setThresholdsState(json.data);
+        }
+      }
+    } catch {
+      // Offline/backend down — do not inject fake data; report disconnected status
+      setIsConnected(false);
+    }
+  }, []);
 
   useEffect(() => {
-    // 1. Initialize Socket.IO Client connection
-    const socket = io(BACKEND_URL, {
-      reconnectionAttempts: 5,
-      timeout: 2000,
+    // Initial fetch
+    pollBackendData();
+
+    // Set recurring poll
+    pollTimerRef.current = setInterval(pollBackendData, POLL_INTERVAL_MS);
+
+    // Optional Socket.IO realtime connection
+    const socket = io(SOCKET_BASE, {
+      reconnectionAttempts: 3,
+      timeout: 3000,
+      autoConnect: true,
     });
 
     socketRef.current = socket;
@@ -76,95 +155,118 @@ export function useTelemetry(): TelemetryState {
       setIsConnected(true);
     });
 
-    socket.on("connect_error", () => {
-      setIsConnected(false);
-    });
-
     socket.on("disconnect", () => {
       setIsConnected(false);
     });
 
-    // 2. Telemetry Listeners
-    socket.on("nodes", (data: EspNode[]) => {
-      if (Array.isArray(data)) setNodes(data);
-    });
-
     socket.on("node_telemetry", (data: NodeTelemetry) => {
-      if (data && data.nodeId) {
+      if (data?.nodeId) {
         setTelemetry((prev) => ({ ...prev, [data.nodeId]: data }));
       }
     });
 
-    socket.on("all_telemetry", (data: Record<string, NodeTelemetry>) => {
-      if (data) setTelemetry(data);
-    });
-
-    socket.on("alarm_event", (data: Alarm) => {
-      setRecentAlarms((prev) => [data, ...prev].slice(0, 10));
-      setAlarms((prev) => {
-        const exists = prev.some((a) => a.id === data.id);
-        if (exists) return prev;
-        return [data, ...prev];
-      });
+    socket.on("alarm_event", (alarm: Alarm) => {
+      if (alarm?.id) {
+        setAlarms((prev) => [alarm, ...prev.filter((a) => a.id !== alarm.id)]);
+        setRecentAlarms((prev) => [alarm, ...prev.filter((a) => a.id !== alarm.id)].slice(0, 10));
+      }
     });
 
     return () => {
+      if (pollTimerRef.current) {
+        clearInterval(pollTimerRef.current);
+        pollTimerRef.current = null;
+      }
       socket.close();
     };
-  }, []);
+  }, [pollBackendData]);
 
   // Acknowledge Alarm Handler
   const handleAcknowledgeAlarm = useCallback(
-    (alarmId: string, notes?: string) => {
-      if (isConnected && socketRef.current) {
-        socketRef.current.emit("acknowledge_alarm", { alarmId, notes });
+    async (alarmId: string, notes?: string) => {
+      try {
+        await fetch(`${API_BASE}/alarms/${alarmId}/acknowledge`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ by: "CONTROL_ROOM_OPERATOR", notes }),
+        });
+        setAlarms((prev) =>
+          prev.map((a) =>
+            a.id === alarmId
+              ? { ...a, state: "ACKNOWLEDGED", acknowledgedBy: "CONTROL_ROOM_OPERATOR", notes }
+              : a
+          )
+        );
+      } catch {
+        // network error
       }
-      mockAcknowledgeAlarm(alarmId, notes);
-      setAlarms([...getAlarmHistory()]);
     },
-    [isConnected]
+    []
   );
 
   // Update Thresholds Handler
   const handleSetThresholds = useCallback(
-    (newThresholds: Partial<AlertThresholdConfig>) => {
-      updateAlertThresholds(newThresholds);
+    async (newThresholds: Partial<AlertThresholdConfig>) => {
       setThresholdsState((prev) => ({ ...prev, ...newThresholds }));
-      if (isConnected && socketRef.current) {
-        socketRef.current.emit("update_thresholds", newThresholds);
+      try {
+        await fetch(`${API_BASE}/thresholds`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newThresholds),
+        });
+      } catch {
+        // network error
       }
     },
-    [isConnected]
+    []
   );
 
-  // Actuator Test Trigger
+  // Actuator Remote Command
   const handleTriggerActuatorTest = useCallback(
-    (actuator: "buzzer" | "ledMatrix", pattern?: LedMatrixPattern) => {
-      if (isConnected && socketRef.current) {
-        socketRef.current.emit("actuator_test", { actuator, pattern, nodeId: selectedNodeId });
+    async (actuator: "buzzer" | "ledMatrix", pattern?: LedMatrixPattern) => {
+      try {
+        await fetch(`${API_BASE}/commands`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: actuator === "buzzer" ? "BUZZER_TEST" : "LED_TEST",
+            targetNodeId: selectedNodeId,
+            issuedBy: "OPERATOR",
+            payload: { pattern: pattern || "DANGER_FLASH" },
+          }),
+        });
+      } catch {
+        // network error
       }
-      setTelemetry((prev) => {
-        const nodeTel = prev[selectedNodeId];
-        if (!nodeTel) return prev;
-        return {
-          ...prev,
-          [selectedNodeId]: {
-            ...nodeTel,
-            actuators: {
-              ...nodeTel.actuators,
-              buzzerActive: actuator === "buzzer" ? !nodeTel.actuators.buzzerActive : nodeTel.actuators.buzzerActive,
-              ledMatrixPattern: pattern || (actuator === "ledMatrix" ? "DANGER_FLASH" : nodeTel.actuators.ledMatrixPattern),
-            },
-          },
-        };
-      });
     },
-    [isConnected, selectedNodeId]
+    [selectedNodeId]
   );
 
-  // Derived selected node data
+  // Fetch real node historical points for graphs
+  const handleFetchNodeHistory = useCallback(
+    async (nodeId: string, points = 50): Promise<TelemetryDataPoint[]> => {
+      try {
+        const res = await fetch(`${API_BASE}/telemetry/${nodeId}/history?points=${points}`, {
+          cache: "no-store",
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.ok && Array.isArray(json.data)) {
+            return json.data;
+          }
+        }
+      } catch {
+        // offline
+      }
+      return [];
+    },
+    []
+  );
+
+  // Derived selected node and telemetry
   const selectedNode = nodes.find((n) => n.id === selectedNodeId) || nodes[0] || null;
-  const selectedTelemetry = telemetry[selectedNodeId] || (selectedNode ? telemetry[selectedNode.id] : null) || null;
+  const selectedTelemetry =
+    (selectedNode ? telemetry[selectedNode.id] : null) || telemetry[selectedNodeId] || null;
 
   return {
     nodes,
@@ -180,5 +282,6 @@ export function useTelemetry(): TelemetryState {
     acknowledgeAlarm: handleAcknowledgeAlarm,
     setThresholds: handleSetThresholds,
     triggerActuatorTest: handleTriggerActuatorTest,
+    fetchNodeHistory: handleFetchNodeHistory,
   };
 }

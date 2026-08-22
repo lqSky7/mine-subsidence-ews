@@ -1,8 +1,8 @@
 // ============================================================
 // Mine IoT Early Warning System (EWS)
-// Shared Type Definitions for Multi-Node ESP Sensor System
-// Hardware: 2x Gy87 AXL385 MPU (Perpendicular), Ultrasound,
-// Vibration, MQ2 Gas Sensor, Buzzer & 8x8 Flash LED Matrix
+// Canonical Shared Type Definitions for Multi-Node ESP Sensor System
+// Hardware: 2x Gy87 AXL385 / MPU-6050, Ultrasound, Vibration,
+// MQ2 Gas Sensor, Buzzer & 8x8 Flash LED Matrix
 // ============================================================
 
 export type NodeStatus = "ONLINE" | "WARNING" | "OFFLINE" | "CRITICAL";
@@ -11,7 +11,7 @@ export type AlarmSeverity = "CRITICAL" | "WARNING" | "INFO";
 export type AlarmState = "ACTIVE" | "ACKNOWLEDGED" | "RESOLVED";
 export type LedMatrixPattern = "IDLE" | "NORMAL_CHECK" | "WARNING_PULSE" | "DANGER_FLASH" | "EVACUATE_ARROW";
 
-// ---- Single MPU Sensor Readings (Gy87 AXL385) ----
+// ---- Single MPU Sensor Readings (Gy87 AXL385 / MPU6050) ----
 export interface MpuSensorData {
   accelX: number; // m/s^2 or g
   accelY: number;
@@ -31,45 +31,55 @@ export interface EspNode {
   location: string; // e.g. "Chamber 4B"
   status: NodeStatus;
   riskSeverity: HazardSeverity;
-  ipAddress: string;
-  lastSeen: string;
-  firmware: string;
+  ipAddress?: string;
+  lastSeen: string | null;
+  firmware?: string;
   rssi?: number;
+  capabilities?: string[];
 }
 
 // ---- Live Node Sensor Telemetry ----
 export interface NodeTelemetry {
   nodeId: string;
   timestamp: string;
+  seq?: number;
 
-  // Dual Perpendicular MPU Sensors (Gy87 AXL385)
-  mpu1: MpuSensorData; // Sensor A - Horizontal / Lateral Plane
-  mpu2: MpuSensorData; // Sensor B - Vertical / Longitudinal Plane (Perpendicular)
+  // Dual IMU / MPU Inclinometer Sensors (both aliases supported for seamless backend compatibility)
+  mpu1?: MpuSensorData | null;
+  mpu2?: MpuSensorData | null;
+  imu1?: MpuSensorData | null;
+  imu2?: MpuSensorData | null;
 
   // Ultrasound Distance Sensor (Front Wall Clearance)
-  ultrasound: {
+  ultrasound?: {
     distanceCm: number;
     baselineCm: number;
     deltaCm: number;
     approachRateCmPerMin: number;
-  };
+  } | null;
 
   // Micro-Vibration Sensor
-  vibration: {
+  vibration?: {
     triggered: boolean;
     eventCount: number;
     intensity: number; // 0 - 100 normalized
-  };
+  } | null;
 
   // MQ2 Gas Sensor (Flammable Gas / Smoke / Methane)
-  gas: {
+  gas?: {
     mq2Ppm: number;
     rawAdc: number;
     status: "NORMAL" | "WARNING" | "DANGER";
-  };
+  } | null;
+
+  // Environment (Temperature & Humidity)
+  environment?: {
+    temperatureC: number | null;
+    humidityPct: number | null;
+  } | null;
 
   // Alert Actuators / Outputs
-  actuators: {
+  actuators?: {
     buzzerActive: boolean;
     buzzerFrequencyHz?: number;
     ledMatrixPattern: LedMatrixPattern;
@@ -84,13 +94,14 @@ export interface Alarm {
   source: string; // e.g. "ESP-NODE-01"
   sourceLabel: string;
   severity: AlarmSeverity;
-  category: "GAS" | "TILT_MPU1" | "TILT_MPU2" | "WALL_DISTANCE" | "VIBRATION" | "SYSTEM";
+  category: "GAS" | "TILT_MPU1" | "TILT_MPU2" | "WALL_DISTANCE" | "VIBRATION" | "ENVIRONMENT" | "SYSTEM" | "MANUAL" | string;
   value: string;
   description: string;
   state: AlarmState;
   acknowledgedBy?: string;
   acknowledgedAt?: string;
   resolvedAt?: string;
+  resolvedBy?: string;
   notes?: string;
 }
 
@@ -101,8 +112,8 @@ export interface AlertThresholdConfig {
   gasPpmCritical: number;  // default: 800 ppm
 
   // Wall Distance Clearance (Ultrasound) (cm)
-  wallDistanceMinWarningCm: number;  // default: 30 cm
-  wallDistanceMinCriticalCm: number; // default: 15 cm
+  wallDistanceMinWarningCm: number;  // default: 35 cm
+  wallDistanceMinCriticalCm: number; // default: 20 cm
 
   // Tilt Thresholds for MPU 1 & MPU 2 (deg)
   tiltDegWarning: number;  // default: 3.0 deg
@@ -110,6 +121,10 @@ export interface AlertThresholdConfig {
 
   // Vibration Threshold (events / intensity)
   vibrationIntensityThreshold: number; // default: 60
+
+  // Environment Thresholds
+  tempCWarning?: number;
+  tempCCritical?: number;
 
   // Actuator Trigger Settings
   buzzerEnabled: boolean;

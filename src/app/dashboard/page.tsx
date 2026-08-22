@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useTelemetryContext } from "@/components/layout/telemetry-provider";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,12 @@ import {
 } from "lucide-react";
 import { TiltInclinometer3D } from "@/components/industrial/TiltInclinometer3D";
 import { LedMatrixDisplay } from "@/components/industrial/LedMatrixDisplay";
+import {
+  AestheticMiniSparkline,
+  AestheticAreaTrendChart,
+  SeriesConfig,
+} from "@/components/charts";
+import type { TelemetryDataPoint } from "@/types";
 
 export default function CommandCenterPage() {
   const {
@@ -33,72 +39,170 @@ export default function CommandCenterPage() {
     selectedTelemetry,
     triggerActuatorTest,
     acknowledgeAlarm,
+    fetchNodeHistory,
+    isConnected,
   } = useTelemetryContext();
 
-  const node = selectedNode || nodes[0];
-  const tel = selectedTelemetry || (node ? telemetry[node.id] : null);
+  const node = selectedNode || nodes[0] || null;
+  const tel = selectedTelemetry || (node ? telemetry[node.id] : null) || null;
 
   const activeAlarms = alarms.filter((a) => a.state === "ACTIVE");
   const criticalAlarms = activeAlarms.filter((a) => a.severity === "CRITICAL");
   const hasCriticalHazard = criticalAlarms.length > 0;
 
+  // Real historical data fetched from backend
+  const [nodeHistory, setNodeHistory] = useState<TelemetryDataPoint[]>([]);
+  const [fleetHistoryMap, setFleetHistoryMap] = useState<Record<string, TelemetryDataPoint[]>>({});
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadHistories() {
+      if (node?.id) {
+        const hist = await fetchNodeHistory(node.id, 20);
+        if (isMounted) setNodeHistory(hist);
+      }
+
+      // Fetch histories for all registered nodes
+      const map: Record<string, TelemetryDataPoint[]> = {};
+      for (const n of nodes) {
+        const h = await fetchNodeHistory(n.id, 24);
+        map[n.id] = h;
+      }
+      if (isMounted) setFleetHistoryMap(map);
+    }
+
+    loadHistories();
+
+    const interval = setInterval(loadHistories, 4000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [node?.id, nodes, fetchNodeHistory]);
+
+  const gasSparkline: number[] = useMemo(
+    () => nodeHistory.map((d) => Number(d.gasPpm) || 0).filter((v) => !isNaN(v)),
+    [nodeHistory]
+  );
+  const distSparkline: number[] = useMemo(
+    () => nodeHistory.map((d) => Number(d.wallDistanceCm) || 0).filter((v) => !isNaN(v)),
+    [nodeHistory]
+  );
+  const mpu1Sparkline: number[] = useMemo(
+    () => nodeHistory.map((d) => Number(d.tiltMpu1) || 0).filter((v) => !isNaN(v)),
+    [nodeHistory]
+  );
+  const mpu2Sparkline: number[] = useMemo(
+    () => nodeHistory.map((d) => Number(d.tiltMpu2) || 0).filter((v) => !isNaN(v)),
+    [nodeHistory]
+  );
+  const vibSparkline: number[] = useMemo(
+    () => nodeHistory.map((d) => Number(d.vibrationIntensity) || 0).filter((v) => !isNaN(v)),
+    [nodeHistory]
+  );
+
+  // Dynamic Fleet Series & Stream Data from real backend nodes
+  const fleetSeries: SeriesConfig[] = useMemo(() => {
+    const palette = ["#F97316", "#E11D48", "#8B5CF6", "#10B981", "#3B82F6", "#EC4899"];
+    return nodes.map((n, idx) => ({
+      key: n.id,
+      name: `${n.id} · ${n.label}`,
+      color: palette[idx % palette.length],
+      strokeWidth: idx === 0 ? 2.4 : 1.8,
+    }));
+  }, [nodes]);
+
+  const fleetStreamData = useMemo(() => {
+    if (nodes.length === 0) return [];
+    const firstNodeHistory = fleetHistoryMap[nodes[0].id] || [];
+    return firstNodeHistory.map((pt, idx) => {
+      const row: Record<string, string | number | undefined> = {
+        time: pt.time || pt.timestamp,
+      };
+      nodes.forEach((n) => {
+        const hist = fleetHistoryMap[n.id] || [];
+        row[n.id] = Number(hist[idx]?.gasPpm) || undefined;
+      });
+      return row;
+    });
+  }, [nodes, fleetHistoryMap]);
+
   return (
-    <div className="space-y-6 pb-12 font-sans text-slate-800">
+    <div className="space-y-6 pb-16 font-sans text-slate-800 dark:text-slate-200">
       {/* Header & Station Selector */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/70">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/70 dark:border-slate-800">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-            Mine Sensor Command Center
-          </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+              Mine Sensor Command Center
+            </h1>
+            <Badge
+              variant={isConnected ? "outline" : "secondary"}
+              className={`text-[10px] font-bold ${
+                isConnected
+                  ? "border-emerald-300 text-emerald-700 bg-emerald-50 dark:bg-emerald-950/60 dark:text-emerald-300"
+                  : "bg-slate-100 text-slate-500"
+              }`}
+            >
+              {isConnected ? "GATEWAY LIVE" : "OFFLINE / STANDBY"}
+            </Badge>
+          </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Real-Time Multi-Sensor Telemetry & Early Warning Safety System
           </p>
         </div>
 
         {/* Multi-Node Station Switcher */}
         <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-slate-500">Active Node:</span>
-          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl">
-            {nodes.length > 0 ? (
-              nodes.map((n) => (
+          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Station Node:</span>
+          {nodes.length > 0 ? (
+            <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+              {nodes.map((n) => (
                 <Button
                   key={n.id}
                   size="sm"
                   variant={selectedNodeId === n.id ? "default" : "ghost"}
                   onClick={() => setSelectedNodeId(n.id)}
                   className={`h-7 px-3 text-xs font-bold rounded-lg ${
-                    selectedNodeId === n.id ? "bg-orange-600 hover:bg-orange-700 text-white" : "text-slate-700"
+                    selectedNodeId === n.id
+                      ? "bg-orange-600 hover:bg-orange-700 text-white"
+                      : "text-slate-700 dark:text-slate-300"
                   }`}
                 >
                   {n.id}
                 </Button>
-              ))
-            ) : (
-              <span className="text-xs font-semibold text-slate-400 px-2 py-0.5">-</span>
-            )}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-xs font-medium text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl">
+              — No Active Nodes Connected —
+            </div>
+          )}
         </div>
       </div>
 
       {/* Critical Hazard Alert Banner */}
       {hasCriticalHazard && (
-        <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 flex items-start gap-3 shadow-xs">
+        <div className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-2xl p-4 flex items-start gap-3 shadow-xs">
           <AlertTriangle className="size-5 text-rose-600 shrink-0 mt-0.5" />
           <div className="flex-1 text-xs">
-            <span className="font-bold text-rose-900 text-sm block">
+            <span className="font-bold text-rose-900 dark:text-rose-200 text-sm block">
               CRITICAL HAZARD ALERT: Safety Threshold Breached
             </span>
             <div className="mt-1.5 space-y-1">
               {criticalAlarms.slice(0, 3).map((a) => (
-                <div key={a.id} className="flex justify-between items-center text-rose-800 font-medium">
-                  <span>[{a.sourceLabel}] {a.description}</span>
+                <div key={a.id} className="flex justify-between items-center text-rose-800 dark:text-rose-300 font-medium">
+                  <span>
+                    [{a.sourceLabel}] {a.description}
+                  </span>
                   <div className="flex items-center gap-2">
-                    <span className="font-bold">{a.value}</span>
+                    <span className="font-bold tabular-nums">{a.value}</span>
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => acknowledgeAlarm(a.id)}
-                      className="h-6 px-2 text-[10px] bg-white border-rose-300 text-rose-900 hover:bg-rose-100 font-bold"
+                      className="h-6 px-2 text-[10px] bg-white dark:bg-slate-900 border-rose-300 dark:border-rose-800 text-rose-900 dark:text-rose-200 hover:bg-rose-100 font-bold"
                     >
                       Ack
                     </Button>
@@ -110,153 +214,195 @@ export default function CommandCenterPage() {
         </div>
       )}
 
-      {/* Top 5 Real-Time Sensor Metric Cards */}
+      {/* Top 5 Real-Time Sensor Metric Cards with Aesthetic Sparklines */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Metric 1: MQ2 Gas Sensor */}
-        <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs transition-all hover:shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">MQ2 Gas Level</span>
-            <div className="size-7 rounded-xl bg-orange-100 flex items-center justify-center text-orange-700">
-              <Flame className="size-3.5" />
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs transition-all hover:shadow-sm flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                MQ2 Gas Level
+              </span>
+              <div className="size-7 rounded-xl bg-orange-100 dark:bg-orange-950/60 flex items-center justify-center text-orange-600">
+                <Flame className="size-3.5" />
+              </div>
+            </div>
+            <div className="mt-2.5 flex items-baseline gap-1">
+              <span className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100 tabular-nums">
+                {tel?.gas?.mq2Ppm !== undefined ? tel.gas.mq2Ppm : "—"}
+              </span>
+              {tel?.gas?.mq2Ppm !== undefined && (
+                <span className="text-xs font-semibold text-slate-500">ppm</span>
+              )}
             </div>
           </div>
-          <div className="mt-2.5 flex items-baseline gap-1">
-            <span className="text-3xl font-bold tracking-tight text-slate-900">
-              {tel?.gas?.mq2Ppm != null ? tel.gas.mq2Ppm : "-"}
-            </span>
-            <span className="text-xs font-semibold text-slate-500">
-              {tel?.gas?.mq2Ppm != null ? "ppm" : ""}
-            </span>
-          </div>
-          <div className="mt-2 flex items-center justify-between text-[11px]">
-            <span className="text-slate-400">Limit: {thresholds.gasPpmCritical} ppm</span>
-            <Badge
-              variant={
-                tel?.gas?.status === "DANGER"
-                  ? "destructive"
-                  : tel?.gas?.status === "WARNING"
-                  ? "outline"
-                  : "secondary"
-              }
-              className={`text-[9px] font-bold ${
-                tel?.gas?.status === "WARNING" ? "bg-amber-100 text-amber-900 border-amber-300" : ""
-              }`}
-            >
-              {tel?.gas?.status || "-"}
-            </Badge>
+
+          <div className="mt-3">
+            <AestheticMiniSparkline data={gasSparkline} color="#EA580C" height={28} />
+            <div className="mt-2 flex items-center justify-between text-[10px]">
+              <span className="text-slate-400">Limit: {thresholds.gasPpmCritical} ppm</span>
+              <Badge
+                variant={
+                  tel?.gas?.status === "DANGER"
+                    ? "destructive"
+                    : tel?.gas?.status === "WARNING"
+                    ? "outline"
+                    : "secondary"
+                }
+                className={`text-[9px] font-bold ${
+                  tel?.gas?.status === "WARNING"
+                    ? "bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950 dark:text-amber-300"
+                    : ""
+                }`}
+              >
+                {tel?.gas?.status || "NO DATA"}
+              </Badge>
+            </div>
           </div>
         </div>
 
         {/* Metric 2: Ultrasound Wall Distance */}
-        <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs transition-all hover:shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Wall Clearance</span>
-            <div className="size-7 rounded-xl bg-blue-100 flex items-center justify-center text-blue-700">
-              <Radio className="size-3.5" />
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs transition-all hover:shadow-sm flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                Wall Clearance
+              </span>
+              <div className="size-7 rounded-xl bg-blue-100 dark:bg-blue-950/60 flex items-center justify-center text-blue-600">
+                <Radio className="size-3.5" />
+              </div>
+            </div>
+            <div className="mt-2.5 flex items-baseline gap-1">
+              <span className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100 tabular-nums">
+                {tel?.ultrasound?.distanceCm !== undefined
+                  ? tel.ultrasound.distanceCm.toFixed(1)
+                  : "—"}
+              </span>
+              {tel?.ultrasound?.distanceCm !== undefined && (
+                <span className="text-xs font-semibold text-slate-500">cm</span>
+              )}
             </div>
           </div>
-          <div className="mt-2.5 flex items-baseline gap-1">
-            <span className="text-3xl font-bold tracking-tight text-slate-900">
-              {tel?.ultrasound?.distanceCm != null ? tel.ultrasound.distanceCm.toFixed(1) : "-"}
-            </span>
-            <span className="text-xs font-semibold text-slate-500">
-              {tel?.ultrasound?.distanceCm != null ? "cm" : ""}
-            </span>
-          </div>
-          <div className="mt-2 flex items-center justify-between text-[11px]">
-            <span className="text-slate-400">Min: {thresholds.wallDistanceMinCriticalCm} cm</span>
-            <span
-              className={`font-semibold ${
-                tel?.ultrasound
-                  ? tel.ultrasound.distanceCm <= thresholds.wallDistanceMinCriticalCm
+
+          <div className="mt-3">
+            <AestheticMiniSparkline data={distSparkline} color="#3B82F6" height={28} />
+            <div className="mt-2 flex items-center justify-between text-[10px]">
+              <span className="text-slate-400">Min: {thresholds.wallDistanceMinCriticalCm} cm</span>
+              <span
+                className={`font-semibold ${
+                  tel?.ultrasound?.distanceCm === undefined
+                    ? "text-slate-400"
+                    : tel.ultrasound.distanceCm <= thresholds.wallDistanceMinCriticalCm
                     ? "text-rose-600 font-bold"
                     : tel.ultrasound.distanceCm <= thresholds.wallDistanceMinWarningCm
                     ? "text-amber-600 font-bold"
                     : "text-emerald-600"
-                  : "text-slate-400"
-              }`}
-            >
-              {tel?.ultrasound
-                ? tel.ultrasound.distanceCm <= thresholds.wallDistanceMinCriticalCm
+                }`}
+              >
+                {tel?.ultrasound?.distanceCm === undefined
+                  ? "Standby"
+                  : tel.ultrasound.distanceCm <= thresholds.wallDistanceMinCriticalCm
                   ? "Critical Close"
-                  : "Clear"
-                : "-"}
-            </span>
+                  : "Clear"}
+              </span>
+            </div>
           </div>
         </div>
 
         {/* Metric 3: MPU 1 (Horizontal Gy87) */}
-        <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs transition-all hover:shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">MPU 1 (Horizontal)</span>
-            <div className="size-7 rounded-xl bg-purple-100 flex items-center justify-center text-purple-700">
-              <Compass className="size-3.5" />
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs transition-all hover:shadow-sm flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                MPU 1 (Horizontal)
+              </span>
+              <div className="size-7 rounded-xl bg-purple-100 dark:bg-purple-950/60 flex items-center justify-center text-purple-600">
+                <Compass className="size-3.5" />
+              </div>
+            </div>
+            <div className="mt-2.5 flex items-baseline gap-1">
+              <span className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100 tabular-nums">
+                {tel?.imu1?.totalTiltDeg !== undefined ? `${tel.imu1.totalTiltDeg.toFixed(1)}°` : "—"}
+              </span>
+              <span className="text-[10px] text-slate-400 font-medium">Tilt</span>
             </div>
           </div>
-          <div className="mt-2.5 flex items-baseline gap-1">
-            <span className="text-3xl font-bold tracking-tight text-slate-900">
-              {tel?.mpu1?.totalTiltDeg != null ? `${tel.mpu1.totalTiltDeg.toFixed(1)}°` : "-"}
-            </span>
-            <span className="text-[10px] text-slate-400 font-medium">Tilt</span>
-          </div>
-          <div className="mt-2 flex items-center justify-between text-[11px] text-slate-500 font-medium">
-            <span>R: {tel?.mpu1?.rollDeg != null ? `${tel.mpu1.rollDeg.toFixed(1)}°` : "-"}</span>
-            <span>P: {tel?.mpu1?.pitchDeg != null ? `${tel.mpu1.pitchDeg.toFixed(1)}°` : "-"}</span>
+
+          <div className="mt-3">
+            <AestheticMiniSparkline data={mpu1Sparkline} color="#8B5CF6" height={28} />
+            <div className="mt-2 flex items-center justify-between text-[10px] text-slate-500 font-medium">
+              <span>R: {tel?.imu1?.rollDeg !== undefined ? `${tel.imu1.rollDeg.toFixed(1)}°` : "—"}</span>
+              <span>P: {tel?.imu1?.pitchDeg !== undefined ? `${tel.imu1.pitchDeg.toFixed(1)}°` : "—"}</span>
+            </div>
           </div>
         </div>
 
         {/* Metric 4: MPU 2 (Vertical Gy87) */}
-        <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs transition-all hover:shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">MPU 2 (Vertical)</span>
-            <div className="size-7 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-700">
-              <Compass className="size-3.5" />
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs transition-all hover:shadow-sm flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                MPU 2 (Vertical)
+              </span>
+              <div className="size-7 rounded-xl bg-indigo-100 dark:bg-indigo-950/60 flex items-center justify-center text-indigo-600">
+                <Compass className="size-3.5" />
+              </div>
+            </div>
+            <div className="mt-2.5 flex items-baseline gap-1">
+              <span className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100 tabular-nums">
+                {tel?.imu2?.totalTiltDeg !== undefined ? `${tel.imu2.totalTiltDeg.toFixed(1)}°` : "—"}
+              </span>
+              <span className="text-[10px] text-slate-400 font-medium">Tilt</span>
             </div>
           </div>
-          <div className="mt-2.5 flex items-baseline gap-1">
-            <span className="text-3xl font-bold tracking-tight text-slate-900">
-              {tel?.mpu2?.totalTiltDeg != null ? `${tel.mpu2.totalTiltDeg.toFixed(1)}°` : "-"}
-            </span>
-            <span className="text-[10px] text-slate-400 font-medium">Tilt</span>
-          </div>
-          <div className="mt-2 flex items-center justify-between text-[11px] text-slate-500 font-medium">
-            <span>R: {tel?.mpu2?.rollDeg != null ? `${tel.mpu2.rollDeg.toFixed(1)}°` : "-"}</span>
-            <span>P: {tel?.mpu2?.pitchDeg != null ? `${tel.mpu2.pitchDeg.toFixed(1)}°` : "-"}</span>
+
+          <div className="mt-3">
+            <AestheticMiniSparkline data={mpu2Sparkline} color="#6366F1" height={28} />
+            <div className="mt-2 flex items-center justify-between text-[10px] text-slate-500 font-medium">
+              <span>R: {tel?.imu2?.rollDeg !== undefined ? `${tel.imu2.rollDeg.toFixed(1)}°` : "—"}</span>
+              <span>P: {tel?.imu2?.pitchDeg !== undefined ? `${tel.imu2.pitchDeg.toFixed(1)}°` : "—"}</span>
+            </div>
           </div>
         </div>
 
         {/* Metric 5: Vibration Sensor */}
-        <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs transition-all hover:shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Micro-Vibration</span>
-            <div className="size-7 rounded-xl bg-amber-100 flex items-center justify-center text-amber-700">
-              <Activity className="size-3.5" />
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs transition-all hover:shadow-sm flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                Micro-Vibration
+              </span>
+              <div className="size-7 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 flex items-center justify-center text-emerald-600">
+                <Activity className="size-3.5" />
+              </div>
+            </div>
+            <div className="mt-2.5 flex items-baseline gap-1">
+              <span className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100 tabular-nums">
+                {tel?.vibration?.intensity !== undefined ? `${tel.vibration.intensity}%` : "—"}
+              </span>
+              <span className="text-xs font-semibold text-slate-500">Intensity</span>
             </div>
           </div>
-          <div className="mt-2.5 flex items-baseline gap-1">
-            <span className="text-3xl font-bold tracking-tight text-slate-900">
-              {tel?.vibration?.intensity != null ? `${tel.vibration.intensity}%` : "-"}
-            </span>
-            <span className="text-xs font-semibold text-slate-500">
-              {tel?.vibration?.intensity != null ? "Intensity" : ""}
-            </span>
-          </div>
-          <div className="mt-2 flex items-center justify-between text-[11px]">
-            <span className="text-slate-400">
-              {tel?.vibration?.eventCount != null ? `${tel.vibration.eventCount} pulses` : "-"}
-            </span>
-            <span
-              className={`font-semibold ${
-                tel?.vibration?.triggered ? "text-rose-600 font-bold" : "text-slate-400"
-              }`}
-            >
-              {tel?.vibration ? (tel.vibration.triggered ? "Active Pulse" : "Quiet") : "-"}
-            </span>
+
+          <div className="mt-3">
+            <AestheticMiniSparkline data={vibSparkline} color="#10B981" height={28} />
+            <div className="mt-2 flex items-center justify-between text-[10px]">
+              <span className="text-slate-400">
+                {tel?.vibration?.eventCount !== undefined ? `${tel.vibration.eventCount} pulses` : "—"}
+              </span>
+              <span
+                className={`font-semibold ${
+                  tel?.vibration?.triggered ? "text-rose-600 font-bold" : "text-emerald-600"
+                }`}
+              >
+                {!tel?.vibration ? "Standby" : tel.vibration.triggered ? "Active Pulse" : "Quiet"}
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Main Row: Dual 3D Inclinometers */}
+      {/* Main Row: Dual 3D Inclinometers & Actuators */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Dual Perpendicular Inclinometers (8 cols) */}
         <div className="lg:col-span-8 space-y-6">
@@ -264,40 +410,40 @@ export default function CommandCenterPage() {
             {/* Inclinometer 1: Horizontal Sensor */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-700">
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
                   Sensor A: MPU-1 (Horizontal / Lateral Axis)
                 </span>
                 <Badge variant="outline" className="text-[10px] font-semibold">
-                  Gy87 AXL385 #1
+                  Primary IMU #1
                 </Badge>
               </div>
               <TiltInclinometer3D
-                rollDeg={tel?.mpu1?.rollDeg}
-                pitchDeg={tel?.mpu1?.pitchDeg}
-                totalTiltDeg={tel?.mpu1?.totalTiltDeg}
-                accelX={tel?.mpu1?.accelX}
-                accelY={tel?.mpu1?.accelY}
-                accelZ={tel?.mpu1?.accelZ}
+                rollDeg={tel?.imu1?.rollDeg}
+                pitchDeg={tel?.imu1?.pitchDeg}
+                totalTiltDeg={tel?.imu1?.totalTiltDeg}
+                accelX={tel?.imu1?.accelX}
+                accelY={tel?.imu1?.accelY}
+                accelZ={tel?.imu1?.accelZ}
               />
             </div>
 
             {/* Inclinometer 2: Vertical Sensor (Perpendicular) */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-700">
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
                   Sensor B: MPU-2 (Vertical / Longitudinal Axis)
                 </span>
                 <Badge variant="outline" className="text-[10px] font-semibold">
-                  Gy87 AXL385 #2 (Perpendicular)
+                  Secondary IMU #2 (Perpendicular)
                 </Badge>
               </div>
               <TiltInclinometer3D
-                rollDeg={tel?.mpu2?.rollDeg}
-                pitchDeg={tel?.mpu2?.pitchDeg}
-                totalTiltDeg={tel?.mpu2?.totalTiltDeg}
-                accelX={tel?.mpu2?.accelX}
-                accelY={tel?.mpu2?.accelY}
-                accelZ={tel?.mpu2?.accelZ}
+                rollDeg={tel?.imu2?.rollDeg}
+                pitchDeg={tel?.imu2?.pitchDeg}
+                totalTiltDeg={tel?.imu2?.totalTiltDeg}
+                accelX={tel?.imu2?.accelX}
+                accelY={tel?.imu2?.accelY}
+                accelZ={tel?.imu2?.accelZ}
               />
             </div>
           </div>
@@ -306,50 +452,54 @@ export default function CommandCenterPage() {
         {/* Right Column: Actuator & Physical Output Status (4 cols) */}
         <div className="lg:col-span-4 space-y-6">
           {/* Actuators Control Card */}
-          <Card className="rounded-2xl border-slate-200/80 shadow-xs">
-            <CardHeader className="pb-3 border-b border-slate-100">
+          <Card className="rounded-2xl border-slate-200/80 dark:border-slate-800 shadow-xs">
+            <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <CardTitle className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                   <Zap className="size-4 text-orange-600" />
                   Alert Actuators & Outputs
                 </CardTitle>
-                <Link href="/dashboard/outputs" className="text-[11px] font-semibold text-orange-600 hover:text-orange-700 flex items-center gap-1">
+                <Link
+                  href="/dashboard/outputs"
+                  className="text-[11px] font-semibold text-orange-600 hover:text-orange-700 flex items-center gap-1"
+                >
                   Full View <ArrowUpRight className="size-3" />
                 </Link>
               </div>
             </CardHeader>
             <CardContent className="p-5 space-y-4">
               {/* 8x8 LED Matrix Live Rendering */}
-              <div className="flex flex-col items-center p-3 bg-slate-50 rounded-xl border border-slate-200/80">
+              <div className="flex flex-col items-center p-3 bg-slate-50 dark:bg-slate-950/40 rounded-xl border border-slate-200/80 dark:border-slate-800">
                 <LedMatrixDisplay
                   pattern={tel?.actuators?.ledMatrixPattern || "IDLE"}
-                  isActive={tel?.actuators?.ledMatrixActive ?? false}
+                  isActive={tel?.actuators?.ledMatrixActive ?? true}
                   size="sm"
                 />
               </div>
 
               {/* Buzzer Siren Status */}
-              <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-200/80">
+              <div className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-950/40 rounded-xl border border-slate-200/80 dark:border-slate-800">
                 <div className="flex items-center gap-2.5">
                   <div
                     className={`size-8 rounded-xl flex items-center justify-center ${
                       tel?.actuators?.buzzerActive
                         ? "bg-rose-100 text-rose-700 animate-pulse"
-                        : "bg-slate-200 text-slate-500"
+                        : "bg-slate-200 dark:bg-slate-800 text-slate-500"
                     }`}
                   >
                     {tel?.actuators?.buzzerActive ? <Volume2 className="size-4" /> : <VolumeX className="size-4" />}
                   </div>
                   <div>
-                    <span className="text-xs font-bold text-slate-900 block">Audible Buzzer</span>
+                    <span className="text-xs font-bold text-slate-900 dark:text-slate-100 block">
+                      Audible Buzzer
+                    </span>
                     <span className="text-[10px] text-slate-500 font-medium">
-                      {tel?.actuators ? (tel.actuators.buzzerActive ? "SIREN SOUNDING (2.8 kHz)" : "Silent / Standby") : "-"}
+                      {tel?.actuators?.buzzerActive ? "SIREN SOUNDING (2.8 kHz)" : "Silent / Standby"}
                     </span>
                   </div>
                 </div>
                 <Button
                   size="sm"
-                  disabled={!tel}
                   variant={tel?.actuators?.buzzerActive ? "destructive" : "outline"}
                   onClick={() => triggerActuatorTest("buzzer")}
                   className="h-7 text-xs font-bold"
@@ -361,13 +511,16 @@ export default function CommandCenterPage() {
           </Card>
 
           {/* Recent Alerts Feed Card */}
-          <Card className="rounded-2xl border-slate-200/80 shadow-xs">
-            <CardHeader className="pb-3 border-b border-slate-100">
+          <Card className="rounded-2xl border-slate-200/80 dark:border-slate-800 shadow-xs">
+            <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-bold text-slate-900">
+                <CardTitle className="text-sm font-bold text-slate-900 dark:text-slate-100">
                   Recent Alarms ({alarms.length})
                 </CardTitle>
-                <Link href="/dashboard/alarms" className="text-[11px] font-semibold text-slate-500 hover:text-slate-800">
+                <Link
+                  href="/dashboard/alarms"
+                  className="text-[11px] font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                >
                   View All
                 </Link>
               </div>
@@ -378,7 +531,7 @@ export default function CommandCenterPage() {
                   {alarms.slice(0, 3).map((a) => (
                     <div
                       key={a.id}
-                      className="p-2.5 bg-slate-50/80 rounded-xl border border-slate-100 flex items-start justify-between text-xs"
+                      className="p-2.5 bg-slate-50/80 dark:bg-slate-950/40 rounded-xl border border-slate-100 dark:border-slate-800 flex items-start justify-between text-xs"
                     >
                       <div>
                         <div className="flex items-center gap-1.5">
@@ -387,26 +540,49 @@ export default function CommandCenterPage() {
                               a.severity === "CRITICAL" ? "text-rose-600" : "text-amber-500"
                             }`}
                           />
-                          <span className="font-bold text-slate-800">{a.sourceLabel}</span>
+                          <span className="font-bold text-slate-800 dark:text-slate-200">
+                            {a.sourceLabel}
+                          </span>
                           <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 font-semibold">
                             {a.category}
                           </Badge>
                         </div>
-                        <p className="text-slate-600 mt-0.5 text-[11px]">{a.description}</p>
+                        <p className="text-slate-600 dark:text-slate-400 mt-0.5 text-[11px]">
+                          {a.description}
+                        </p>
                       </div>
                       <span className="text-[10px] text-slate-400 shrink-0 font-medium">
-                        {new Date(a.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        {new Date(a.timestamp).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
                       </span>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-slate-400 text-center py-3">-</p>
+                <p className="text-xs text-slate-400 text-center py-3">All sensor channels nominal.</p>
               )}
             </CardContent>
           </Card>
         </div>
       </div>
+
+      {/* Fleet-Wide Real-Time Telemetry Stream Chart */}
+      <AestheticAreaTrendChart
+        title="Live Fleet-Wide Telemetry Stream: MQ2 Gas (ppm)"
+        description="Synchronized real-time comparison across all chamber stations with dynamic threshold safety envelopes"
+        data={fleetStreamData}
+        series={fleetSeries}
+        unit="ppm"
+        height={320}
+        thresholds={{
+          warning: thresholds.gasPpmWarning,
+          critical: thresholds.gasPpmCritical,
+          warningLabel: `WARNING (${thresholds.gasPpmWarning} ppm)`,
+          criticalLabel: `CRITICAL (${thresholds.gasPpmCritical} ppm)`,
+        }}
+      />
     </div>
   );
 }

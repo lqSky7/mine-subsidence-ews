@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useTelemetryContext } from "@/components/layout/telemetry-provider";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { AestheticAreaTrendChart, SeriesConfig, ThresholdZone } from "@/components/charts";
 import {
   Select,
   SelectContent,
@@ -11,105 +10,226 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
-import { TrendingUp, Download, Layers } from "lucide-react";
-import { generateTelemetryHistory } from "@/data/mock-engine";
+import { TrendingUp, Flame, Radio, Compass, Activity, Download, Layers } from "lucide-react";
+import type { TelemetryDataPoint } from "@/types";
 
 export default function TrendsPage() {
-  const { nodes } = useTelemetryContext();
-  const [metric, setMetric] = useState<"gasPpm" | "wallDistanceCm" | "tiltMpu1" | "tiltMpu2" | "vibrationIntensity">("gasPpm");
-  const [timeRange, setTimeRange] = useState("1h");
+  const { nodes, thresholds, fetchNodeHistory } = useTelemetryContext();
+  const [metric, setMetric] = useState<
+    "gasPpm" | "wallDistanceCm" | "tiltMpu1" | "tiltMpu2" | "vibrationIntensity"
+  >("gasPpm");
+  const [timeRange, setTimeRange] = useState<"15m" | "1h" | "6h" | "24h">("1h");
 
-  const combinedData: Array<{ time: string; [key: string]: number | string }> = [];
+  // Sample points count based on time range
+  const sampleCount = timeRange === "15m" ? 15 : timeRange === "1h" ? 30 : timeRange === "6h" ? 60 : 96;
 
-  const metricLabel =
-    metric === "gasPpm"
-      ? "MQ2 Gas Level (ppm)"
-      : metric === "wallDistanceCm"
-      ? "Ultrasound Wall Clearance (cm)"
-      : metric === "tiltMpu1"
-      ? "MPU-1 Horizontal Tilt (°)"
-      : metric === "tiltMpu2"
-      ? "MPU-2 Vertical Tilt (°)"
-      : "Micro-Vibration Intensity (%)";
+  const [fleetHistoryMap, setFleetHistoryMap] = useState<Record<string, TelemetryDataPoint[]>>({});
 
-  const unit =
-    metric === "gasPpm"
-      ? "ppm"
-      : metric === "wallDistanceCm"
-      ? "cm"
-      : metric === "tiltMpu1" || metric === "tiltMpu2"
-      ? "°"
-      : "%";
+  useEffect(() => {
+    let isMounted = true;
 
+    async function loadHistories() {
+      const map: Record<string, TelemetryDataPoint[]> = {};
+      for (const n of nodes) {
+        const hist = await fetchNodeHistory(n.id, sampleCount);
+        map[n.id] = hist;
+      }
+      if (isMounted) {
+        setFleetHistoryMap(map);
+      }
+    }
+
+    loadHistories();
+    const interval = setInterval(loadHistories, 4000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [nodes, sampleCount, fetchNodeHistory]);
+
+  const series: SeriesConfig[] = useMemo(() => {
+    const palette = ["#F97316", "#E11D48", "#8B5CF6", "#10B981", "#3B82F6", "#EC4899"];
+    return nodes.map((n, idx) => ({
+      key: n.id,
+      name: `${n.id} · ${n.label}`,
+      color: palette[idx % palette.length],
+      strokeWidth: idx === 0 ? 2.4 : 2.0,
+      dashed: idx === 3,
+    }));
+  }, [nodes]);
+
+  const combinedData = useMemo(() => {
+    if (nodes.length === 0) return [];
+    const firstNodeHistory = fleetHistoryMap[nodes[0].id] || [];
+    return firstNodeHistory.map((d, idx) => {
+      const row: Record<string, string | number | undefined> = {
+        time: d.time || d.timestamp,
+      };
+      nodes.forEach((n) => {
+        const hist = fleetHistoryMap[n.id] || [];
+        const val = hist[idx]?.[metric];
+        row[n.id] = typeof val === "number" ? val : typeof val === "string" ? Number(val) : undefined;
+      });
+      return row;
+    });
+  }, [nodes, fleetHistoryMap, metric]);
+
+  const metricDetails = useMemo(() => {
+    switch (metric) {
+      case "gasPpm":
+        return {
+          title: "Cross-Station Geotechnical Trends: MQ2 Flammable Gas",
+          unit: "ppm",
+          thresholds: {
+            warning: thresholds.gasPpmWarning,
+            critical: thresholds.gasPpmCritical,
+            warningLabel: `WARNING (${thresholds.gasPpmWarning} ppm)`,
+            criticalLabel: `CRITICAL DANGER (${thresholds.gasPpmCritical} ppm)`,
+          } as ThresholdZone,
+          icon: <Flame className="size-4 text-orange-600" />,
+        };
+      case "wallDistanceCm":
+        return {
+          title: "Cross-Station Geotechnical Trends: Rock Wall Clearance",
+          unit: "cm",
+          thresholds: {
+            warning: thresholds.wallDistanceMinWarningCm,
+            critical: thresholds.wallDistanceMinCriticalCm,
+            warningLabel: `CONVERGENCE WARNING (${thresholds.wallDistanceMinWarningCm} cm)`,
+            criticalLabel: `COLLAPSE DANGER (${thresholds.wallDistanceMinCriticalCm} cm)`,
+            inverted: true,
+          } as ThresholdZone,
+          icon: <Radio className="size-4 text-blue-600" />,
+        };
+      case "tiltMpu1":
+        return {
+          title: "Cross-Station Geotechnical Trends: MPU-1 Horizontal Incline",
+          unit: "°",
+          thresholds: {
+            warning: thresholds.tiltDegWarning,
+            critical: thresholds.tiltDegCritical,
+            warningLabel: `INCLINE WARN (${thresholds.tiltDegWarning}°)`,
+            criticalLabel: `STRUCTURAL RISK (${thresholds.tiltDegCritical}°)`,
+          } as ThresholdZone,
+          icon: <Compass className="size-4 text-purple-600" />,
+        };
+      case "tiltMpu2":
+        return {
+          title: "Cross-Station Geotechnical Trends: MPU-2 Vertical Incline",
+          unit: "°",
+          thresholds: {
+            warning: thresholds.tiltDegWarning,
+            critical: thresholds.tiltDegCritical,
+            warningLabel: `INCLINE WARN (${thresholds.tiltDegWarning}°)`,
+            criticalLabel: `STRUCTURAL RISK (${thresholds.tiltDegCritical}°)`,
+          } as ThresholdZone,
+          icon: <Compass className="size-4 text-indigo-600" />,
+        };
+      case "vibrationIntensity":
+        return {
+          title: "Cross-Station Geotechnical Trends: Micro-Seismic Vibration",
+          unit: "%",
+          thresholds: {
+            warning: thresholds.vibrationIntensityThreshold,
+            critical: 90,
+            warningLabel: `VIBRATION SPIKE (${thresholds.vibrationIntensityThreshold}%)`,
+            criticalLabel: `SEVERE IMPACT (90%)`,
+          } as ThresholdZone,
+          icon: <Activity className="size-4 text-emerald-600" />,
+        };
+    }
+  }, [metric, thresholds]);
+
+  // CSV Export Handler
   const handleExportCsv = () => {
     if (combinedData.length === 0) return;
-    const headers = ["Timestamp", "ESP-NODE-01", "ESP-NODE-02", "ESP-NODE-03", "ESP-NODE-04"];
+    const headers = ["Timestamp", ...nodes.map((n) => `"${n.id} (${n.label}) - ${metricDetails.unit}"`)];
     const rows = combinedData.map((d) => [
       d.time,
-      d["ESP-NODE-01 (Chamber 1)"] || "-",
-      d["ESP-NODE-02 (Chamber 2)"] || "-",
-      d["ESP-NODE-03 (Chamber 3)"] || "-",
-      d["ESP-NODE-04 (Chamber 4)"] || "-",
+      ...nodes.map((n) => d[n.id] ?? ""),
     ]);
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
+
+    const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `mine_${metric}_trends.csv`);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `mine-trends-${metric}-${timeRange}-${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
   return (
-    <div className="space-y-6 pb-16 font-sans text-slate-800">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/70">
+    <div className="space-y-6 pb-16 font-sans text-slate-800 dark:text-slate-200">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/70 dark:border-slate-800">
         <div>
           <div className="flex items-center gap-2">
-            <div className="size-8 rounded-xl bg-orange-100 text-orange-700 flex items-center justify-center shadow-xs">
+            <div className="size-8 rounded-xl bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-400 flex items-center justify-center shadow-xs">
               <TrendingUp className="size-4.5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-                Multi-Sensor Geotechnical Trends
+              <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+                Geotechnical Multi-Station Trends
               </h1>
-              <p className="text-xs text-slate-500">
-                Comparative Time-Series Overlay across ESP Node Stations
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                High-Resolution Comparative Overlay across all Mine Monitoring Stations
               </p>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Filters */}
+        <div className="flex flex-wrap items-center gap-2">
           {/* Metric Selector */}
-          <Select value={metric} onValueChange={(val: any) => setMetric(val)}>
-            <SelectTrigger className="w-[200px] text-xs font-semibold bg-white">
-              <SelectValue placeholder="Select Sensor" />
+          <Select
+            value={metric}
+            onValueChange={(val) => {
+              if (val) setMetric(val as typeof metric);
+            }}
+          >
+            <SelectTrigger className="w-[210px] text-xs font-semibold bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+              <SelectValue placeholder="Select Sensor Metric" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="gasPpm">MQ2 Gas (ppm)</SelectItem>
-              <SelectItem value="wallDistanceCm">Wall Clearance (cm)</SelectItem>
-              <SelectItem value="tiltMpu1">MPU-1 Horizontal Tilt (°)</SelectItem>
-              <SelectItem value="tiltMpu2">MPU-2 Vertical Tilt (°)</SelectItem>
-              <SelectItem value="vibrationIntensity">Vibration Intensity (%)</SelectItem>
+              <SelectItem value="gasPpm">
+                <span className="flex items-center gap-2">
+                  <Flame className="size-3.5 text-orange-500" /> MQ2 Gas (ppm)
+                </span>
+              </SelectItem>
+              <SelectItem value="wallDistanceCm">
+                <span className="flex items-center gap-2">
+                  <Radio className="size-3.5 text-blue-500" /> Wall Clearance (cm)
+                </span>
+              </SelectItem>
+              <SelectItem value="tiltMpu1">
+                <span className="flex items-center gap-2">
+                  <Compass className="size-3.5 text-purple-500" /> MPU-1 Horizontal Tilt (°)
+                </span>
+              </SelectItem>
+              <SelectItem value="tiltMpu2">
+                <span className="flex items-center gap-2">
+                  <Compass className="size-3.5 text-indigo-500" /> MPU-2 Vertical Tilt (°)
+                </span>
+              </SelectItem>
+              <SelectItem value="vibrationIntensity">
+                <span className="flex items-center gap-2">
+                  <Activity className="size-3.5 text-emerald-500" /> Vibration Intensity (%)
+                </span>
+              </SelectItem>
             </SelectContent>
           </Select>
 
-          {/* Time range */}
-          <Select value={timeRange} onValueChange={(val: any) => setTimeRange(val || "1h")}>
-            <SelectTrigger className="w-[120px] text-xs font-semibold bg-white">
-              <SelectValue placeholder="Range" />
+          {/* Time Range Selector */}
+          <Select
+            value={timeRange}
+            onValueChange={(val) => {
+              if (val) setTimeRange(val as typeof timeRange);
+            }}
+          >
+            <SelectTrigger className="w-[130px] text-xs font-semibold bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+              <SelectValue placeholder="Time Range" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="15m">Last 15 Mins</SelectItem>
@@ -118,74 +238,20 @@ export default function TrendsPage() {
               <SelectItem value="24h">Last 24 Hours</SelectItem>
             </SelectContent>
           </Select>
-
-          <Button size="sm" variant="outline" disabled={combinedData.length === 0} onClick={handleExportCsv} className="h-9 px-3 gap-1.5 text-xs bg-white font-semibold">
-            <Download className="size-3.5" /> Export CSV
-          </Button>
         </div>
       </div>
 
-      {/* Main Trends Chart Card */}
-      <Card className="rounded-2xl border-slate-200/80 shadow-xs overflow-hidden">
-        <CardHeader className="pb-3 bg-slate-50/80 border-b border-slate-200">
-          <CardTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
-            <Layers className="size-4 text-orange-600" />
-            Cross-Station Overlay: {metricLabel}
-          </CardTitle>
-          <CardDescription className="text-xs">
-            Comparing working face stations vs return airway and intake shaft
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-6">
-          {combinedData.length > 0 ? (
-            <div className="h-80 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={combinedData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                  <XAxis dataKey="time" tick={{ fontSize: 10 }} />
-                  <YAxis tick={{ fontSize: 10 }} unit={unit} />
-                  <Tooltip contentStyle={{ fontSize: "11px", fontFamily: "monospace", borderRadius: "10px" }} />
-                  <Legend wrapperStyle={{ fontSize: "11px" }} />
-                  <Line
-                    type="monotone"
-                    dataKey="ESP-NODE-02 (Chamber 2)"
-                    stroke="#E11D48"
-                    strokeWidth={2.5}
-                    dot={false}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="ESP-NODE-01 (Chamber 1)"
-                    stroke="#F59E0B"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="ESP-NODE-03 (Chamber 3)"
-                    stroke="#8B5CF6"
-                    strokeWidth={1.5}
-                    dot={false}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="ESP-NODE-04 (Chamber 4)"
-                    stroke="#10B981"
-                    strokeWidth={1.5}
-                    strokeDasharray="4 4"
-                    dot={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <div className="h-52 w-full flex flex-col items-center justify-center text-slate-400 text-xs">
-              <span className="text-base font-bold">-</span>
-              <span className="text-xs text-slate-400 mt-1 font-medium">Awaiting backend trend telemetry data</span>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Main Comparative Trend Chart */}
+      <AestheticAreaTrendChart
+        title={metricDetails.title}
+        description={`Comparative real-time telemetry stream · Interval: ${timeRange} · Multi-Station Convergence Visualizer`}
+        data={combinedData}
+        series={series}
+        unit={metricDetails.unit}
+        height={380}
+        thresholds={metricDetails.thresholds}
+        onExportCsv={handleExportCsv}
+      />
     </div>
   );
 }

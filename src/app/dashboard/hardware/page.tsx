@@ -3,6 +3,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Layers } from "lucide-react";
+import { AestheticHardwareCostDonut } from "@/components/charts";
 
 export default function HardwarePage() {
   const hardwareBOM = [
@@ -65,19 +66,19 @@ export default function HardwarePage() {
   ];
 
   return (
-    <div className="space-y-6 pb-16 font-sans text-slate-800">
+    <div className="space-y-6 pb-16 font-sans text-slate-800 dark:text-slate-200">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/70">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/70 dark:border-slate-800">
         <div>
-          <div className="flex items-center gap-2">
-            <div className="size-8 rounded-xl bg-orange-100 text-orange-700 flex items-center justify-center shadow-xs">
-              <Layers className="size-4.5" />
+          <div className="flex items-center gap-2.5">
+            <div className="size-9 rounded-xl bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-300 flex items-center justify-center shadow-xs">
+              <Layers className="size-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+              <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
                 ESP Sensor Station Hardware BOM & Architecture
               </h1>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Single/Multi-Node Station Specification · Dual Gy87 MPU + Ultrasound + MQ2 + Vibration + Buzzer + 8x8 LED Matrix
               </p>
             </div>
@@ -87,56 +88,65 @@ export default function HardwarePage() {
 
       {/* Cost & Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="border-slate-200/80 shadow-xs bg-emerald-50/50 border-emerald-200">
+        <Card className="border-slate-200/80 dark:border-slate-800 shadow-xs bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900">
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-bold text-emerald-800 uppercase tracking-wider">
+            <CardTitle className="text-xs font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">
               Total Station Unit Cost
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold tracking-tight text-emerald-900">₹1,015</div>
-            <p className="text-xs text-emerald-700 mt-1">&lt; $13 USD · Low-Cost Mine Safety Station</p>
+            <div className="text-3xl font-bold tracking-tight text-emerald-900 dark:text-emerald-200 tabular-nums">
+              ₹1,015
+            </div>
+            <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-1">&lt; $13 USD · Low-Cost Mine Safety Station</p>
           </CardContent>
         </Card>
 
-        <Card className="border-slate-200/80 shadow-xs">
+        <Card className="border-slate-200/80 dark:border-slate-800 shadow-xs">
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+            <CardTitle className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               Sensors per Node
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold tracking-tight text-slate-900">5 Sensors</div>
-            <p className="text-xs text-slate-500 mt-1">2x MPU + Ultrasound + MQ2 + Vibration</p>
+            <div className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100 tabular-nums">
+              5 Sensors
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">2x MPU + Ultrasound + MQ2 + Vibration</p>
           </CardContent>
         </Card>
 
-        <Card className="border-slate-200/80 shadow-xs">
+        <Card className="border-slate-200/80 dark:border-slate-800 shadow-xs">
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+            <CardTitle className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               Alert Actuators
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold tracking-tight text-orange-600">2 Outputs</div>
-            <p className="text-xs text-slate-500 mt-1">Piezo Buzzer + 8x8 Flash LED Matrix</p>
+            <div className="text-3xl font-bold tracking-tight text-orange-600 dark:text-orange-400 tabular-nums">
+              2 Outputs
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Piezo Buzzer + 8x8 Flash LED Matrix</p>
           </CardContent>
         </Card>
       </div>
 
+      {/* Aesthetic Hardware Cost Donut Chart */}
+      <AestheticHardwareCostDonut />
+
       {/* Hardware BOM Table */}
-      <Card className="rounded-2xl border-slate-200/80 shadow-xs overflow-hidden">
-        <CardHeader className="pb-3 bg-slate-50/80 border-b border-slate-200">
-          <CardTitle className="text-sm font-bold text-slate-900">
+      <Card className="rounded-2xl border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
+        <CardHeader className="pb-3 bg-slate-50/80 dark:bg-slate-900/40 border-b border-slate-200 dark:border-slate-800">
+          <CardTitle className="text-sm font-bold text-slate-900 dark:text-slate-100">
             Station Hardware Component Breakdown & ESP32 Pin Connections
           </CardTitle>
-          <CardDescription className="text-xs">
+          <CardDescription className="text-xs text-slate-500 dark:text-slate-400">
             Standardized pinout utilized across every identical ESP monitoring node
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           <table className="w-full text-left text-xs border-collapse font-sans">
-            <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+            <thead className="bg-slate-50 dark:bg-slate-900/60 text-slate-600 dark:text-slate-400 font-bold border-b border-slate-200 dark:border-slate-800">
               <tr>
                 <th className="py-3 px-4">Subsystem</th>
                 <th className="py-3 px-4">Hardware Component</th>
@@ -145,14 +155,14 @@ export default function HardwarePage() {
                 <th className="py-3 px-4">Functional Role in Mine Safety</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 font-normal">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-normal">
               {hardwareBOM.map((item, idx) => (
-                <tr key={idx} className="hover:bg-slate-50">
-                  <td className="py-3 px-4 font-bold text-slate-900">{item.component}</td>
-                  <td className="py-3 px-4 font-semibold text-slate-800">{item.part}</td>
-                  <td className="py-3 px-4 text-slate-600 font-medium">{item.interface}</td>
-                  <td className="py-3 px-4 font-bold text-emerald-700">{item.costInr}</td>
-                  <td className="py-3 px-4 text-slate-600 leading-relaxed">{item.role}</td>
+                <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                  <td className="py-3 px-4 font-bold text-slate-900 dark:text-slate-100">{item.component}</td>
+                  <td className="py-3 px-4 font-semibold text-slate-800 dark:text-slate-200">{item.part}</td>
+                  <td className="py-3 px-4 text-slate-600 dark:text-slate-400 text-[11px] font-medium">{item.interface}</td>
+                  <td className="py-3 px-4 font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">{item.costInr}</td>
+                  <td className="py-3 px-4 text-slate-600 dark:text-slate-400 leading-relaxed">{item.role}</td>
                 </tr>
               ))}
             </tbody>

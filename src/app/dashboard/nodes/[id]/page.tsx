@@ -1,273 +1,263 @@
 "use client";
 
-import React, { use } from "react";
+import React, { use, useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useTelemetryContext } from "@/components/layout/telemetry-provider";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Compass,
-  Activity,
   Radio,
   ArrowLeft,
   Flame,
 } from "lucide-react";
 import { TiltInclinometer3D } from "@/components/industrial/TiltInclinometer3D";
-import { generateTelemetryHistory } from "@/data/mock-engine";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
+import { AestheticMultiMetricChart, AestheticMiniSparkline } from "@/components/charts";
+import type { TelemetryDataPoint } from "@/types";
 
 export default function NodeDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const nodeId = resolvedParams.id;
 
-  const { nodes, telemetry } = useTelemetryContext();
+  const { nodes, telemetry, fetchNodeHistory } = useTelemetryContext();
 
-  const node = nodes.find((n) => n.id === nodeId) || nodes[0];
-  const tel = telemetry[nodeId] || (node ? telemetry[node.id] : null);
+  const node = nodes.find((n) => n.id === nodeId) || null;
+  const tel = telemetry[nodeId] || null;
 
   const isCritical = node?.riskSeverity === "CRITICAL";
   const isWatch = node?.riskSeverity === "WATCH";
 
-  const historyData: Array<{ time: string; gasPpm: number; wallDistanceCm: number; tiltMpu1: number }> = [];
+  const [historyData, setHistoryData] = useState<TelemetryDataPoint[]>([]);
 
-  if (!node) {
-    return (
-      <div className="p-8 text-center text-slate-500">
-        <p>Node {nodeId} not found. Awaiting data from backend.</p>
-        <Link href="/dashboard/nodes">
-          <Button variant="outline" className="mt-4">Back to Fleet</Button>
-        </Link>
-      </div>
-    );
-  }
+  useEffect(() => {
+    let isMounted = true;
+    async function load() {
+      const hist = await fetchNodeHistory(nodeId, 30);
+      if (isMounted) setHistoryData(hist);
+    }
+    load();
+    const interval = setInterval(load, 3000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [nodeId, fetchNodeHistory]);
+
+  // Extract sparkline historical arrays
+  const gasHistory: number[] = useMemo(
+    () => historyData.map((d) => Number(d.gasPpm) || 0).filter((v) => !isNaN(v)),
+    [historyData]
+  );
+  const distHistory: number[] = useMemo(
+    () => historyData.map((d) => Number(d.wallDistanceCm) || 0).filter((v) => !isNaN(v)),
+    [historyData]
+  );
+  const mpu1History: number[] = useMemo(
+    () => historyData.map((d) => Number(d.tiltMpu1) || 0).filter((v) => !isNaN(v)),
+    [historyData]
+  );
+  const mpu2History: number[] = useMemo(
+    () => historyData.map((d) => Number(d.tiltMpu2) || 0).filter((v) => !isNaN(v)),
+    [historyData]
+  );
 
   return (
-    <div className="space-y-6 pb-16 font-sans text-slate-800">
+    <div className="space-y-6 pb-16 font-sans text-slate-800 dark:text-slate-200">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/70">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/70 dark:border-slate-800">
         <div className="flex items-center gap-3">
           <Link href="/dashboard/nodes">
-            <Button size="sm" variant="outline" className="h-8 w-8 p-0 rounded-xl">
+            <Button size="sm" variant="outline" className="size-9 p-0 rounded-xl bg-white dark:bg-slate-900">
               <ArrowLeft className="size-4" />
             </Button>
           </Link>
           <div>
             <div className="flex items-center gap-2.5">
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900">{node.id}</h1>
-              <Badge
-                variant={isCritical ? "destructive" : isWatch ? "outline" : "secondary"}
-                className={isWatch ? "bg-amber-100 text-amber-900 border-amber-300" : ""}
-              >
-                {node.riskSeverity}
-              </Badge>
-              <Badge variant="outline" className="font-semibold text-xs">
-                {node.location}
-              </Badge>
+              <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+                {nodeId}
+              </h1>
+              {node && (
+                <>
+                  <Badge
+                    variant={isCritical ? "destructive" : isWatch ? "outline" : "secondary"}
+                    className={`font-bold ${
+                      isWatch
+                        ? "bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950 dark:text-amber-300"
+                        : ""
+                    }`}
+                  >
+                    {node.riskSeverity}
+                  </Badge>
+                  <Badge variant="outline" className="font-semibold text-xs bg-slate-50 dark:bg-slate-800">
+                    {node.location}
+                  </Badge>
+                </>
+              )}
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">{node.label} · IP: {node.ipAddress}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              {node ? `${node.label} · IP: ${node.ipAddress || "—"} · Live Polling Gateway` : "Station not registered"}
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Top 4 Sensor Summary Cards */}
+      {/* Top 4 Sensor Summary Cards with Integrated Mini Sparklines */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: MQ2 Gas Sensor */}
-        <Card className="border-slate-200/80 shadow-xs">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
-              <span>MQ2 Gas Sensor</span>
-              <Flame className="size-4 text-orange-600" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-bold tracking-tight text-slate-900">
-                {tel?.gas?.mq2Ppm != null ? tel.gas.mq2Ppm : "-"}
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                MQ2 Gas Sensor
               </span>
-              <span className="text-xs font-semibold text-slate-500">
-                {tel?.gas?.mq2Ppm != null ? "ppm" : ""}
+              <div className="size-7 rounded-xl bg-orange-100 dark:bg-orange-950/60 text-orange-600 flex items-center justify-center">
+                <Flame className="size-3.5" />
+              </div>
+            </div>
+            <div className="mt-2 flex items-baseline gap-1">
+              <span className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100 tabular-nums">
+                {tel?.gas?.mq2Ppm !== undefined ? tel.gas.mq2Ppm : "—"}
               </span>
+              {tel?.gas?.mq2Ppm !== undefined && (
+                <span className="text-xs font-semibold text-slate-500">ppm</span>
+              )}
             </div>
-            <div className="mt-2 text-xs text-slate-500 space-y-0.5 font-medium">
-              <div>Status: {tel?.gas?.status || "-"}</div>
-              <div>Raw ADC: {tel?.gas?.rawAdc != null ? `${tel.gas.rawAdc} / 4095` : "-"}</div>
+          </div>
+          <div className="mt-3">
+            <AestheticMiniSparkline data={gasHistory} color="#EA580C" height={28} />
+            <div className="mt-2 flex items-center justify-between text-[10px] text-slate-500">
+              <span>Status: <strong className="text-slate-700 dark:text-slate-300">{tel?.gas?.status || "—"}</strong></span>
+              <span>ADC: {tel?.gas?.rawAdc !== undefined ? `${tel.gas.rawAdc}/4095` : "—"}</span>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Card 2: Ultrasound Wall Distance */}
-        <Card className="border-slate-200/80 shadow-xs">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
-              <span>Ultrasound Wall Distance</span>
-              <Radio className="size-4 text-blue-600" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-bold tracking-tight text-slate-900">
-                {tel?.ultrasound?.distanceCm != null ? `${tel.ultrasound.distanceCm.toFixed(1)}` : "-"}
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                Wall Clearance
               </span>
-              <span className="text-xs font-semibold text-slate-500">
-                {tel?.ultrasound?.distanceCm != null ? "cm" : ""}
+              <div className="size-7 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-600 flex items-center justify-center">
+                <Radio className="size-3.5" />
+              </div>
+            </div>
+            <div className="mt-2 flex items-baseline gap-1">
+              <span className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100 tabular-nums">
+                {tel?.ultrasound?.distanceCm !== undefined ? `${tel.ultrasound.distanceCm.toFixed(1)}` : "—"}
               </span>
+              {tel?.ultrasound?.distanceCm !== undefined && (
+                <span className="text-xs font-semibold text-slate-500">cm</span>
+              )}
             </div>
-            <div className="mt-2 text-xs text-slate-500 space-y-0.5 font-medium">
-              <div>Baseline: {tel?.ultrasound?.baselineCm != null ? `${tel.ultrasound.baselineCm} cm` : "-"}</div>
-              <div>Delta: {tel?.ultrasound?.deltaCm != null ? `-${tel.ultrasound.deltaCm} cm` : "-"}</div>
+          </div>
+          <div className="mt-3">
+            <AestheticMiniSparkline data={distHistory} color="#3B82F6" height={28} />
+            <div className="mt-2 flex items-center justify-between text-[10px] text-slate-500">
+              <span>Base: {tel?.ultrasound?.baselineCm !== undefined ? `${tel.ultrasound.baselineCm} cm` : "—"}</span>
+              <span>Delta: {tel?.ultrasound?.deltaCm !== undefined ? `-${tel.ultrasound.deltaCm} cm` : "—"}</span>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Card 3: MPU 1 (Horizontal) */}
-        <Card className="border-slate-200/80 shadow-xs">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
-              <span>MPU 1 (Horizontal Gy87)</span>
-              <Compass className="size-4 text-purple-600" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-bold tracking-tight text-slate-900">
-                {tel?.mpu1?.totalTiltDeg != null ? `${tel.mpu1.totalTiltDeg.toFixed(2)}` : "-"}
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                MPU 1 (Horizontal)
               </span>
-              <span className="text-xs font-semibold text-slate-500">
-                {tel?.mpu1?.totalTiltDeg != null ? "°" : ""}
-              </span>
-            </div>
-            <div className="mt-2 text-xs text-slate-500 space-y-0.5 font-medium">
-              <div>
-                Roll: {tel?.mpu1?.rollDeg != null ? `${tel.mpu1.rollDeg.toFixed(1)}°` : "-"} · Pitch: {tel?.mpu1?.pitchDeg != null ? `${tel.mpu1.pitchDeg.toFixed(1)}°` : "-"}
+              <div className="size-7 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-600 flex items-center justify-center">
+                <Compass className="size-3.5" />
               </div>
-              <div>Accel Z: {tel?.mpu1?.accelZ != null ? `${tel.mpu1.accelZ.toFixed(2)} m/s²` : "-"}</div>
             </div>
-          </CardContent>
-        </Card>
+            <div className="mt-2 flex items-baseline gap-1">
+              <span className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100 tabular-nums">
+                {tel?.imu1?.totalTiltDeg !== undefined ? `${tel.imu1.totalTiltDeg.toFixed(2)}` : "—"}
+              </span>
+              {tel?.imu1?.totalTiltDeg !== undefined && (
+                <span className="text-xs font-semibold text-slate-500">°</span>
+              )}
+            </div>
+          </div>
+          <div className="mt-3">
+            <AestheticMiniSparkline data={mpu1History} color="#8B5CF6" height={28} />
+            <div className="mt-2 flex items-center justify-between text-[10px] text-slate-500">
+              <span>R: {tel?.imu1?.rollDeg !== undefined ? `${tel.imu1.rollDeg.toFixed(1)}°` : "—"} · P: {tel?.imu1?.pitchDeg !== undefined ? `${tel.imu1.pitchDeg.toFixed(1)}°` : "—"}</span>
+              <span>Z: {tel?.imu1?.accelZ !== undefined ? `${tel.imu1.accelZ.toFixed(1)} m/s²` : "—"}</span>
+            </div>
+          </div>
+        </div>
 
         {/* Card 4: MPU 2 (Vertical Perpendicular) */}
-        <Card className="border-slate-200/80 shadow-xs">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
-              <span>MPU 2 (Vertical Gy87)</span>
-              <Compass className="size-4 text-indigo-600" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-bold tracking-tight text-slate-900">
-                {tel?.mpu2?.totalTiltDeg != null ? `${tel.mpu2.totalTiltDeg.toFixed(2)}` : "-"}
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                MPU 2 (Vertical)
               </span>
-              <span className="text-xs font-semibold text-slate-500">
-                {tel?.mpu2?.totalTiltDeg != null ? "°" : ""}
-              </span>
-            </div>
-            <div className="mt-2 text-xs text-slate-500 space-y-0.5 font-medium">
-              <div>
-                Roll: {tel?.mpu2?.rollDeg != null ? `${tel.mpu2.rollDeg.toFixed(1)}°` : "-"} · Pitch: {tel?.mpu2?.pitchDeg != null ? `${tel.mpu2.pitchDeg.toFixed(1)}°` : "-"}
+              <div className="size-7 rounded-xl bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 flex items-center justify-center">
+                <Compass className="size-3.5" />
               </div>
-              <div>Accel Z: {tel?.mpu2?.accelZ != null ? `${tel.mpu2.accelZ.toFixed(2)} m/s²` : "-"}</div>
             </div>
-          </CardContent>
-        </Card>
+            <div className="mt-2 flex items-baseline gap-1">
+              <span className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100 tabular-nums">
+                {tel?.imu2?.totalTiltDeg !== undefined ? `${tel.imu2.totalTiltDeg.toFixed(2)}` : "—"}
+              </span>
+              {tel?.imu2?.totalTiltDeg !== undefined && (
+                <span className="text-xs font-semibold text-slate-500">°</span>
+              )}
+            </div>
+          </div>
+          <div className="mt-3">
+            <AestheticMiniSparkline data={mpu2History} color="#6366F1" height={28} />
+            <div className="mt-2 flex items-center justify-between text-[10px] text-slate-500">
+              <span>R: {tel?.imu2?.rollDeg !== undefined ? `${tel.imu2.rollDeg.toFixed(1)}°` : "—"} · P: {tel?.imu2?.pitchDeg !== undefined ? `${tel.imu2.pitchDeg.toFixed(1)}°` : "—"}</span>
+              <span>Z: {tel?.imu2?.accelZ !== undefined ? `${tel.imu2.accelZ.toFixed(1)} m/s²` : "—"}</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Dual Inclinometer Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <span className="text-xs font-bold text-slate-700">Sensor A: Horizontal MPU (Gy87 AXL385)</span>
+          <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+            Sensor A: Horizontal MPU (Primary Inclinometer)
+          </span>
           <TiltInclinometer3D
-            rollDeg={tel?.mpu1?.rollDeg}
-            pitchDeg={tel?.mpu1?.pitchDeg}
-            totalTiltDeg={tel?.mpu1?.totalTiltDeg}
-            accelX={tel?.mpu1?.accelX}
-            accelY={tel?.mpu1?.accelY}
-            accelZ={tel?.mpu1?.accelZ}
+            rollDeg={tel?.imu1?.rollDeg}
+            pitchDeg={tel?.imu1?.pitchDeg}
+            totalTiltDeg={tel?.imu1?.totalTiltDeg}
+            accelX={tel?.imu1?.accelX}
+            accelY={tel?.imu1?.accelY}
+            accelZ={tel?.imu1?.accelZ}
           />
         </div>
 
         <div className="space-y-2">
-          <span className="text-xs font-bold text-slate-700">Sensor B: Vertical MPU (Perpendicular Gy87 AXL385)</span>
+          <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+            Sensor B: Vertical MPU (Perpendicular Inclinometer)
+          </span>
           <TiltInclinometer3D
-            rollDeg={tel?.mpu2?.rollDeg}
-            pitchDeg={tel?.mpu2?.pitchDeg}
-            totalTiltDeg={tel?.mpu2?.totalTiltDeg}
-            accelX={tel?.mpu2?.accelX}
-            accelY={tel?.mpu2?.accelY}
-            accelZ={tel?.mpu2?.accelZ}
+            rollDeg={tel?.imu2?.rollDeg}
+            pitchDeg={tel?.imu2?.pitchDeg}
+            totalTiltDeg={tel?.imu2?.totalTiltDeg}
+            accelX={tel?.imu2?.accelX}
+            accelY={tel?.imu2?.accelY}
+            accelZ={tel?.imu2?.accelZ}
           />
         </div>
       </div>
 
-      {/* Historical Telemetry Overlay Chart */}
-      <Card className="rounded-2xl border-slate-200/80 shadow-xs overflow-hidden">
-        <CardHeader className="pb-3 border-b border-slate-100">
-          <CardTitle className="text-sm font-bold text-slate-900">
-            Real-Time Telemetry History ({node.id})
-          </CardTitle>
-          <CardDescription className="text-xs">
-            Correlated multi-sensor time-series showing Gas (ppm), Wall Clearance (cm), and Tilt (°)
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-6">
-          {historyData.length > 0 ? (
-            <div className="h-72 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={historyData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                  <XAxis dataKey="time" tick={{ fontSize: 10 }} />
-                  <YAxis yAxisId="left" tick={{ fontSize: 10 }} unit="ppm" />
-                  <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} unit="cm" />
-                  <Tooltip contentStyle={{ fontSize: "11px", borderRadius: "8px" }} />
-                  <Legend wrapperStyle={{ fontSize: "11px" }} />
-                  <Line
-                    yAxisId="left"
-                    type="monotone"
-                    dataKey="gasPpm"
-                    name="MQ2 Gas (ppm)"
-                    stroke="#EA580C"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                  <Line
-                    yAxisId="right"
-                    type="monotone"
-                    dataKey="wallDistanceCm"
-                    name="Wall Clearance (cm)"
-                    stroke="#3B82F6"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                  <Line
-                    yAxisId="right"
-                    type="monotone"
-                    dataKey="tiltMpu1"
-                    name="MPU-1 Tilt (°)"
-                    stroke="#8B5CF6"
-                    strokeWidth={1.5}
-                    dot={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <div className="h-44 w-full flex flex-col items-center justify-center text-slate-400 text-xs">
-              <span>-</span>
-              <span className="text-[11px] text-slate-400 mt-1 font-medium">Awaiting backend historical telemetry data</span>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Flagship Aesthetic Correlated Multi-Sensor Chart */}
+      <AestheticMultiMetricChart
+        nodeId={node?.id || nodeId}
+        nodeLabel={node?.label}
+        data={historyData}
+        height={320}
+      />
     </div>
   );
 }

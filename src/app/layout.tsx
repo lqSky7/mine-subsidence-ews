@@ -1,22 +1,11 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
-const inter = Inter({
-  variable: "--font-sans",
-  subsets: ["latin"],
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
 export const metadata: Metadata = {
-  title: "Mine Subsidence Early Warning System (EWS) — Geotechnical AI Platform",
+  title: "Mine Subsidence Early Warning System (EWS) — Geotechnical Safety Platform",
   description:
-    "AI-Enabled Low-Cost Real-Time Mine Subsidence Monitoring, Prediction & Early Warning System using localized wireless surface mesh sensor networks.",
+    "Real-time mine telemetry, convergence detection, multi-sensor tilt inclinometers, and early warning geotechnical safety platform.",
 };
 
 export default function RootLayout({
@@ -25,14 +14,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html
-      lang="en"
-      className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">
-        <TooltipProvider>
-          {children}
-        </TooltipProvider>
+    <html lang="en" className="h-full antialiased font-sans">
+      <body className="min-h-full flex flex-col font-sans text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-950">
+        <TooltipProvider>{children}</TooltipProvider>
       </body>
     </html>
   );
