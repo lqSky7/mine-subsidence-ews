@@ -60,7 +60,6 @@ export default function MeshFleetPage() {
         eyebrow="Monitor"
         title="Nodes"
         description="Station health and current telemetry. Open a node only when you need the full sensor detail."
-        meta={<StatusBadge tone={isConnected ? "live" : "neutral"}>{isConnected ? "Gateway live" : "Gateway offline"}</StatusBadge>}
       />
 
       <StatStrip

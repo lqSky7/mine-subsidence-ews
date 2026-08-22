@@ -190,7 +190,6 @@ export default function CommandCenterPage() {
         eyebrow="Command"
         title="Mine command"
         description="Live risk, sensor evidence, and physical outputs for the selected monitoring station."
-        meta={<StatusBadge tone={isConnected ? "live" : "neutral"}>{isConnected ? "Gateway live" : "Gateway offline"}</StatusBadge>}
         actions={
           <>
             {activeAlarms.length > 0 && (

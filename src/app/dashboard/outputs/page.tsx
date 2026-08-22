@@ -123,14 +123,7 @@ export default function OutputsPage() {
         eyebrow="Actuators & Alerting"
         title="Emergency outputs"
         description="Station-level active visual beacons and high-decibel audible alerts. Test display patterns, sound sirens, and monitor GPIO actuator telemetry."
-        meta={
-          <div className="flex items-center gap-2">
-            <StatusBadge tone={isConnected ? "live" : "neutral"}>
-              {isConnected ? "Gateway live" : "Gateway offline"}
-            </StatusBadge>
-            {isBuzzerActive && <StatusBadge tone="critical">Siren Engaged</StatusBadge>}
-          </div>
-        }
+        meta={isBuzzerActive ? <StatusBadge tone="critical">Siren Engaged</StatusBadge> : undefined}
       />
 
       {/* Station Selector & Context Toolbar */}

@@ -71,11 +71,11 @@ export function TopBar() {
       </Breadcrumb>
 
       <div className="ml-auto flex min-w-0 items-center gap-2">
-        <div className="hidden items-center gap-2 rounded-md border border-neutral-200 bg-white px-2.5 py-1 text-xs font-medium text-neutral-700 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-300 md:flex">
+        <div className="flex items-center gap-2 rounded-md border border-neutral-200 bg-white px-2.5 py-1 text-xs font-medium text-neutral-700 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-300">
           <Dot tone={isConnected ? "live" : "neutral"} />
-          {isConnected ? "Live socket" : "Offline"}
+          <span>{isConnected ? "Gateway live" : "Gateway offline"}</span>
           <span className="text-neutral-400">/</span>
-          <span className="tabular-nums">{onlineNodes}/{nodes.length || 0} nodes</span>
+          <span className="font-mono text-[11px] tabular-nums">{onlineNodes}/{nodes.length || 0} nodes</span>
         </div>
 
         <StatusBadge tone={activeCritical > 0 ? "critical" : activeWarning > 0 ? "watch" : "neutral"}>

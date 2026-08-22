@@ -214,14 +214,9 @@ export default function PhotosPage() {
         title="Optical inspections"
         description="ESP32-CAM optical and infrared underground gallery monitoring feed. Structural clearance scans, rock strata inspection, and drone subsidence tracking."
         meta={
-          <div className="flex items-center gap-2">
-            <StatusBadge tone={isConnected ? "live" : "neutral"}>
-              {isConnected ? "Gateway live" : "Gateway offline"}
-            </StatusBadge>
-            <StatusBadge tone="neutral" className="font-mono text-[9px]">
-              {photos.length} SCANS ON RECORD
-            </StatusBadge>
-          </div>
+          <StatusBadge tone="neutral" className="font-mono text-[9px]">
+            {photos.length} SCANS ON RECORD
+          </StatusBadge>
         }
         actions={
           <Button
