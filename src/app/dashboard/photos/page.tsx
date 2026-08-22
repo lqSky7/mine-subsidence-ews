@@ -235,8 +235,8 @@ export default function PhotosPage() {
         items={[
           { label: "Total Scans", value: `${photos.length} Record${photos.length === 1 ? "" : "s"}` },
           { label: "Active Camera Source", value: latestPhoto?.nodeId || "ESP-NODE-01", tone: isConnected ? "live" : "neutral" },
-          { label: "Night Vision Optics", value: "ESP32-CAM (IR 850nm)" },
-          { label: "Latest Scan Timestamp", value: latestPhoto ? new Date(latestPhoto.timestamp).toLocaleTimeString() : "Standby" },
+          { label: "S3 Cloud Bucket", value: "mine-iot-photos-697114252450" },
+          { label: "S3 Synced Records", value: `${photos.filter((p) => p.imageUrl?.includes("amazonaws.com")).length || "Verified"} Cloud` },
         ]}
       />
 
@@ -452,30 +452,45 @@ export default function PhotosPage() {
                   <div className="rounded border border-neutral-800 bg-neutral-950 p-2.5">
                     <span className="text-[10px] uppercase text-neutral-500">Optics</span>
                     <span className="mt-0.5 block font-bold text-neutral-200">
-                      {String(selectedPhoto.metadata?.cameraModel || "ESP32-CAM")}
+                      {String(selectedPhoto.metadata?.cameraModel || "ESP32-CAM (IR 850nm)")}
                     </span>
                   </div>
                   <div className="rounded border border-neutral-800 bg-neutral-950 p-2.5">
-                    <span className="text-[10px] uppercase text-neutral-500">ISO</span>
+                    <span className="text-[10px] uppercase text-neutral-500">Resolution</span>
                     <span className="mt-0.5 block font-bold text-neutral-200">
-                      {String(selectedPhoto.metadata?.iso || "800")}
+                      {String(selectedPhoto.metadata?.resolution || "1920x1080")}
                     </span>
                   </div>
                   <div className="rounded border border-neutral-800 bg-neutral-950 p-2.5">
-                    <span className="text-[10px] uppercase text-neutral-500">Exposure</span>
+                    <span className="text-[10px] uppercase text-neutral-500">Exposure / ISO</span>
                     <span className="mt-0.5 block font-bold text-neutral-200">
-                      {String(selectedPhoto.metadata?.exposure || "1/60s")}
+                      {String(selectedPhoto.metadata?.exposure || "1/60s")} · ISO {String(selectedPhoto.metadata?.iso || "800")}
                     </span>
                   </div>
                   <div className="rounded border border-neutral-800 bg-neutral-950 p-2.5">
-                    <span className="text-[10px] uppercase text-neutral-500">Light Level</span>
-                    <span className="mt-0.5 block font-bold text-neutral-200">
-                      {String(selectedPhoto.metadata?.lightLevelLux || "45")} Lux
+                    <span className="text-[10px] uppercase text-neutral-500">Storage Destination</span>
+                    <span className="mt-0.5 block font-bold text-neutral-200 truncate">
+                      {selectedPhoto.imageUrl?.includes("amazonaws.com")
+                        ? "S3 AWS Cloud"
+                        : "Station Memory"}
                     </span>
                   </div>
                 </div>
 
-                <DialogFooter className="border-t border-neutral-800 pt-3">
+                <DialogFooter className="flex items-center justify-between border-t border-neutral-800 pt-3">
+                  {selectedPhoto.imageUrl?.startsWith("http") ? (
+                    <a
+                      href={selectedPhoto.imageUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-md border border-neutral-700 bg-neutral-950 px-3 py-1.5 font-mono text-xs text-neutral-300 hover:bg-neutral-800 hover:text-white"
+                    >
+                      <Icon icon="solar:link-minimalistic-bold" className="size-3.5" />
+                      View Full S3 URL
+                    </a>
+                  ) : (
+                    <span className="font-mono text-[11px] text-neutral-500">Station Camera Buffer</span>
+                  )}
                   <Button
                     size="sm"
                     variant="outline"
