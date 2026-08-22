@@ -93,8 +93,26 @@ export default function NodeDetailClient({ nodeId }: { nodeId: string }) {
         </div>
       </div>
 
-      {/* Top 4 Sensor Summary Cards with Integrated Mini Sparklines */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Sensor evidence summary */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Baseline Anomaly</span>
+              <div className="size-7 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 flex items-center justify-center">
+                <Icon icon="solar:graph-new-up-bold-duotone" className="size-4" />
+              </div>
+            </div>
+            <div className="mt-2 flex items-baseline gap-1">
+              <span className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100 tabular-nums">{tel?.anomaly?.score?.toFixed(3) ?? "—"}</span>
+              <span className="text-xs font-semibold text-slate-500">score</span>
+            </div>
+          </div>
+          <div className="mt-3 text-[10px] text-slate-500">
+            <p className="font-bold text-slate-700 dark:text-slate-300">{tel?.anomaly?.level ?? "Awaiting model"}</p>
+            <p className="mt-1 line-clamp-2">{tel?.anomaly?.contributors.map((item) => item.feature).join(", ") || "No evidence available"}</p>
+          </div>
+        </div>
         {/* Card 1: MQ2 Gas Sensor */}
         <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between">
           <div>

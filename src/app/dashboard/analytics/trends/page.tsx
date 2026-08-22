@@ -14,9 +14,9 @@ import { Icon } from "@/components/ui/icon";
 import type { TelemetryDataPoint } from "@/types";
 
 export default function TrendsPage() {
-  const { nodes, thresholds, fetchNodeHistory } = useTelemetryContext();
+  const { nodes, thresholds, anomalyModel, fetchNodeHistory } = useTelemetryContext();
   const [metric, setMetric] = useState<
-    "gasPpm" | "wallDistanceCm" | "tiltMpu1" | "tiltMpu2" | "vibrationIntensity"
+    "gasPpm" | "wallDistanceCm" | "tiltMpu1" | "tiltMpu2" | "vibrationIntensity" | "anomalyScore"
   >("gasPpm");
   const [timeRange, setTimeRange] = useState<"15m" | "1h" | "6h" | "24h">("1h");
 
@@ -132,8 +132,19 @@ export default function TrendsPage() {
             criticalLabel: `SEVERE IMPACT (90%)`,
           } as ThresholdZone,
         };
+      case "anomalyScore":
+        return {
+          title: "Learned Normal-Baseline Anomaly Score",
+          unit: "score",
+          thresholds: {
+            warning: anomalyModel?.warningThreshold ?? 0.54,
+            critical: anomalyModel?.criticalThreshold ?? 0.72,
+            warningLabel: "SUSTAINED WATCH",
+            criticalLabel: "SUSTAINED CRITICAL",
+          } as ThresholdZone,
+        };
     }
-  }, [metric, thresholds]);
+  }, [metric, thresholds, anomalyModel]);
 
   // CSV Export Handler
   const handleExportCsv = () => {
@@ -211,6 +222,11 @@ export default function TrendsPage() {
               <SelectItem value="vibrationIntensity">
                 <span className="flex items-center gap-2">
                   <Icon icon="solar:graph-up-bold-duotone" className="size-3.5 text-emerald-500" /> Vibration Intensity (%)
+                </span>
+              </SelectItem>
+              <SelectItem value="anomalyScore">
+                <span className="flex items-center gap-2">
+                  <Icon icon="solar:graph-new-up-bold-duotone" className="size-3.5 text-amber-500" /> Learned Anomaly Score
                 </span>
               </SelectItem>
             </SelectContent>

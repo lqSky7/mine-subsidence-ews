@@ -78,6 +78,17 @@ export interface NodeTelemetry {
     humidityPct: number | null;
   } | null;
 
+  anomaly?: {
+    score: number;
+    level: "NORMAL" | "WATCH" | "CRITICAL";
+    sustained: boolean;
+    consecutiveAnomalies: number;
+    threshold: number;
+    contributors: Array<{ feature: string; deviation: number }>;
+    recommendation: string;
+    modelVersion: string;
+  } | null;
+
   // Alert Actuators / Outputs
   actuators?: {
     buzzerActive: boolean;
@@ -120,16 +131,16 @@ export interface Alarm {
 // ---- Safety Alert Thresholds ----
 export interface AlertThresholdConfig {
   // Gas (MQ2) Thresholds (ppm)
-  gasPpmWarning: number;   // default: 400 ppm
-  gasPpmCritical: number;  // default: 800 ppm
+  gasPpmWarning: number;   // default: 450 ppm
+  gasPpmCritical: number;  // default: 700 ppm
 
   // Wall Distance Clearance (Ultrasound) (cm)
-  wallDistanceMinWarningCm: number;  // default: 35 cm
-  wallDistanceMinCriticalCm: number; // default: 20 cm
+  wallDistanceMinWarningCm: number;  // default: 2.5 cm
+  wallDistanceMinCriticalCm: number; // default: 1.5 cm
 
   // Tilt Thresholds for MPU 1 & MPU 2 (deg)
-  tiltDegWarning: number;  // default: 3.0 deg
-  tiltDegCritical: number; // default: 7.0 deg
+  tiltDegWarning: number;  // default: 14.0 deg
+  tiltDegCritical: number; // default: 18.0 deg
 
   // Vibration Threshold (events / intensity)
   vibrationIntensityThreshold: number; // default: 60
@@ -160,6 +171,16 @@ export interface MineHealthScore {
   contributingFactors: Array<{ factor: string; impact: number; nodeId?: string }>;
   modelVersion: string;
   summary: string;
+}
+
+export interface AnomalyModelStatus {
+  ready: boolean;
+  modelVersion: string;
+  baselineSamples: number;
+  features: string[];
+  warningThreshold: number;
+  criticalThreshold: number;
+  source: string;
 }
 
 // ---- Outbound Remote Command (backend -> Pi4 -> ESP) ----

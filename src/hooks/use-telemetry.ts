@@ -11,16 +11,17 @@ import type {
   TelemetryDataPoint,
   MineHealthScore,
   MinePhoto,
+  AnomalyModelStatus,
   AlarmSeverity,
 } from "@/types";
 
 const defaultThresholds: AlertThresholdConfig = {
-  gasPpmWarning: 400,
-  gasPpmCritical: 800,
-  wallDistanceMinWarningCm: 35,
-  wallDistanceMinCriticalCm: 20,
-  tiltDegWarning: 3,
-  tiltDegCritical: 7,
+  gasPpmWarning: 450,
+  gasPpmCritical: 700,
+  wallDistanceMinWarningCm: 2.5,
+  wallDistanceMinCriticalCm: 1.5,
+  tiltDegWarning: 14,
+  tiltDegCritical: 18,
   vibrationIntensityThreshold: 60,
   tempCWarning: 38,
   tempCCritical: 45,
@@ -73,6 +74,7 @@ export interface TelemetryState {
   recentAlarms: Alarm[];
   thresholds: AlertThresholdConfig;
   mineHealth: MineHealthScore | null;
+  anomalyModel: AnomalyModelStatus | null;
   photos: MinePhoto[];
   isConnected: boolean;
   selectedNodeId: string;
@@ -115,6 +117,7 @@ export function useTelemetry(): TelemetryState {
   const [recentAlarms, setRecentAlarms] = useState<Alarm[]>([]);
   const [thresholds, setThresholdsState] = useState<AlertThresholdConfig>(defaultThresholds);
   const [mineHealth, setMineHealth] = useState<MineHealthScore | null>(null);
+  const [anomalyModel, setAnomalyModel] = useState<AnomalyModelStatus | null>(null);
   const [photos, setPhotos] = useState<MinePhoto[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [selectedNodeId, setSelectedNodeId] = useState<string>("ESP-NODE-01");
@@ -185,6 +188,15 @@ export function useTelemetry(): TelemetryState {
         if (json.ok && json.data) {
           setMineHealth(json.data);
         }
+      }
+
+      const anomalyRes = await fetch(`${API_BASE}/health/anomaly`, {
+        headers: DEFAULT_FETCH_HEADERS,
+        cache: "no-store",
+      });
+      if (anomalyRes.ok) {
+        const json = await anomalyRes.json();
+        if (json.ok && json.data) setAnomalyModel(json.data);
       }
 
       // 6. Fetch latest photos
@@ -545,6 +557,7 @@ export function useTelemetry(): TelemetryState {
     recentAlarms,
     thresholds,
     mineHealth,
+    anomalyModel,
     photos,
     isConnected,
     selectedNodeId,

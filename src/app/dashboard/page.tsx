@@ -40,6 +40,7 @@ export default function CommandCenterPage() {
     alarms,
     thresholds,
     mineHealth,
+    anomalyModel,
     selectedNodeId,
     setSelectedNodeId,
     selectedNode,
@@ -265,6 +266,41 @@ export default function CommandCenterPage() {
             <span className="text-[10px] font-semibold text-white/80 mt-1.5 whitespace-nowrap">
               AI Logs
             </span>
+          </div>
+        </Link>
+      )}
+
+      {tel?.anomaly && (
+        <Link
+          href="/dashboard/ai-logs"
+          className={`block border rounded-2xl px-4 py-3 transition-colors ${
+            tel.anomaly.level === "CRITICAL"
+              ? "border-rose-300 bg-rose-50 dark:border-rose-900 dark:bg-rose-950/30"
+              : tel.anomaly.level === "WATCH"
+              ? "border-amber-300 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30"
+              : "border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
+          }`}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="size-8 rounded-xl bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 flex items-center justify-center">
+                <Icon icon="solar:graph-new-up-bold-duotone" className="size-4" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-900 dark:text-slate-100">Baseline anomaly monitor: {tel.anomaly.level}</p>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400">{tel.anomaly.recommendation}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 text-right">
+              <div>
+                <p className="text-[10px] uppercase tracking-wide text-slate-500">Anomaly score</p>
+                <p className="text-lg font-bold tabular-nums text-slate-900 dark:text-slate-100">{tel.anomaly.score.toFixed(3)}</p>
+              </div>
+              <div className="max-w-64 text-[11px] text-slate-600 dark:text-slate-400">
+                <span className="font-semibold">Evidence:</span> {tel.anomaly.contributors.map((item) => item.feature).join(", ") || "Collecting baseline"}
+              </div>
+              {anomalyModel && <Badge variant="outline" className="text-[10px]">{anomalyModel.baselineSamples} baseline samples</Badge>}
+            </div>
           </div>
         </Link>
       )}
