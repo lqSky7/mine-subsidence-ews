@@ -149,10 +149,11 @@ export interface AlertThresholdConfig {
   tempCWarning?: number;
   tempCCritical?: number;
 
-  // Actuator Trigger Settings
+  // Actuator & Alert Notification Trigger Settings
   buzzerEnabled: boolean;
   ledMatrixEnabled: boolean;
   autoTriggerActuatorsOnCritical: boolean;
+  alertEmailsEnabled?: boolean;
 }
 
 // ---- Telemetry History Point ----

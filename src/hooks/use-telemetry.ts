@@ -28,6 +28,7 @@ const defaultThresholds: AlertThresholdConfig = {
   buzzerEnabled: true,
   ledMatrixEnabled: true,
   autoTriggerActuatorsOnCritical: true,
+  alertEmailsEnabled: true,
 };
 
 const DEFAULT_REMOTE_BACKEND = "https://commute-overrule-employer.ngrok-free.dev";
@@ -107,6 +108,8 @@ export interface TelemetryState {
     category?: MinePhoto["category"];
     metadata?: Record<string, unknown>;
   }) => Promise<MinePhoto | null>;
+  uploadPhoto: (formData: FormData) => Promise<MinePhoto | null>;
+  toggleEmailKillSwitch: (enabled: boolean) => Promise<boolean>;
   refreshAll: () => Promise<void>;
 }
 
@@ -545,6 +548,60 @@ export function useTelemetry(): TelemetryState {
     []
   );
 
+  // Upload Photo (multipart to S3)
+  const handleUploadPhoto = useCallback(
+    async (formData: FormData): Promise<MinePhoto | null> => {
+      try {
+        const res = await fetch(`${API_BASE}/photos/upload`, {
+          method: "POST",
+          headers: {
+            "ngrok-skip-browser-warning": "1",
+          },
+          body: formData,
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.ok && json.data) {
+            setPhotos((prev) => [json.data, ...prev]);
+            return json.data;
+          }
+        }
+      } catch {
+        // offline
+      }
+      return null;
+    },
+    []
+  );
+
+  // Email Alert Dispatch Kill Switch Handler
+  const handleToggleEmailKillSwitch = useCallback(
+    async (enabled: boolean): Promise<boolean> => {
+      setThresholdsState((prev) => ({ ...prev, alertEmailsEnabled: enabled }));
+      try {
+        const res = await fetch(`${API_BASE}/mail/kill-switch`, {
+          method: "POST",
+          headers: {
+            ...DEFAULT_FETCH_HEADERS,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ enabled }),
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.ok && typeof json.enabled === "boolean") {
+            setThresholdsState((prev) => ({ ...prev, alertEmailsEnabled: json.enabled }));
+            return json.enabled;
+          }
+        }
+      } catch {
+        // network error
+      }
+      return enabled;
+    },
+    []
+  );
+
   // Derived selected node and telemetry
   const selectedNode = nodes.find((n) => n.id === selectedNodeId) || nodes[0] || null;
   const selectedTelemetry =
@@ -574,6 +631,8 @@ export function useTelemetry(): TelemetryState {
     fetchHealthHistory: handleFetchHealthHistory,
     fetchPhotos: handleFetchPhotos,
     ingestPhoto: handleIngestPhoto,
+    uploadPhoto: handleUploadPhoto,
+    toggleEmailKillSwitch: handleToggleEmailKillSwitch,
     refreshAll: pollBackendData,
   };
 }

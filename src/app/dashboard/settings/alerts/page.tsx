@@ -23,6 +23,7 @@ export default function AlertSettingsPage() {
   const [buzzerEnabled, setBuzzerEnabled] = useState(thresholds.buzzerEnabled);
   const [ledMatrixEnabled, setLedMatrixEnabled] = useState(thresholds.ledMatrixEnabled);
   const [autoTrigger, setAutoTrigger] = useState(thresholds.autoTriggerActuatorsOnCritical);
+  const [emailAlertsEnabled, setEmailAlertsEnabled] = useState(thresholds.alertEmailsEnabled !== false);
 
   const [savedSuccess, setSavedSuccess] = useState(false);
 
@@ -38,6 +39,7 @@ export default function AlertSettingsPage() {
       buzzerEnabled,
       ledMatrixEnabled,
       autoTriggerActuatorsOnCritical: autoTrigger,
+      alertEmailsEnabled: emailAlertsEnabled,
     });
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 3000);
@@ -54,6 +56,7 @@ export default function AlertSettingsPage() {
     setBuzzerEnabled(true);
     setLedMatrixEnabled(true);
     setAutoTrigger(true);
+    setEmailAlertsEnabled(true);
   };
 
   return (
@@ -336,6 +339,44 @@ export default function AlertSettingsPage() {
                 id="ledEnable"
                 checked={ledMatrixEnabled}
                 onCheckedChange={setLedMatrixEnabled}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Section 6: Automated Email Dispatch & Kill Switch */}
+        <Card className="rounded-2xl border-slate-200/80 dark:border-slate-800 shadow-xs">
+          <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-2">
+              <div className="size-7 rounded-xl bg-sky-100 dark:bg-sky-950/60 text-sky-600 flex items-center justify-center">
+                <Icon icon="solar:letter-bold-duotone" className="size-4" />
+              </div>
+              <div>
+                <CardTitle className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                  Automated Alert Email Notifications & Kill Switch
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Configure SMTP dispatch for real-time critical hazard emails
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-5 space-y-4 text-xs font-sans">
+            <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-950/40 rounded-xl border border-slate-100 dark:border-slate-800">
+              <div className="space-y-0.5">
+                <Label htmlFor="emailKillSwitch" className="font-bold text-slate-800 dark:text-slate-200 cursor-pointer">
+                  Automated Alert Email Dispatch
+                </Label>
+                <p className="text-slate-500 text-[11px]">
+                  {emailAlertsEnabled
+                    ? "Enabled — Emergency emails are automatically sent to configured officers upon critical safety threshold breaches."
+                    : "Kill Switch Engaged — All automated email dispatches are halted. No emails will be sent."}
+                </p>
+              </div>
+              <Switch
+                id="emailKillSwitch"
+                checked={emailAlertsEnabled}
+                onCheckedChange={setEmailAlertsEnabled}
               />
             </div>
           </CardContent>

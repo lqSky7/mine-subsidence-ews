@@ -28,9 +28,10 @@ import type { MinePhoto } from "@/types";
 const BACKEND_BASE = process.env.NEXT_PUBLIC_BACKEND_URL
   ? process.env.NEXT_PUBLIC_BACKEND_URL.replace("/api/v1", "")
   : "https://commute-overrule-employer.ngrok-free.dev";
+const S3_FALLBACK_URL = "https://mine-iot-photos-697114252450.s3.us-east-1.amazonaws.com/photos/PHOTO-001.jpg";
 
 export default function PhotosPage() {
-  const { photos, nodes, ingestPhoto } = useTelemetryContext();
+  const { photos, nodes, ingestPhoto, uploadPhoto } = useTelemetryContext();
 
   const [categoryFilter, setCategoryFilter] = useState<string>("ALL");
   const [searchTerm, setSearchTerm] = useState("");
@@ -42,6 +43,7 @@ export default function PhotosPage() {
   const [newNodeId, setNewNodeId] = useState("ESP-NODE-01");
   const [newLocation, setNewLocation] = useState("Gallery North AA - Working Face 1");
   const [newCategory, setNewCategory] = useState<MinePhoto["category"]>("TUNNEL");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const filteredPhotos = useMemo(() => {
@@ -61,27 +63,46 @@ export default function PhotosPage() {
     if (!newTitle.trim()) return;
     setIsSubmitting(true);
     try {
-      await ingestPhoto({
-        title: newTitle.trim(),
-        nodeId: newNodeId,
-        location: newLocation,
-        category: newCategory,
-        metadata: {
-          capturedBy: "SAFETY_OFFICER",
-          resolution: "1920x1080",
-          cameraModel: "ESP32-CAM-IR-NightVision",
-          lightLevelLux: 85,
-        },
-      });
+      if (selectedFile) {
+        const formData = new FormData();
+        formData.append("image", selectedFile);
+        formData.append("title", newTitle.trim());
+        formData.append("nodeId", newNodeId);
+        formData.append("location", newLocation);
+        formData.append("category", newCategory || "TUNNEL");
+        formData.append(
+          "metadata",
+          JSON.stringify({
+            capturedBy: "SAFETY_OFFICER",
+            fileName: selectedFile.name,
+            fileSize: selectedFile.size,
+          })
+        );
+        await uploadPhoto(formData);
+      } else {
+        await ingestPhoto({
+          title: newTitle.trim(),
+          nodeId: newNodeId,
+          location: newLocation,
+          category: newCategory,
+          metadata: {
+            capturedBy: "SAFETY_OFFICER",
+            resolution: "1920x1080",
+            cameraModel: "ESP32-CAM-IR-NightVision",
+            lightLevelLux: 85,
+          },
+        });
+      }
       setIsCaptureOpen(false);
       setNewTitle("");
+      setSelectedFile(null);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const getFullImageUrl = (path: string) => {
-    if (!path) return "";
+  const getFullImageUrl = (path?: string) => {
+    if (!path) return S3_FALLBACK_URL;
     if (path.startsWith("http://") || path.startsWith("https://")) return path;
     return `${BACKEND_BASE}${path}`;
   };
@@ -439,6 +460,22 @@ export default function PhotosPage() {
                 onChange={(e) => setNewLocation(e.target.value)}
                 className="text-xs h-9"
               />
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="photo-file" className="text-xs font-semibold">
+                Upload Camera Snapshot Image (S3 Direct)
+              </Label>
+              <Input
+                id="photo-file"
+                type="file"
+                accept="image/*"
+                onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                className="text-xs h-9 cursor-pointer file:text-xs file:font-semibold file:text-orange-600 file:bg-orange-50 file:border-0 file:rounded-md file:mr-2"
+              />
+              <p className="text-[10px] text-slate-400">
+                Optional. Leave empty to automatically trigger optical capture on the selected node.
+              </p>
             </div>
           </div>
 
