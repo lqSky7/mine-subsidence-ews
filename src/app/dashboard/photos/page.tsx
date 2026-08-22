@@ -200,6 +200,7 @@ export default function PhotosPage() {
     }
   };
 
+  // Resolve photo URL supporting S3 bucket URLs, backend endpoints, and base64 Data URIs (SparkleYR)
   const getFullImageUrl = (path?: string, photo?: Partial<MinePhoto>) => {
     if (!path) return getFallbackSvgDataUri(photo);
     if (path.startsWith("http://") || path.startsWith("https://") || path.startsWith("data:")) return path;
