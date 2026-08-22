@@ -257,16 +257,10 @@ export default function OutputsPage() {
                           <Icon
                             icon={pat.icon}
                             className={cn(
-                              "mt-0.5 size-4 shrink-0",
+                              "mt-0.5 size-4 shrink-0 transition-colors",
                               isCurrent
                                 ? "text-white dark:text-black"
-                                : pat.tone === "critical"
-                                ? "text-red-600 dark:text-red-400"
-                                : pat.tone === "watch"
-                                ? "text-amber-600 dark:text-amber-400"
-                                : pat.tone === "live"
-                                ? "text-emerald-600 dark:text-emerald-400"
-                                : "text-neutral-400"
+                                : "text-neutral-500 dark:text-neutral-400"
                             )}
                           />
                           <div className="min-w-0">

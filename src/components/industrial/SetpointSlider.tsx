@@ -97,7 +97,7 @@ export function SetpointSlider({
     <Card className={cn("bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-xs", className)}>
       <CardHeader className="border-b border-slate-100 dark:border-slate-800 pb-3">
         <CardTitle className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
-          <Icon icon="solar:target-bold-duotone" className="size-4 text-orange-600" />
+          <Icon icon="solar:target-bold-duotone" className="size-4 text-neutral-500 dark:text-neutral-400" />
           {label}
         </CardTitle>
       </CardHeader>

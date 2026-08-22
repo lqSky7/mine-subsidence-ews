@@ -120,8 +120,8 @@ export default function NodeDetailClient({ nodeId }: { nodeId: string }) {
               <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 MQ2 Gas Sensor
               </span>
-              <div className="size-7 rounded-xl bg-orange-100 dark:bg-orange-950/60 text-orange-600 flex items-center justify-center">
-                <Icon icon="solar:flame-bold-duotone" className="size-4 text-orange-600" />
+              <div className="size-7 rounded-md bg-neutral-100 dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 flex items-center justify-center border border-neutral-200 dark:border-neutral-800">
+                <Icon icon="solar:flame-bold-duotone" className="size-4 text-neutral-700 dark:text-neutral-300" />
               </div>
             </div>
             <div className="mt-2 flex items-baseline gap-1">
@@ -149,8 +149,8 @@ export default function NodeDetailClient({ nodeId }: { nodeId: string }) {
               <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 Wall Clearance
               </span>
-              <div className="size-7 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-600 flex items-center justify-center">
-                <Icon icon="solar:radar-2-bold-duotone" className="size-4 text-blue-600" />
+              <div className="size-7 rounded-md bg-neutral-100 dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 flex items-center justify-center border border-neutral-200 dark:border-neutral-800">
+                <Icon icon="solar:radar-2-bold-duotone" className="size-4 text-neutral-700 dark:text-neutral-300" />
               </div>
             </div>
             <div className="mt-2 flex items-baseline gap-1">
@@ -178,8 +178,8 @@ export default function NodeDetailClient({ nodeId }: { nodeId: string }) {
               <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 MPU 1 (Horizontal)
               </span>
-              <div className="size-7 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-600 flex items-center justify-center">
-                <Icon icon="solar:compass-bold-duotone" className="size-4 text-purple-600" />
+              <div className="size-7 rounded-md bg-neutral-100 dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 flex items-center justify-center border border-neutral-200 dark:border-neutral-800">
+                <Icon icon="solar:compass-bold-duotone" className="size-4 text-neutral-700 dark:text-neutral-300" />
               </div>
             </div>
             <div className="mt-2 flex items-baseline gap-1">
@@ -207,8 +207,8 @@ export default function NodeDetailClient({ nodeId }: { nodeId: string }) {
               <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 MPU 2 (Vertical)
               </span>
-              <div className="size-7 rounded-xl bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 flex items-center justify-center">
-                <Icon icon="solar:compass-bold-duotone" className="size-4 text-indigo-600" />
+              <div className="size-7 rounded-md bg-neutral-100 dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 flex items-center justify-center border border-neutral-200 dark:border-neutral-800">
+                <Icon icon="solar:compass-bold-duotone" className="size-4 text-neutral-700 dark:text-neutral-300" />
               </div>
             </div>
             <div className="mt-2 flex items-baseline gap-1">

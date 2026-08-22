@@ -176,7 +176,7 @@ export function AestheticMultiMetricChart({
             <span className="text-[10px] font-bold text-orange-700 dark:text-orange-400 uppercase tracking-wider">
               MQ2 Gas Peak
             </span>
-            <Icon icon="solar:flame-bold-duotone" className="size-3.5 text-orange-500" />
+            <Icon icon="solar:flame-bold-duotone" className="size-3.5 text-neutral-500 dark:text-neutral-400" />
           </div>
           <div className="flex items-baseline gap-1 mt-1">
             <span className="text-xl font-bold text-slate-900 dark:text-slate-100 tabular-nums">
@@ -198,7 +198,7 @@ export function AestheticMultiMetricChart({
             <span className="text-[10px] font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wider">
               Min Wall Clearance
             </span>
-            <Icon icon="solar:radar-2-bold-duotone" className="size-3.5 text-blue-500" />
+            <Icon icon="solar:radar-2-bold-duotone" className="size-3.5 text-neutral-500 dark:text-neutral-400" />
           </div>
           <div className="flex items-baseline gap-1 mt-1">
             <span className="text-xl font-bold text-slate-900 dark:text-slate-100 tabular-nums">
@@ -220,7 +220,7 @@ export function AestheticMultiMetricChart({
             <span className="text-[10px] font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider">
               Max Incline Tilt
             </span>
-            <Icon icon="solar:compass-bold-duotone" className="size-3.5 text-purple-500" />
+            <Icon icon="solar:compass-bold-duotone" className="size-3.5 text-neutral-500 dark:text-neutral-400" />
           </div>
           <div className="flex items-baseline gap-1 mt-1">
             <span className="text-xl font-bold text-slate-900 dark:text-slate-100 tabular-nums">

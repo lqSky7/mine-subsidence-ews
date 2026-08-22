@@ -162,7 +162,7 @@ function CommandItem({
       {...props}
     >
       {children}
-      <Icon icon="solar:check-read-linear" className="ml-auto opacity-0 group-has-data-[slot=command-shortcut]/command-item:hidden group-data-[checked=true]/command-item:opacity-100 size-4 text-orange-600" />
+      <Icon icon="solar:check-read-linear" className="ml-auto opacity-0 group-has-data-[slot=command-shortcut]/command-item:hidden group-data-[checked=true]/command-item:opacity-100 size-4 text-neutral-900 dark:text-neutral-100" />
     </CommandPrimitive.Item>
   )
 }

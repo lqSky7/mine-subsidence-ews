@@ -65,8 +65,8 @@ export default function AlertSettingsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/70 dark:border-slate-800">
         <div>
           <div className="flex items-center gap-2">
-            <div className="size-8 rounded-xl bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-400 flex items-center justify-center shadow-xs">
-              <Icon icon="solar:settings-bold-duotone" className="size-4.5" />
+            <div className="size-8 rounded-md bg-neutral-100 dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 flex items-center justify-center border border-neutral-200 dark:border-neutral-800 shadow-xs">
+              <Icon icon="solar:settings-bold-duotone" className="size-4.5 text-neutral-700 dark:text-neutral-300" />
             </div>
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
@@ -86,12 +86,12 @@ export default function AlertSettingsPage() {
             onClick={handleReset}
             className="text-xs font-semibold h-8 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 gap-1.5"
           >
-            <Icon icon="solar:restart-bold" className="size-3.5" /> Reset Defaults
+            <Icon icon="solar:restart-bold" className="size-3.5 text-neutral-500 dark:text-neutral-400" /> Reset Defaults
           </Button>
           <Button
             size="sm"
             onClick={handleSave}
-            className="text-xs font-bold h-8 bg-orange-600 hover:bg-orange-700 text-white gap-1.5"
+            className="text-xs font-bold h-8 bg-black text-white hover:bg-neutral-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200 gap-1.5"
           >
             {savedSuccess ? (
               <>
@@ -107,8 +107,8 @@ export default function AlertSettingsPage() {
       </div>
 
       {savedSuccess && (
-        <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-900 rounded-xl text-xs text-emerald-800 dark:text-emerald-300 font-semibold flex items-center gap-2">
-          <Icon icon="solar:check-circle-bold-duotone" className="size-4 text-emerald-600" />
+        <div className="p-3 bg-neutral-50 dark:bg-neutral-900/60 border border-neutral-200 dark:border-neutral-800 rounded-lg text-xs text-neutral-800 dark:text-neutral-200 font-semibold flex items-center gap-2">
+          <Icon icon="solar:check-circle-bold-duotone" className="size-4 text-neutral-500 dark:text-neutral-400" />
           Safety threshold configuration has been broadcasted to all ESP monitoring stations.
         </div>
       )}
@@ -119,8 +119,8 @@ export default function AlertSettingsPage() {
         <Card className="rounded-2xl border-slate-200/80 dark:border-slate-800 shadow-xs">
           <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-2">
-              <div className="size-7 rounded-xl bg-orange-100 dark:bg-orange-950/60 text-orange-600 flex items-center justify-center">
-                <Icon icon="solar:flame-bold-duotone" className="size-4" />
+              <div className="size-7 rounded-md bg-neutral-100 dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 flex items-center justify-center border border-neutral-200 dark:border-neutral-800">
+                <Icon icon="solar:flame-bold-duotone" className="size-4 text-neutral-700 dark:text-neutral-300" />
               </div>
               <div>
                 <CardTitle className="text-sm font-bold text-slate-900 dark:text-slate-100">
@@ -162,8 +162,8 @@ export default function AlertSettingsPage() {
         <Card className="rounded-2xl border-slate-200/80 dark:border-slate-800 shadow-xs">
           <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-2">
-              <div className="size-7 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-600 flex items-center justify-center">
-                <Icon icon="solar:radar-2-bold-duotone" className="size-4" />
+              <div className="size-7 rounded-md bg-neutral-100 dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 flex items-center justify-center border border-neutral-200 dark:border-neutral-800">
+                <Icon icon="solar:radar-2-bold-duotone" className="size-4 text-neutral-700 dark:text-neutral-300" />
               </div>
               <div>
                 <CardTitle className="text-sm font-bold text-slate-900 dark:text-slate-100">
@@ -205,8 +205,8 @@ export default function AlertSettingsPage() {
         <Card className="rounded-2xl border-slate-200/80 dark:border-slate-800 shadow-xs">
           <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-2">
-              <div className="size-7 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-600 flex items-center justify-center">
-                <Icon icon="solar:compass-bold-duotone" className="size-4" />
+              <div className="size-7 rounded-md bg-neutral-100 dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 flex items-center justify-center border border-neutral-200 dark:border-neutral-800">
+                <Icon icon="solar:compass-bold-duotone" className="size-4 text-neutral-700 dark:text-neutral-300" />
               </div>
               <div>
                 <CardTitle className="text-sm font-bold text-slate-900 dark:text-slate-100">
@@ -248,8 +248,8 @@ export default function AlertSettingsPage() {
         <Card className="rounded-2xl border-slate-200/80 dark:border-slate-800 shadow-xs">
           <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-2">
-              <div className="size-7 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 flex items-center justify-center">
-                <Icon icon="solar:graph-up-bold-duotone" className="size-4" />
+              <div className="size-7 rounded-md bg-neutral-100 dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 flex items-center justify-center border border-neutral-200 dark:border-neutral-800">
+                <Icon icon="solar:graph-up-bold-duotone" className="size-4 text-neutral-700 dark:text-neutral-300" />
               </div>
               <div>
                 <CardTitle className="text-sm font-bold text-slate-900 dark:text-slate-100">
@@ -280,8 +280,8 @@ export default function AlertSettingsPage() {
         <Card className="rounded-2xl border-slate-200/80 dark:border-slate-800 shadow-xs">
           <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-2">
-              <div className="size-7 rounded-xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 flex items-center justify-center">
-                <Icon icon="solar:volume-loud-bold-duotone" className="size-4" />
+              <div className="size-7 rounded-md bg-neutral-100 dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 flex items-center justify-center border border-neutral-200 dark:border-neutral-800">
+                <Icon icon="solar:volume-loud-bold-duotone" className="size-4 text-neutral-700 dark:text-neutral-300" />
               </div>
               <div>
                 <CardTitle className="text-sm font-bold text-slate-900 dark:text-slate-100">
@@ -348,8 +348,8 @@ export default function AlertSettingsPage() {
         <Card className="rounded-2xl border-slate-200/80 dark:border-slate-800 shadow-xs">
           <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-2">
-              <div className="size-7 rounded-xl bg-sky-100 dark:bg-sky-950/60 text-sky-600 flex items-center justify-center">
-                <Icon icon="solar:letter-bold-duotone" className="size-4" />
+              <div className="size-7 rounded-md bg-neutral-100 dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 flex items-center justify-center border border-neutral-200 dark:border-neutral-800">
+                <Icon icon="solar:letter-bold-duotone" className="size-4 text-neutral-700 dark:text-neutral-300" />
               </div>
               <div>
                 <CardTitle className="text-sm font-bold text-slate-900 dark:text-slate-100">

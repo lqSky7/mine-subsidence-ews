@@ -62,7 +62,7 @@ export function ThermometerWidget({
     >
       {/* Title */}
       <span className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2">
-        <Icon icon="solar:thermometer-bold-duotone" className="size-4 text-orange-600" />
+        <Icon icon="solar:thermometer-bold-duotone" className="size-4 text-neutral-500 dark:text-neutral-400" />
         {label}
       </span>
 

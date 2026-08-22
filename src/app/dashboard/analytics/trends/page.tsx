@@ -172,8 +172,8 @@ export default function TrendsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/70 dark:border-slate-800">
         <div>
           <div className="flex items-center gap-2">
-            <div className="size-8 rounded-xl bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-400 flex items-center justify-center shadow-xs">
-              <Icon icon="solar:chart-2-bold-duotone" className="size-4.5" />
+            <div className="size-8 rounded-md bg-neutral-100 dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 flex items-center justify-center border border-neutral-200 dark:border-neutral-800 shadow-xs">
+              <Icon icon="solar:chart-2-bold-duotone" className="size-4.5 text-neutral-700 dark:text-neutral-300" />
             </div>
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
@@ -201,32 +201,32 @@ export default function TrendsPage() {
             <SelectContent>
               <SelectItem value="gasPpm">
                 <span className="flex items-center gap-2">
-                  <Icon icon="solar:flame-bold-duotone" className="size-3.5 text-orange-500" /> MQ2 Gas (ppm)
+                  <Icon icon="solar:flame-bold-duotone" className="size-3.5 text-neutral-500 dark:text-neutral-400" /> MQ2 Gas (ppm)
                 </span>
               </SelectItem>
               <SelectItem value="wallDistanceCm">
                 <span className="flex items-center gap-2">
-                  <Icon icon="solar:radar-2-bold-duotone" className="size-3.5 text-blue-500" /> Wall Clearance (cm)
+                  <Icon icon="solar:radar-2-bold-duotone" className="size-3.5 text-neutral-500 dark:text-neutral-400" /> Wall Clearance (cm)
                 </span>
               </SelectItem>
               <SelectItem value="tiltMpu1">
                 <span className="flex items-center gap-2">
-                  <Icon icon="solar:compass-bold-duotone" className="size-3.5 text-purple-500" /> MPU-1 Horizontal Tilt (°)
+                  <Icon icon="solar:compass-bold-duotone" className="size-3.5 text-neutral-500 dark:text-neutral-400" /> MPU-1 Horizontal Tilt (°)
                 </span>
               </SelectItem>
               <SelectItem value="tiltMpu2">
                 <span className="flex items-center gap-2">
-                  <Icon icon="solar:compass-bold-duotone" className="size-3.5 text-indigo-500" /> MPU-2 Vertical Tilt (°)
+                  <Icon icon="solar:compass-bold-duotone" className="size-3.5 text-neutral-500 dark:text-neutral-400" /> MPU-2 Vertical Tilt (°)
                 </span>
               </SelectItem>
               <SelectItem value="vibrationIntensity">
                 <span className="flex items-center gap-2">
-                  <Icon icon="solar:graph-up-bold-duotone" className="size-3.5 text-emerald-500" /> Vibration Intensity (%)
+                  <Icon icon="solar:graph-up-bold-duotone" className="size-3.5 text-neutral-500 dark:text-neutral-400" /> Vibration Intensity (%)
                 </span>
               </SelectItem>
               <SelectItem value="anomalyScore">
                 <span className="flex items-center gap-2">
-                  <Icon icon="solar:graph-new-up-bold-duotone" className="size-3.5 text-amber-500" /> Learned Anomaly Score
+                  <Icon icon="solar:graph-new-up-bold-duotone" className="size-3.5 text-neutral-500 dark:text-neutral-400" /> Learned Anomaly Score
                 </span>
               </SelectItem>
             </SelectContent>

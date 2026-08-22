@@ -136,8 +136,8 @@ export default function AlarmsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/70 dark:border-slate-800">
         <div>
           <div className="flex items-center gap-2">
-            <div className="size-8 rounded-xl bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 flex items-center justify-center shadow-xs">
-              <Icon icon="solar:bell-bold-duotone" className="size-4.5" />
+            <div className="size-8 rounded-md bg-neutral-100 dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 flex items-center justify-center border border-neutral-200 dark:border-neutral-800 shadow-xs">
+              <Icon icon="solar:bell-bold-duotone" className="size-4.5 text-neutral-700 dark:text-neutral-300" />
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -162,9 +162,9 @@ export default function AlarmsPage() {
           <Button
             size="sm"
             onClick={() => setIsManualAlarmOpen(true)}
-            className="h-8 px-3 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-xl gap-1.5 shadow-xs"
+            className="h-8 px-3 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-md gap-1.5 shadow-xs"
           >
-            <Icon icon="solar:danger-triangle-bold" className="size-3.5" /> Raise Manual Alarm
+            <Icon icon="solar:danger-triangle-bold" className="size-3.5 text-white" /> Raise Manual Alarm
           </Button>
 
           {totalActiveCount > 0 && (
@@ -172,9 +172,9 @@ export default function AlarmsPage() {
               size="sm"
               variant="outline"
               onClick={() => resolveActiveAlarms("Safety Officer", "Bulk resolved by operator")}
-              className="h-8 px-3 text-xs font-semibold rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 gap-1.5"
+              className="h-8 px-3 text-xs font-semibold rounded-md bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 gap-1.5"
             >
-              <Icon icon="solar:check-circle-bold-duotone" className="size-3.5 text-emerald-600" /> Resolve All Active ({totalActiveCount})
+              <Icon icon="solar:check-circle-bold-duotone" className="size-3.5 text-neutral-500 dark:text-neutral-400" /> Resolve All Active ({totalActiveCount})
             </Button>
           )}
 
@@ -396,8 +396,8 @@ export default function AlarmsPage() {
       <Dialog open={!!selectedAlarmForAck} onOpenChange={(open) => !open && setSelectedAlarmForAck(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
-              <Icon icon="solar:danger-triangle-bold" className="size-5" />
+            <DialogTitle className="flex items-center gap-2 text-neutral-900 dark:text-neutral-100">
+              <Icon icon="solar:danger-triangle-bold" className="size-5 text-neutral-600 dark:text-neutral-400" />
               Acknowledge Early Warning Hazard
             </DialogTitle>
             <DialogDescription className="text-xs">
@@ -466,8 +466,8 @@ export default function AlarmsPage() {
       <Dialog open={!!selectedAlarmForResolve} onOpenChange={(open) => !open && setSelectedAlarmForResolve(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
-              <Icon icon="solar:check-circle-bold-duotone" className="size-5" />
+            <DialogTitle className="flex items-center gap-2 text-neutral-900 dark:text-neutral-100">
+              <Icon icon="solar:check-circle-bold-duotone" className="size-5 text-neutral-600 dark:text-neutral-400" />
               Resolve Hazard Alert #{selectedAlarmForResolve?.id}
             </DialogTitle>
             <DialogDescription className="text-xs">
@@ -536,8 +536,8 @@ export default function AlarmsPage() {
       <Dialog open={isManualAlarmOpen} onOpenChange={setIsManualAlarmOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-rose-600 dark:text-rose-400">
-              <Icon icon="solar:danger-triangle-bold" className="size-5" />
+            <DialogTitle className="flex items-center gap-2 text-neutral-900 dark:text-neutral-100">
+              <Icon icon="solar:danger-triangle-bold" className="size-5 text-neutral-600 dark:text-neutral-400" />
               Raise Manual Emergency Hazard Alarm
             </DialogTitle>
             <DialogDescription className="text-xs">

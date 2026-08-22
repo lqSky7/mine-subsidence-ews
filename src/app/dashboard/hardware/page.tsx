@@ -88,8 +88,8 @@ export default function HardwarePage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/70 dark:border-slate-800">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="size-9 rounded-xl bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-300 flex items-center justify-center shadow-xs">
-              <Icon icon="solar:layers-minimalistic-bold-duotone" className="size-5" />
+            <div className="size-8 rounded-md bg-neutral-100 dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 flex items-center justify-center border border-neutral-200 dark:border-neutral-800 shadow-xs">
+              <Icon icon="solar:layers-minimalistic-bold-duotone" className="size-4.5 text-neutral-700 dark:text-neutral-300" />
             </div>
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
@@ -113,16 +113,10 @@ export default function HardwarePage() {
       >
         <CardContent className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-start sm:items-center gap-3.5">
-            <div
-              className={`size-11 rounded-2xl flex items-center justify-center shrink-0 shadow-xs ${
-                isEmailEnabled
-                  ? "bg-emerald-600 text-white"
-                  : "bg-rose-600 text-white animate-pulse"
-              }`}
-            >
+            <div className="size-10 rounded-md bg-neutral-100 dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 flex items-center justify-center shrink-0 border border-neutral-200 dark:border-neutral-800 shadow-xs">
               <Icon
                 icon={isEmailEnabled ? "solar:letter-bold-duotone" : "solar:letter-cross-bold-duotone"}
-                className="size-6"
+                className="size-5 text-neutral-700 dark:text-neutral-300"
               />
             </div>
             <div>

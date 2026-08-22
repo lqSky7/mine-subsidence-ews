@@ -72,8 +72,8 @@ export default function HistoryPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/70 dark:border-slate-800">
         <div>
           <div className="flex items-center gap-2">
-            <div className="size-8 rounded-xl bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-400 flex items-center justify-center shadow-xs">
-              <Icon icon="solar:history-bold-duotone" className="size-4.5" />
+            <div className="size-8 rounded-md bg-neutral-100 dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 flex items-center justify-center border border-neutral-200 dark:border-neutral-800 shadow-xs">
+              <Icon icon="solar:history-bold-duotone" className="size-4.5 text-neutral-700 dark:text-neutral-300" />
             </div>
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
@@ -93,7 +93,7 @@ export default function HistoryPage() {
             onClick={handleExportCsv}
             className="text-xs font-semibold h-8 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 gap-1.5 shadow-xs"
           >
-            <Icon icon="solar:download-minimalistic-bold" className="size-3.5" /> Export Audit CSV
+            <Icon icon="solar:download-minimalistic-bold" className="size-3.5 text-neutral-500 dark:text-neutral-400" /> Export Audit CSV
           </Button>
         </div>
       </div>
@@ -105,7 +105,7 @@ export default function HistoryPage() {
       <Card className="border-slate-200/80 dark:border-slate-800 shadow-xs">
         <CardContent className="p-4 flex flex-wrap items-center justify-between gap-4">
           <div className="flex-1 min-w-[240px] max-w-md relative">
-            <Icon icon="solar:magnifer-linear" className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Icon icon="solar:magnifer-linear" className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
             <Input
               placeholder="Search audit trail by keyword, sector, category..."
               value={searchTerm}
@@ -115,7 +115,7 @@ export default function HistoryPage() {
           </div>
 
           <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-            <Icon icon="solar:shield-check-bold-duotone" className="size-4 text-emerald-600" />
+            <Icon icon="solar:shield-check-bold-duotone" className="size-4 text-neutral-500 dark:text-neutral-400" />
             <span>Cryptographic Log Integrity Verified</span>
           </div>
         </CardContent>
