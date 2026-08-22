@@ -254,13 +254,13 @@ export default function CommandCenterPage() {
                   {healthScore ?? placeholder}
                 </span>
                 <div className="pb-1">
-                  <div className="text-xl font-semibold">{tel?.anomaly?.level || mineHealth?.riskLevel || "Collecting"}</div>
+                  <div className="text-xl font-semibold">{tel?.anomaly?.level || mineHealth?.riskLevel || placeholder}</div>
                   <div className="text-sm text-white/60 dark:text-black/60">Health index</div>
                 </div>
               </div>
             </div>
             <StatusBadge tone={riskTone === "critical" ? "critical" : riskTone === "watch" ? "watch" : "inverse"}>
-              {criticalAlarms.length > 0 ? `${criticalAlarms.length} critical` : watchAlarms.length > 0 ? `${watchAlarms.length} watch` : "Nominal"}
+              {criticalAlarms.length > 0 ? `${criticalAlarms.length} critical` : watchAlarms.length > 0 ? `${watchAlarms.length} watch` : tel ? "Nominal" : placeholder}
             </StatusBadge>
           </div>
 
@@ -268,16 +268,16 @@ export default function CommandCenterPage() {
             <div className="bg-black px-3 py-3 dark:bg-white">
               <div className="text-[11px] font-semibold uppercase text-white/50 dark:text-black/50">Evidence</div>
               <div className="mt-1 text-sm font-medium">
-                {tel?.anomaly?.contributors.map((item) => item.feature).slice(0, 3).join(", ") || "Baseline forming"}
+                {tel?.anomaly?.contributors.map((item) => item.feature).slice(0, 3).join(", ") || placeholder}
               </div>
             </div>
             <div className="bg-black px-3 py-3 dark:bg-white">
               <div className="text-[11px] font-semibold uppercase text-white/50 dark:text-black/50">Score</div>
-              <div className="mt-1 text-sm font-medium tabular-nums">{tel?.anomaly?.score.toFixed(3) ?? "No anomaly"}</div>
+              <div className="mt-1 text-sm font-medium tabular-nums">{tel?.anomaly?.score !== undefined ? tel.anomaly.score.toFixed(3) : placeholder}</div>
             </div>
             <div className="bg-black px-3 py-3 dark:bg-white">
               <div className="text-[11px] font-semibold uppercase text-white/50 dark:text-black/50">Action</div>
-              <div className="mt-1 text-sm font-medium">{tel?.anomaly?.recommendation || "Continue monitoring"}</div>
+              <div className="mt-1 text-sm font-medium">{tel?.anomaly?.recommendation || placeholder}</div>
             </div>
           </div>
         </div>
@@ -285,10 +285,10 @@ export default function CommandCenterPage() {
         <StatStrip
           className="lg:grid-cols-2"
           items={[
-            { label: "Active nodes", value: nodes.filter((n) => n.status !== "OFFLINE").length, tone: isConnected ? "live" : "neutral" },
+            { label: "Active nodes", value: nodes.filter((n) => n.status !== "OFFLINE").length, tone: nodes.some((n) => n.status !== "OFFLINE") ? "live" : "neutral" },
             { label: "Critical", value: criticalAlarms.length, tone: criticalAlarms.length > 0 ? "critical" : "neutral" },
             { label: "Watch", value: watchAlarms.length, tone: watchAlarms.length > 0 ? "watch" : "neutral" },
-            { label: "Baseline", value: anomalyModel ? `${anomalyModel.baselineSamples} samples` : "Pending" },
+            { label: "Baseline", value: anomalyModel && nodes.some((n) => n.status !== "OFFLINE") ? `${anomalyModel.baselineSamples} samples` : placeholder },
           ]}
         />
       </section>
@@ -300,7 +300,7 @@ export default function CommandCenterPage() {
           unit={tel?.gas?.mq2Ppm !== undefined ? "ppm" : undefined}
           tone={gasTone}
           sparkline={<AestheticMiniSparkline data={gasSparkline} color={gasTone === "critical" ? "#d1242f" : "#000000"} height={28} />}
-          detail={<span>Limit {thresholds.gasPpmCritical} ppm / {tel?.gas?.status || "No data"}</span>}
+          detail={<span>Limit {thresholds.gasPpmCritical} ppm / {tel?.gas?.status || placeholder}</span>}
         />
         <MetricTile
           label="Wall"
@@ -332,7 +332,7 @@ export default function CommandCenterPage() {
           unit={tel?.vibration?.intensity !== undefined ? "%" : undefined}
           tone={vibrationTone}
           sparkline={<AestheticMiniSparkline data={vibSparkline} color={vibrationTone === "critical" ? "#d1242f" : "#000000"} height={28} />}
-          detail={<span>{tel?.vibration?.eventCount ?? placeholder} pulses / {tel?.vibration?.triggered ? "active" : "quiet"}</span>}
+          detail={<span>{tel?.vibration?.eventCount ?? placeholder} pulses / {tel?.vibration?.triggered ? "active" : placeholder}</span>}
         />
       </section>
 

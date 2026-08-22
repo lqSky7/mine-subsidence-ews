@@ -607,18 +607,42 @@ export function useTelemetry(): TelemetryState {
     []
   );
 
+  // Helper to check if data is fresh within the last 30 seconds
+  const isFresh = (timestamp?: string | null) => {
+    if (!timestamp) return false;
+    return Date.now() - new Date(timestamp).getTime() <= 30_000;
+  };
+
+  // Filter out any stale telemetry entries older than 30s
+  const liveTelemetry: Record<string, NodeTelemetry> = {};
+  for (const [id, tel] of Object.entries(telemetry)) {
+    if (isFresh(tel?.timestamp)) {
+      liveTelemetry[id] = tel;
+    }
+  }
+
+  // Derive live nodes with 30s offline threshold
+  const liveNodes = nodes.map((n) => {
+    if (!isFresh(n.lastSeen)) {
+      return { ...n, status: "OFFLINE" as const };
+    }
+    return n;
+  });
+
   // Derived selected node and telemetry
-  const selectedNode = nodes.find((n) => n.id === selectedNodeId) || nodes[0] || null;
-  const selectedTelemetry =
-    (selectedNode ? telemetry[selectedNode.id] : null) || telemetry[selectedNodeId] || null;
+  const selectedNode = liveNodes.find((n) => n.id === selectedNodeId) || liveNodes[0] || null;
+  const rawSelectedTelemetry =
+    (selectedNode ? liveTelemetry[selectedNode.id] : null) || liveTelemetry[selectedNodeId] || null;
+  const selectedTelemetry = isFresh(rawSelectedTelemetry?.timestamp) ? rawSelectedTelemetry : null;
+  const activeMineHealth = isFresh(mineHealth?.timestamp) ? mineHealth : null;
 
   return {
-    nodes,
-    telemetry,
+    nodes: liveNodes,
+    telemetry: liveTelemetry,
     alarms,
     recentAlarms,
     thresholds,
-    mineHealth,
+    mineHealth: activeMineHealth,
     anomalyModel,
     photos,
     isConnected,

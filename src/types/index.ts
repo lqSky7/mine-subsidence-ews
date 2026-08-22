@@ -168,8 +168,8 @@ export interface MineHealthScore {
   id: string;
   timestamp: string;
   overallScore: number; // 0-100, higher = healthier
-  riskLevel: "LOW" | "MODERATE" | "HIGH" | "SEVERE";
-  contributingFactors: Array<{ factor: string; impact: number; nodeId?: string }>;
+  riskLevel: "LOW" | "MODERATE" | "HIGH" | "SEVERE" | "NO_DATA" | "OFFLINE";
+  contributingFactors?: Array<{ factor: string; impact: number; nodeId?: string }>;
   modelVersion: string;
   summary: string;
 }
