@@ -1,10 +1,8 @@
 "use client";
 
 import React from "react";
-import { Icon } from "@/components/ui/icon";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
+import { usePathname } from "next/navigation";
+
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -13,22 +11,25 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { usePathname } from "next/navigation";
+import { Icon } from "@/components/ui/icon";
+import { Separator } from "@/components/ui/separator";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Dot, StatusBadge } from "@/components/uber/dashboard-primitives";
 import { useTelemetryContext } from "@/components/layout/telemetry-provider";
-import { cn } from "@/lib/utils";
 
 const pathLabels: Record<string, string> = {
-  dashboard: "Command Center",
-  nodes: "ESP Node Fleet",
-  photos: "Visual Inspections",
-  outputs: "Actuators & Outputs",
-  alarms: "Early Warning Alerts",
+  dashboard: "Command",
+  nodes: "Nodes",
+  photos: "Photos",
+  outputs: "Outputs",
+  alarms: "Alerts",
   analytics: "Analytics",
-  trends: "Multi-Sensor Trends",
-  history: "Event Audit Logs",
+  trends: "Trends",
+  history: "History",
   settings: "Settings",
-  alerts: "Safety Thresholds",
-  hardware: "Hardware Architecture & BOM",
+  alerts: "Thresholds",
+  hardware: "Hardware",
+  "ai-logs": "AI Logs",
 };
 
 export function TopBar() {
@@ -36,31 +37,31 @@ export function TopBar() {
   const { isConnected, alarms, nodes } = useTelemetryContext();
   const segments = pathname.split("/").filter(Boolean);
 
-  const activeCritical = alarms.filter((a) => a.state === "ACTIVE" && a.severity === "CRITICAL").length;
-  const activeWarning = alarms.filter((a) => a.state === "ACTIVE" && a.severity === "WARNING").length;
-  const totalActive = activeCritical + activeWarning;
-
-  const onlineNodes = nodes.filter((n) => n.status !== "OFFLINE").length;
+  const activeCritical = alarms.filter((alarm) => alarm.state === "ACTIVE" && alarm.severity === "CRITICAL").length;
+  const activeWarning = alarms.filter((alarm) => alarm.state === "ACTIVE" && alarm.severity === "WARNING").length;
+  const onlineNodes = nodes.filter((node) => node.status !== "OFFLINE").length;
 
   return (
-    <header className="flex h-14 items-center gap-3 border-b bg-background px-4">
-      <SidebarTrigger className="-ml-1" />
-      <Separator orientation="vertical" className="h-5" />
+    <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-neutral-200 bg-white/95 px-4 backdrop-blur dark:border-neutral-800 dark:bg-black/95">
+      <SidebarTrigger className="-ml-1 rounded-full" />
+      <Separator orientation="vertical" className="h-5 bg-neutral-200 dark:bg-neutral-800" />
 
-      {/* Breadcrumbs */}
-      <Breadcrumb className="hidden sm:flex">
+      <Breadcrumb className="hidden min-w-0 sm:flex">
         <BreadcrumbList>
-          {segments.map((seg, i) => {
-            const isLast = i === segments.length - 1;
-            const href = "/" + segments.slice(0, i + 1).join("/");
-            const label = pathLabels[seg] || seg;
+          {segments.map((segment, index) => {
+            const isLast = index === segments.length - 1;
+            const href = "/" + segments.slice(0, index + 1).join("/");
+            const label = pathLabels[segment] || segment;
+
             return (
-              <React.Fragment key={seg}>
+              <React.Fragment key={`${segment}-${index}`}>
                 <BreadcrumbItem>
                   {isLast ? (
-                    <BreadcrumbPage className="font-semibold text-slate-800 dark:text-slate-200">{label}</BreadcrumbPage>
+                    <BreadcrumbPage className="font-medium text-black dark:text-white">{label}</BreadcrumbPage>
                   ) : (
-                    <BreadcrumbLink href={href}>{label}</BreadcrumbLink>
+                    <BreadcrumbLink href={href} className="text-neutral-500 hover:text-black dark:text-neutral-400 dark:hover:text-white">
+                      {label}
+                    </BreadcrumbLink>
                   )}
                 </BreadcrumbItem>
                 {!isLast && <BreadcrumbSeparator />}
@@ -70,48 +71,27 @@ export function TopBar() {
         </BreadcrumbList>
       </Breadcrumb>
 
-      {/* Right side status indicators */}
-      <div className="ml-auto flex items-center gap-3">
-        {/* Mine Location / Station Badge */}
-        <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300">
-          <Icon icon="solar:map-point-bold-duotone" className="size-3.5 text-orange-600" />
-          <span>Mine Station Grid</span>
+      <div className="ml-auto flex min-w-0 items-center gap-2">
+        <div className="hidden items-center gap-2 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 dark:border-neutral-800 dark:bg-black dark:text-neutral-300 md:flex">
+          <Dot tone={isConnected ? "live" : "neutral"} />
+          {isConnected ? "Live socket" : "Offline"}
+          <span className="text-neutral-400">/</span>
+          <span className="tabular-nums">{onlineNodes}/{nodes.length || 0} nodes</span>
         </div>
 
-        {/* Gateway Connection status */}
-        <div className="flex items-center gap-1.5 text-xs">
-          <Icon
-            icon="solar:radio-bold-duotone"
-            className={cn("size-3.5", isConnected ? "text-emerald-600" : "text-slate-400")}
-          />
-          <span className="text-slate-600 dark:text-slate-400 hidden lg:inline font-medium">
-            ESP Bridge: <strong className="text-slate-800 dark:text-slate-200">{isConnected ? "Live Socket" : "Disconnected"}</strong> ({nodes.length > 0 ? `${onlineNodes}/${nodes.length} Nodes` : "-"})
-          </span>
-        </div>
+        <StatusBadge tone={activeCritical > 0 ? "critical" : activeWarning > 0 ? "watch" : "neutral"}>
+          {activeCritical > 0
+            ? `${activeCritical} critical`
+            : activeWarning > 0
+            ? `${activeWarning} watch`
+            : "No active alerts"}
+        </StatusBadge>
 
-        <Separator orientation="vertical" className="h-5" />
+        <Separator orientation="vertical" className="hidden h-5 bg-neutral-200 dark:bg-neutral-800 md:block" />
 
-        {/* Active Hazard Alarm Badge */}
-        <div className="flex items-center gap-1.5">
-          <Icon
-            icon="solar:bell-bold-duotone"
-            className={cn("size-4", totalActive > 0 ? "text-rose-600 animate-pulse" : "text-muted-foreground")}
-          />
-          {totalActive > 0 ? (
-            <Badge variant="destructive" className="h-5 min-w-5 px-1.5 text-[10px] font-bold">
-              {totalActive} HAZARDS
-            </Badge>
-          ) : (
-            <span className="text-xs text-muted-foreground">-</span>
-          )}
-        </div>
-
-        <Separator orientation="vertical" className="h-5" />
-
-        {/* User role */}
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Icon icon="solar:user-circle-bold-duotone" className="size-4 text-slate-500" />
-          <span className="hidden lg:inline font-medium text-slate-700 dark:text-slate-300">SAFETY OFFICER</span>
+        <div className="hidden items-center gap-2 text-xs font-medium text-neutral-500 dark:text-neutral-400 lg:flex">
+          <Icon icon="solar:user-circle-bold-duotone" className="size-4" />
+          Safety officer
         </div>
       </div>
     </header>

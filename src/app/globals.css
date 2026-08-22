@@ -7,8 +7,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "SF Pro", "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --font-mono: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "SF Pro", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-sans: UberMoveText, UberMove, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -54,11 +54,9 @@
   --color-status-info: var(--status-info);
   --color-status-offline: var(--status-offline);
 
-  /* Amber/gold accent from Aceternity */
-  --color-amber-primary: #FA9A63;
-  --color-amber-golden: #F6B253;
-  --color-amber-deep: #CDA63C;
-  --color-amber-light: #FFD99F;
+  --color-uber-black: #000000;
+  --color-uber-white: #ffffff;
+  --color-uber-canvas: #f6f6f6;
 }
 
 :root {
@@ -69,79 +67,79 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
   /* Primary: amber/gold from Aceternity template */
-  --primary: oklch(0.75 0.14 55);
-  --primary-foreground: oklch(0.15 0 0);
-  --secondary: oklch(0.97 0 0);
+  --primary: #000000;
+  --primary-foreground: #ffffff;
+  --secondary: #efefef;
   --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0.005 55);
+  --muted: #f6f6f6;
+  --muted-foreground: #5e5e5e;
+  --accent: #f3f3f3;
   --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.75 0.14 55);
+  --destructive: #d1242f;
+  --border: #e2e2e2;
+  --input: #767676;
+  --ring: #000000;
   /* Chart colors — industrial palette */
-  --chart-1: oklch(0.75 0.14 55);
-  --chart-2: oklch(0.65 0.18 145);
-  --chart-3: oklch(0.55 0.2 260);
-  --chart-4: oklch(0.7 0.15 340);
-  --chart-5: oklch(0.6 0.12 200);
+  --chart-1: #000000;
+  --chart-2: #5e5e5e;
+  --chart-3: #afafaf;
+  --chart-4: #d97706;
+  --chart-5: #d1242f;
   --radius: 0.5rem;
   /* Sidebar: clean white with amber accent */
-  --sidebar: oklch(0.985 0 0);
+  --sidebar: #ffffff;
   --sidebar-foreground: oklch(0.25 0 0);
-  --sidebar-primary: oklch(0.75 0.14 55);
-  --sidebar-primary-foreground: oklch(0.15 0 0);
-  --sidebar-accent: oklch(0.96 0.01 55);
+  --sidebar-primary: #000000;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f3f3f3;
   --sidebar-accent-foreground: oklch(0.25 0 0);
-  --sidebar-border: oklch(0.93 0 0);
-  --sidebar-ring: oklch(0.75 0.14 55);
+  --sidebar-border: #e2e2e2;
+  --sidebar-ring: #000000;
   /* Industrial status colors (ISA/IEC 60073) */
-  --status-healthy: oklch(0.72 0.19 145);
-  --status-warning: oklch(0.8 0.18 85);
-  --status-critical: oklch(0.63 0.25 29);
-  --status-info: oklch(0.62 0.18 260);
-  --status-offline: oklch(0.65 0 0);
+  --status-healthy: #15803d;
+  --status-warning: #b45309;
+  --status-critical: #d1242f;
+  --status-info: #4b4b4b;
+  --status-offline: #767676;
 }
 
 .dark {
-  --background: oklch(0.13 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.17 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.17 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.78 0.14 55);
-  --primary-foreground: oklch(0.13 0 0);
-  --secondary: oklch(0.22 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.22 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.22 0.01 55);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.78 0.14 55);
-  --chart-1: oklch(0.78 0.14 55);
-  --chart-2: oklch(0.72 0.18 145);
-  --chart-3: oklch(0.6 0.2 260);
-  --chart-4: oklch(0.75 0.15 340);
-  --chart-5: oklch(0.65 0.12 200);
-  --sidebar: oklch(0.17 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.78 0.14 55);
-  --sidebar-primary-foreground: oklch(0.13 0 0);
-  --sidebar-accent: oklch(0.22 0.01 55);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.78 0.14 55);
-  --status-healthy: oklch(0.72 0.19 145);
-  --status-warning: oklch(0.8 0.18 85);
-  --status-critical: oklch(0.63 0.25 29);
-  --status-info: oklch(0.62 0.18 260);
-  --status-offline: oklch(0.55 0 0);
+  --background: #000000;
+  --foreground: #ffffff;
+  --card: #000000;
+  --card-foreground: #ffffff;
+  --popover: #000000;
+  --popover-foreground: #ffffff;
+  --primary: #ffffff;
+  --primary-foreground: #000000;
+  --secondary: #282828;
+  --secondary-foreground: #ffffff;
+  --muted: #1f1f1f;
+  --muted-foreground: #afafaf;
+  --accent: #282828;
+  --accent-foreground: #ffffff;
+  --destructive: #ff5a5f;
+  --border: #282828;
+  --input: #767676;
+  --ring: #ffffff;
+  --chart-1: #ffffff;
+  --chart-2: #afafaf;
+  --chart-3: #767676;
+  --chart-4: #f59e0b;
+  --chart-5: #ff5a5f;
+  --sidebar: #000000;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #ffffff;
+  --sidebar-primary-foreground: #000000;
+  --sidebar-accent: #1f1f1f;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #282828;
+  --sidebar-ring: #ffffff;
+  --status-healthy: #34d399;
+  --status-warning: #f59e0b;
+  --status-critical: #ff5a5f;
+  --status-info: #afafaf;
+  --status-offline: #767676;
 }
 
 @layer base {
@@ -150,6 +148,7 @@
   }
   body {
     @apply bg-background text-foreground;
+    letter-spacing: 0;
   }
   html {
     @apply font-sans;
@@ -188,7 +187,7 @@
     padding: 4px 8px;
     border-radius: 4px;
     font-variant-numeric: tabular-nums;
-    letter-spacing: 0.05em;
+    letter-spacing: 0;
   }
 
   /* Compact information density for SCADA */

@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import Link from "next/link";
+
 import { useTelemetryContext } from "@/components/layout/telemetry-provider";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -15,320 +15,202 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Icon } from "@/components/ui/icon";
+import {
+  EmptyState,
+  PageHeader,
+  PageShell,
+  StatStrip,
+  StatusBadge,
+  Toolbar,
+} from "@/components/uber/dashboard-primitives";
 import { cn } from "@/lib/utils";
+
+const riskTone = (risk: string) => {
+  if (risk === "CRITICAL") return "critical";
+  if (risk === "WATCH") return "watch";
+  if (risk === "STABLE") return "live";
+  return "neutral";
+};
 
 export default function MeshFleetPage() {
   const { nodes, telemetry, isConnected } = useTelemetryContext();
   const [searchTerm, setSearchTerm] = useState("");
   const [severityFilter, setSeverityFilter] = useState("ALL");
-  const [viewMode, setViewMode] = useState<"table" | "grid">("table");
+  const [viewMode, setViewMode] = useState<"table" | "cards">("table");
 
   const filteredNodes = useMemo(() => {
+    const query = searchTerm.toLowerCase();
     return nodes.filter((node) => {
-      const matchSearch =
-        node.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        node.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        node.location.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchSev = severityFilter === "ALL" || node.riskSeverity === severityFilter;
-      return matchSearch && matchSev;
+      const matchesSearch =
+        node.id.toLowerCase().includes(query) ||
+        node.label.toLowerCase().includes(query) ||
+        node.location.toLowerCase().includes(query);
+      const matchesSeverity = severityFilter === "ALL" || node.riskSeverity === severityFilter;
+      return matchesSearch && matchesSeverity;
     });
   }, [nodes, searchTerm, severityFilter]);
 
+  const criticalCount = nodes.filter((node) => node.riskSeverity === "CRITICAL").length;
+  const watchCount = nodes.filter((node) => node.riskSeverity === "WATCH").length;
+  const onlineCount = nodes.filter((node) => node.status !== "OFFLINE").length;
+
   return (
-    <div className="space-y-6 pb-12 font-sans text-slate-800 dark:text-slate-200">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/70 dark:border-slate-800">
-        <div>
-          <div className="flex items-center gap-2">
-            <div className="size-8 rounded-xl bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-400 flex items-center justify-center shadow-xs">
-              <Icon icon="solar:cpu-bolt-bold-duotone" className="size-4.5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-                  ESP Sensor Node Fleet
-                </h1>
-                <Badge
-                  variant={isConnected ? "outline" : "secondary"}
-                  className={`text-[10px] font-bold ${
-                    isConnected
-                      ? "border-emerald-300 text-emerald-700 bg-emerald-50 dark:bg-emerald-950/60 dark:text-emerald-300"
-                      : "bg-slate-100 text-slate-500"
-                  }`}
-                >
-                  {nodes.length} Nodes Registered
-                </Badge>
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Multi-Node Mine Monitoring Stations · Identical Dual MPU + Ultrasound + MQ2 + Vibration + Actuators
-              </p>
-            </div>
-          </div>
+    <PageShell>
+      <PageHeader
+        eyebrow="Monitor"
+        title="Nodes"
+        description="Station health and current telemetry. Open a node only when you need the full sensor detail."
+        meta={<StatusBadge tone={isConnected ? "live" : "neutral"}>{isConnected ? "Gateway live" : "Gateway offline"}</StatusBadge>}
+      />
+
+      <StatStrip
+        items={[
+          { label: "Registered", value: nodes.length },
+          { label: "Online", value: onlineCount, tone: isConnected ? "live" : "neutral" },
+          { label: "Watch", value: watchCount, tone: watchCount > 0 ? "watch" : "neutral" },
+          { label: "Critical", value: criticalCount, tone: criticalCount > 0 ? "critical" : "neutral" },
+        ]}
+      />
+
+      <Toolbar>
+        <div className="relative w-full max-w-md">
+          <Icon icon="solar:magnifer-linear" className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-neutral-400" />
+          <Input
+            placeholder="Search node, sector, chamber"
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            className="h-9 rounded-full border-neutral-300 bg-white pl-9 text-sm dark:border-neutral-700 dark:bg-black"
+          />
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* View mode toggle */}
-          <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+        <div className="flex flex-wrap items-center gap-2">
+          {["ALL", "CRITICAL", "WATCH", "STABLE"].map((severity) => (
             <Button
+              key={severity}
               size="sm"
-              variant={viewMode === "table" ? "default" : "ghost"}
-              onClick={() => setViewMode("table")}
-              className={`h-7 px-2.5 text-xs font-semibold rounded-lg gap-1.5 ${
-                viewMode === "table" ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs font-bold" : ""
-              }`}
+              variant={severityFilter === severity ? "default" : "outline"}
+              onClick={() => setSeverityFilter(severity)}
             >
-              <Icon icon="solar:list-bold" className="size-3.5" /> Table
+              {severity === "ALL" ? "All" : severity}
             </Button>
-            <Button
-              size="sm"
-              variant={viewMode === "grid" ? "default" : "ghost"}
-              onClick={() => setViewMode("grid")}
-              className={`h-7 px-2.5 text-xs font-semibold rounded-lg gap-1.5 ${
-                viewMode === "grid" ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs font-bold" : ""
-              }`}
-            >
-              <Icon icon="solar:widget-2-bold-duotone" className="size-3.5" /> Cards
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Filter Toolbar */}
-      <Card className="border-slate-200/80 dark:border-slate-800 shadow-xs">
-        <CardContent className="p-4 flex flex-wrap gap-4 items-center justify-between">
-          <div className="flex-1 min-w-[220px] max-w-sm relative">
-            <Icon icon="solar:magnifer-linear" className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <Input
-              placeholder="Search by Node ID, sector, chamber..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 text-xs h-9 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800"
-            />
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2 text-xs">
-            <span className="text-slate-500 dark:text-slate-400 font-semibold">Severity Filter:</span>
-            {["ALL", "CRITICAL", "WATCH", "STABLE"].map((sev) => (
+          ))}
+          <div className="ml-0 flex rounded-full border border-neutral-200 p-0.5 dark:border-neutral-800 sm:ml-2">
+            {(["table", "cards"] as const).map((mode) => (
               <Button
-                key={sev}
-                size="sm"
-                variant={severityFilter === sev ? "default" : "outline"}
-                onClick={() => setSeverityFilter(sev)}
-                className="h-7 px-2.5 text-xs font-semibold rounded-lg"
+                key={mode}
+                size="xs"
+                variant={viewMode === mode ? "default" : "ghost"}
+                onClick={() => setViewMode(mode)}
+                className="capitalize"
               >
-                {sev}
+                {mode}
               </Button>
             ))}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </Toolbar>
 
-      {/* Empty State when no nodes registered */}
       {nodes.length === 0 ? (
-        <Card className="border-dashed border-slate-200 dark:border-slate-800 p-12 text-center">
-          <div className="size-12 rounded-full bg-slate-100 dark:bg-slate-800 mx-auto flex items-center justify-center text-slate-400 mb-3">
-            <Icon icon="solar:inbox-line-linear" className="size-6" />
-          </div>
-          <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
-            No ESP Sensor Nodes Discovered
-          </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto mt-1">
-            Monitoring nodes will register automatically upon sending their initial MQTT heartbeat to the gateway.
-          </p>
-        </Card>
-      ) : viewMode === "grid" ? (
-        /* Grid Card View */
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <EmptyState title="No nodes discovered" description="Monitoring stations appear here after their first gateway heartbeat." />
+      ) : viewMode === "cards" ? (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {filteredNodes.map((node) => {
             const tel = telemetry[node.id];
-            const isCrit = node.riskSeverity === "CRITICAL";
-            const isWarn = node.riskSeverity === "WATCH";
-
             return (
-              <Card
+              <Link
                 key={node.id}
-                className={cn(
-                  "border rounded-2xl shadow-xs transition-all hover:shadow-md",
-                  isCrit
-                    ? "border-rose-300 bg-rose-50/20 dark:bg-rose-950/20"
-                    : isWarn
-                    ? "border-amber-300 bg-amber-50/20 dark:bg-amber-950/20"
-                    : "border-slate-200 dark:border-slate-800"
-                )}
+                href={`/dashboard/nodes/${node.id}`}
+                className="rounded-lg border border-neutral-200 bg-white p-4 transition-colors hover:bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-950 dark:hover:bg-neutral-900"
               >
-                <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="text-base font-bold text-slate-900 dark:text-slate-100">{node.id}</CardTitle>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{node.label}</p>
-                    </div>
-                    <Badge
-                      variant={isCrit ? "destructive" : isWarn ? "outline" : "secondary"}
-                      className={cn(
-                        "text-[10px] font-bold",
-                        isWarn && "bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950 dark:text-amber-300"
-                      )}
-                    >
-                      {node.riskSeverity}
-                    </Badge>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="font-semibold text-black dark:text-white">{node.id}</div>
+                    <div className="mt-1 truncate text-sm text-neutral-500 dark:text-neutral-400">{node.location}</div>
                   </div>
-                </CardHeader>
-                <CardContent className="p-4 space-y-3 text-xs">
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="p-2 bg-slate-50 dark:bg-slate-950/40 rounded-lg">
-                      <span className="text-[10px] text-slate-400 block uppercase font-medium">MQ2 Gas</span>
-                      <span className="font-bold text-slate-900 dark:text-slate-100 tabular-nums">
-                        {tel?.gas?.mq2Ppm !== undefined ? `${tel.gas.mq2Ppm} ppm` : "—"}
-                      </span>
-                    </div>
-                    <div className="p-2 bg-slate-50 dark:bg-slate-950/40 rounded-lg">
-                      <span className="text-[10px] text-slate-400 block uppercase font-medium">Wall Clearance</span>
-                      <span className="font-bold text-slate-900 dark:text-slate-100 tabular-nums">
-                        {tel?.ultrasound?.distanceCm !== undefined ? `${tel.ultrasound.distanceCm.toFixed(1)} cm` : "—"}
-                      </span>
-                    </div>
-                    <div className="p-2 bg-slate-50 dark:bg-slate-950/40 rounded-lg">
-                      <span className="text-[10px] text-slate-400 block uppercase font-medium">MPU-1 Tilt</span>
-                      <span className="font-bold text-slate-900 dark:text-slate-100 tabular-nums">
-                        {tel?.imu1?.totalTiltDeg !== undefined ? `${tel.imu1.totalTiltDeg.toFixed(1)}°` : "—"}
-                      </span>
-                    </div>
-                    <div className="p-2 bg-slate-50 dark:bg-slate-950/40 rounded-lg">
-                      <span className="text-[10px] text-slate-400 block uppercase font-medium">MPU-2 Tilt</span>
-                      <span className="font-bold text-slate-900 dark:text-slate-100 tabular-nums">
-                        {tel?.imu2?.totalTiltDeg !== undefined ? `${tel.imu2.totalTiltDeg.toFixed(1)}°` : "—"}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
-                    <div className="flex items-center gap-2 text-[11px]">
-                      {tel?.actuators?.buzzerActive && (
-                        <Badge variant="destructive" className="text-[9px] px-1.5 py-0 h-4 font-semibold">
-                          BUZZER
-                        </Badge>
-                      )}
-                      <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 font-semibold">
-                        {tel?.actuators?.ledMatrixPattern || "IDLE"}
-                      </Badge>
-                    </div>
-                    <Link href={`/dashboard/nodes/${node.id}`}>
-                      <Button size="sm" variant="ghost" className="h-7 text-xs font-semibold gap-1 text-orange-600 hover:text-orange-700">
-                        Inspect <Icon icon="solar:arrow-right-up-linear" className="size-3.5" />
-                      </Button>
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
+                  <StatusBadge tone={riskTone(node.riskSeverity)}>{node.riskSeverity}</StatusBadge>
+                </div>
+                <div className="mt-4 grid grid-cols-2 gap-px overflow-hidden rounded-lg bg-neutral-200 dark:bg-neutral-800">
+                  <MetricMini label="Gas" value={tel?.gas?.mq2Ppm !== undefined ? `${tel.gas.mq2Ppm} ppm` : "--"} />
+                  <MetricMini label="Wall" value={tel?.ultrasound?.distanceCm !== undefined ? `${tel.ultrasound.distanceCm.toFixed(1)} cm` : "--"} />
+                  <MetricMini label="Tilt A" value={tel?.imu1?.totalTiltDeg !== undefined ? `${tel.imu1.totalTiltDeg.toFixed(1)} deg` : "--"} />
+                  <MetricMini label="Vibe" value={tel?.vibration?.intensity !== undefined ? `${tel.vibration.intensity}%` : "--"} />
+                </div>
+              </Link>
             );
           })}
         </div>
       ) : (
-        /* Table View */
-        <Card className="border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader className="bg-slate-50/80 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800">
+        <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-950">
+          <Table>
+            <TableHeader>
+              <TableRow className="border-neutral-200 dark:border-neutral-800">
+                <TableHead>Node</TableHead>
+                <TableHead>Location</TableHead>
+                <TableHead>Risk</TableHead>
+                <TableHead>Gas</TableHead>
+                <TableHead>Wall</TableHead>
+                <TableHead>Tilt A</TableHead>
+                <TableHead>Tilt B</TableHead>
+                <TableHead>Vibe</TableHead>
+                <TableHead className="text-right">Open</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredNodes.length === 0 ? (
                 <TableRow>
-                  <TableHead className="w-[120px]">ESP Node ID</TableHead>
-                  <TableHead className="w-[200px]">Station Location</TableHead>
-                  <TableHead className="w-[100px]">Status</TableHead>
-                  <TableHead className="w-[110px]">MQ2 Gas</TableHead>
-                  <TableHead className="w-[120px]">Wall Clearance</TableHead>
-                  <TableHead className="w-[110px]">MPU 1 (H)</TableHead>
-                  <TableHead className="w-[110px]">MPU 2 (V)</TableHead>
-                  <TableHead className="w-[110px]">Vibration</TableHead>
-                  <TableHead className="w-[140px]">Actuators</TableHead>
-                  <TableHead className="w-[80px] text-right">Inspect</TableHead>
+                  <TableCell colSpan={9} className="py-10 text-center text-sm text-neutral-500">
+                    No nodes match the current filters.
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredNodes.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={10} className="text-center py-8 text-slate-400 text-xs">
-                      No ESP sensor nodes match your search filter.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredNodes.map((node) => {
-                    const tel = telemetry[node.id];
-                    const isCritical = node.riskSeverity === "CRITICAL";
-                    const isWatch = node.riskSeverity === "WATCH";
-
-                    return (
-                      <TableRow
-                        key={node.id}
-                        className={cn(
-                          "text-xs transition-colors",
-                          isCritical
-                            ? "bg-rose-50/30 hover:bg-rose-50/50"
-                            : isWatch
-                            ? "bg-amber-50/30 hover:bg-amber-50/50"
-                            : "hover:bg-slate-50 dark:hover:bg-slate-800/40"
-                        )}
-                      >
-                        <TableCell className="font-bold text-slate-900 dark:text-slate-100">
-                          {node.id}
-                        </TableCell>
-                        <TableCell className="font-medium text-slate-700 dark:text-slate-300">
-                          <div>{node.label}</div>
-                          <div className="text-[10px] text-slate-400 font-medium">{node.location}</div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={isCritical ? "destructive" : isWatch ? "outline" : "secondary"}
-                            className={cn(
-                              "text-[10px] font-bold",
-                              isWatch && "bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950 dark:text-amber-300"
-                            )}
-                          >
-                            {node.riskSeverity}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="font-bold text-slate-900 dark:text-slate-100 tabular-nums">
-                          {tel?.gas?.mq2Ppm !== undefined ? `${tel.gas.mq2Ppm} ppm` : "—"}
-                        </TableCell>
-                        <TableCell className="font-bold text-slate-900 dark:text-slate-100 tabular-nums">
-                          {tel?.ultrasound?.distanceCm !== undefined ? `${tel.ultrasound.distanceCm.toFixed(1)} cm` : "—"}
-                        </TableCell>
-                        <TableCell className="font-bold tabular-nums">
-                          {tel?.imu1?.totalTiltDeg !== undefined ? `${tel.imu1.totalTiltDeg.toFixed(1)}°` : "—"}
-                        </TableCell>
-                        <TableCell className="font-bold tabular-nums">
-                          {tel?.imu2?.totalTiltDeg !== undefined ? `${tel.imu2.totalTiltDeg.toFixed(1)}°` : "—"}
-                        </TableCell>
-                        <TableCell className="font-semibold tabular-nums">
-                          {tel?.vibration?.intensity !== undefined ? `${tel.vibration.intensity}%` : "—"}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            {tel?.actuators?.buzzerActive && (
-                              <Badge variant="destructive" className="text-[9px] px-1.5 py-0 h-4 font-semibold">
-                                BUZZER
-                              </Badge>
-                            )}
-                            <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 font-semibold">
-                              {tel?.actuators?.ledMatrixPattern || "IDLE"}
-                            </Badge>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Link href={`/dashboard/nodes/${node.id}`}>
-                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">
-                              <Icon icon="solar:arrow-right-up-linear" className="size-4" />
-                            </Button>
-                          </Link>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+              ) : (
+                filteredNodes.map((node) => {
+                  const tel = telemetry[node.id];
+                  return (
+                    <TableRow
+                      key={node.id}
+                      className={cn(
+                        "text-sm",
+                        node.riskSeverity === "CRITICAL" && "bg-red-50/60 dark:bg-red-950/20",
+                        node.riskSeverity === "WATCH" && "bg-amber-50/70 dark:bg-amber-950/20"
+                      )}
+                    >
+                      <TableCell className="font-semibold text-black dark:text-white">{node.id}</TableCell>
+                      <TableCell>
+                        <div className="font-medium text-neutral-900 dark:text-neutral-100">{node.location}</div>
+                        <div className="text-xs text-neutral-500 dark:text-neutral-400">{node.label}</div>
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge tone={riskTone(node.riskSeverity)}>{node.riskSeverity}</StatusBadge>
+                      </TableCell>
+                      <TableCell className="tabular-nums">{tel?.gas?.mq2Ppm !== undefined ? `${tel.gas.mq2Ppm} ppm` : "--"}</TableCell>
+                      <TableCell className="tabular-nums">{tel?.ultrasound?.distanceCm !== undefined ? `${tel.ultrasound.distanceCm.toFixed(1)} cm` : "--"}</TableCell>
+                      <TableCell className="tabular-nums">{tel?.imu1?.totalTiltDeg !== undefined ? `${tel.imu1.totalTiltDeg.toFixed(1)} deg` : "--"}</TableCell>
+                      <TableCell className="tabular-nums">{tel?.imu2?.totalTiltDeg !== undefined ? `${tel.imu2.totalTiltDeg.toFixed(1)} deg` : "--"}</TableCell>
+                      <TableCell className="tabular-nums">{tel?.vibration?.intensity !== undefined ? `${tel.vibration.intensity}%` : "--"}</TableCell>
+                      <TableCell className="text-right">
+                        <Link href={`/dashboard/nodes/${node.id}`}>
+                          <Button size="icon-sm" variant="ghost" aria-label={`Open ${node.id}`}>
+                            <Icon icon="solar:arrow-right-up-linear" className="size-4" />
+                          </Button>
+                        </Link>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        </div>
       )}
+    </PageShell>
+  );
+}
+
+function MetricMini({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="bg-white p-3 dark:bg-neutral-950">
+      <div className="text-[11px] font-semibold uppercase text-neutral-500 dark:text-neutral-400">{label}</div>
+      <div className="mt-1 text-sm font-semibold text-black dark:text-white tabular-nums">{value}</div>
     </div>
   );
 }
