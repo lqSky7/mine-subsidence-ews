@@ -60,6 +60,7 @@ export default function MeshFleetPage() {
         eyebrow="Monitor"
         title="Nodes"
         description="Station health and current telemetry. Open a node only when you need the full sensor detail."
+        meta={<StatusBadge tone={isConnected ? "live" : "neutral"}>{isConnected ? "Gateway live" : "Gateway offline"}</StatusBadge>}
       />
 
       <StatStrip
@@ -78,7 +79,7 @@ export default function MeshFleetPage() {
             placeholder="Search node, sector, chamber"
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
-            className="h-9 rounded-md border-neutral-300 bg-white pl-9 text-sm dark:border-neutral-700 dark:bg-black"
+            className="h-9 rounded-full border-neutral-300 bg-white pl-9 text-sm dark:border-neutral-700 dark:bg-black"
           />
         </div>
 
@@ -93,7 +94,7 @@ export default function MeshFleetPage() {
               {severity === "ALL" ? "All" : severity}
             </Button>
           ))}
-          <div className="ml-0 flex rounded-md border border-neutral-200 p-0.5 dark:border-neutral-800 sm:ml-2">
+          <div className="ml-0 flex rounded-full border border-neutral-200 p-0.5 dark:border-neutral-800 sm:ml-2">
             {(["table", "cards"] as const).map((mode) => (
               <Button
                 key={mode}

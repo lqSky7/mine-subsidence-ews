@@ -96,28 +96,19 @@ export function AppSidebar() {
                         isActive={isActive}
                         tooltip={item.title}
                         className={cn(
-                          "h-9 w-full cursor-pointer rounded-md px-3 text-sm font-medium transition-all group-data-[collapsible=icon]:size-9 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0",
+                          "h-10 w-full cursor-pointer rounded-full px-3 text-sm font-medium transition-colors group-data-[collapsible=icon]:size-10 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0",
                           isActive
-                            ? "bg-black text-white hover:bg-black hover:text-white dark:bg-white dark:text-black dark:hover:bg-white dark:hover:text-black font-semibold shadow-xs"
-                            : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 active:bg-neutral-200 dark:text-neutral-400 dark:hover:bg-neutral-900 dark:hover:text-neutral-100 dark:active:bg-neutral-800"
+                            ? "bg-black text-white hover:bg-black dark:bg-white dark:text-black dark:hover:bg-white"
+                            : "text-neutral-700 hover:bg-neutral-100 hover:text-black dark:text-neutral-300 dark:hover:bg-neutral-900 dark:hover:text-white"
                         )}
                       >
                         <Icon
                           icon={item.icon}
-                          className={cn("size-4 shrink-0 transition-colors", isActive ? "text-white dark:text-black" : "text-neutral-500 dark:text-neutral-400")}
+                          className={cn("size-4 shrink-0", isActive ? "text-current" : "text-neutral-500")}
                         />
-                        <span className={cn("truncate group-data-[collapsible=icon]:hidden", isActive ? "text-white dark:text-black" : "text-current")}>
-                          {item.title}
-                        </span>
+                        <span className="truncate group-data-[collapsible=icon]:hidden">{item.title}</span>
                         {item.badge && (
-                          <span
-                            className={cn(
-                              "ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-md px-1.5 font-mono text-[10px] font-semibold group-data-[collapsible=icon]:hidden",
-                              isActive
-                                ? "bg-white/20 text-white dark:bg-black/20 dark:text-black"
-                                : "bg-red-600 text-white"
-                            )}
-                          >
+                          <span className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 text-[10px] font-semibold text-white group-data-[collapsible=icon]:hidden">
                             {item.badge}
                           </span>
                         )}
@@ -132,7 +123,7 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="p-3 group-data-[collapsible=icon]:p-2">
-        <div className="rounded-md border border-neutral-200 bg-white p-3 text-xs dark:border-neutral-800 dark:bg-neutral-950 group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:rounded-md group-data-[collapsible=icon]:p-2">
+        <div className="rounded-lg border border-neutral-200 bg-white p-3 text-xs dark:border-neutral-800 dark:bg-neutral-950 group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:rounded-full group-data-[collapsible=icon]:p-2">
           <div className="flex items-center justify-between gap-2">
             <span className="flex items-center gap-2 font-medium text-neutral-900 dark:text-neutral-100">
               <Dot tone={isConnected ? "live" : "neutral"} />
@@ -140,7 +131,7 @@ export function AppSidebar() {
                 {isConnected ? "Gateway live" : "Gateway offline"}
               </span>
             </span>
-            <span className="font-mono text-neutral-500 group-data-[collapsible=icon]:hidden dark:text-neutral-400">
+            <span className="text-neutral-500 group-data-[collapsible=icon]:hidden dark:text-neutral-400">
               {onlineNodes}/{nodes.length || 0}
             </span>
           </div>

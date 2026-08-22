@@ -43,7 +43,8 @@ export function TopBar() {
 
   return (
     <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-neutral-200 bg-white/95 px-4 backdrop-blur dark:border-neutral-800 dark:bg-black/95">
-      <SidebarTrigger className="-ml-1 rounded-md" />
+      <SidebarTrigger className="-ml-1 rounded-full" />
+      <Separator orientation="vertical" className="h-5 bg-neutral-200 dark:bg-neutral-800" />
 
       <Breadcrumb className="hidden min-w-0 sm:flex">
         <BreadcrumbList>
@@ -71,11 +72,11 @@ export function TopBar() {
       </Breadcrumb>
 
       <div className="ml-auto flex min-w-0 items-center gap-2">
-        <div className="flex items-center gap-2 rounded-md border border-neutral-200 bg-white px-2.5 py-1 text-xs font-medium text-neutral-700 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-300">
+        <div className="hidden items-center gap-2 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 dark:border-neutral-800 dark:bg-black dark:text-neutral-300 md:flex">
           <Dot tone={isConnected ? "live" : "neutral"} />
-          <span>{isConnected ? "Gateway live" : "Gateway offline"}</span>
+          {isConnected ? "Live socket" : "Offline"}
           <span className="text-neutral-400">/</span>
-          <span className="font-mono text-[11px] tabular-nums">{onlineNodes}/{nodes.length || 0} nodes</span>
+          <span className="tabular-nums">{onlineNodes}/{nodes.length || 0} nodes</span>
         </div>
 
         <StatusBadge tone={activeCritical > 0 ? "critical" : activeWarning > 0 ? "watch" : "neutral"}>

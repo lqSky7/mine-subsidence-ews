@@ -191,6 +191,7 @@ export default function CommandCenterPage() {
         eyebrow="Command"
         title="Mine command"
         description="Live risk, sensor evidence, and physical outputs for the selected monitoring station."
+        meta={<StatusBadge tone={isConnected ? "live" : "neutral"}>{isConnected ? "Gateway live" : "Gateway offline"}</StatusBadge>}
         actions={
           <>
             {activeAlarms.length > 0 && (
@@ -255,13 +256,13 @@ export default function CommandCenterPage() {
                   {healthScore ?? placeholder}
                 </span>
                 <div className="pb-1">
-                  <div className="text-xl font-semibold">{tel?.anomaly?.level || mineHealth?.riskLevel || placeholder}</div>
+                  <div className="text-xl font-semibold">{tel?.anomaly?.level || mineHealth?.riskLevel || "Collecting"}</div>
                   <div className="text-sm text-white/60 dark:text-black/60">Health index</div>
                 </div>
               </div>
             </div>
             <StatusBadge tone={riskTone === "critical" ? "critical" : riskTone === "watch" ? "watch" : "inverse"}>
-              {criticalAlarms.length > 0 ? `${criticalAlarms.length} critical` : watchAlarms.length > 0 ? `${watchAlarms.length} watch` : tel ? "Nominal" : placeholder}
+              {criticalAlarms.length > 0 ? `${criticalAlarms.length} critical` : watchAlarms.length > 0 ? `${watchAlarms.length} watch` : "Nominal"}
             </StatusBadge>
           </div>
 
@@ -269,16 +270,16 @@ export default function CommandCenterPage() {
             <div className="bg-black px-3 py-3 dark:bg-white">
               <div className="text-[11px] font-semibold uppercase text-white/50 dark:text-black/50">Evidence</div>
               <div className="mt-1 text-sm font-medium">
-                {tel?.anomaly?.contributors.map((item) => item.feature).slice(0, 3).join(", ") || placeholder}
+                {tel?.anomaly?.contributors.map((item) => item.feature).slice(0, 3).join(", ") || "Baseline forming"}
               </div>
             </div>
             <div className="bg-black px-3 py-3 dark:bg-white">
               <div className="text-[11px] font-semibold uppercase text-white/50 dark:text-black/50">Score</div>
-              <div className="mt-1 text-sm font-medium tabular-nums">{tel?.anomaly?.score !== undefined ? tel.anomaly.score.toFixed(3) : placeholder}</div>
+              <div className="mt-1 text-sm font-medium tabular-nums">{tel?.anomaly?.score.toFixed(3) ?? "No anomaly"}</div>
             </div>
             <div className="bg-black px-3 py-3 dark:bg-white">
               <div className="text-[11px] font-semibold uppercase text-white/50 dark:text-black/50">Action</div>
-              <div className="mt-1 text-sm font-medium">{tel?.anomaly?.recommendation || placeholder}</div>
+              <div className="mt-1 text-sm font-medium">{tel?.anomaly?.recommendation || "Continue monitoring"}</div>
             </div>
           </div>
         </div>
@@ -286,10 +287,10 @@ export default function CommandCenterPage() {
         <StatStrip
           className="lg:grid-cols-2"
           items={[
-            { label: "Active nodes", value: nodes.filter((n) => n.status !== "OFFLINE").length, tone: nodes.some((n) => n.status !== "OFFLINE") ? "live" : "neutral" },
+            { label: "Active nodes", value: nodes.filter((n) => n.status !== "OFFLINE").length, tone: isConnected ? "live" : "neutral" },
             { label: "Critical", value: criticalAlarms.length, tone: criticalAlarms.length > 0 ? "critical" : "neutral" },
             { label: "Watch", value: watchAlarms.length, tone: watchAlarms.length > 0 ? "watch" : "neutral" },
-            { label: "Baseline", value: anomalyModel && nodes.some((n) => n.status !== "OFFLINE") ? `${anomalyModel.baselineSamples} samples` : placeholder },
+            { label: "Baseline", value: anomalyModel ? `${anomalyModel.baselineSamples} samples` : "Pending" },
           ]}
         />
       </section>
@@ -301,7 +302,7 @@ export default function CommandCenterPage() {
           unit={tel?.gas?.mq2Ppm !== undefined ? "ppm" : undefined}
           tone={gasTone}
           sparkline={<AestheticMiniSparkline data={gasSparkline} color={gasTone === "critical" ? "#d1242f" : "#000000"} height={28} />}
-          detail={<span>Limit {thresholds.gasPpmCritical} ppm / {tel?.gas?.status || placeholder}</span>}
+          detail={<span>Limit {thresholds.gasPpmCritical} ppm / {tel?.gas?.status || "No data"}</span>}
         />
         <MetricTile
           label="Wall"
@@ -333,38 +334,34 @@ export default function CommandCenterPage() {
           unit={tel?.vibration?.intensity !== undefined ? "%" : undefined}
           tone={vibrationTone}
           sparkline={<AestheticMiniSparkline data={vibSparkline} color={vibrationTone === "critical" ? "#d1242f" : "#000000"} height={28} />}
-          detail={<span>{tel?.vibration?.eventCount ?? placeholder} pulses / {tel?.vibration?.triggered ? "active" : placeholder}</span>}
+          detail={<span>{tel?.vibration?.eventCount ?? placeholder} pulses / {tel?.vibration?.triggered ? "active" : "quiet"}</span>}
         />
       </section>
 
-      {/* Ultrasound Distance & Wall Clearance Monitor */}
       <section className="space-y-3">
         <SectionHeader
-          title="Ultrasound distance & wall convergence"
-          description="Real-time acoustic HC-SR04 pulse clearance measurement and structural deformation delta."
+          title="Wall clearance"
+          description="Ultrasonic distance, convergence, and approach rate for the selected station."
         />
         <UltrasoundDistanceWidget
           distanceCm={tel?.ultrasound?.distanceCm}
-          baselineCm={tel?.ultrasound?.baselineCm ?? 225.0}
+          baselineCm={tel?.ultrasound?.baselineCm ?? 225}
           deltaCm={tel?.ultrasound?.deltaCm}
           approachRateCmPerMin={tel?.ultrasound?.approachRateCmPerMin}
           warningThresholdCm={thresholds.wallDistanceMinWarningCm}
           criticalThresholdCm={thresholds.wallDistanceMinCriticalCm}
-          nodeId={selectedNodeId}
+          nodeId={node?.id || selectedNodeId || "ESP-NODE-01"}
         />
       </section>
 
       <section className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         <div className="space-y-4 lg:col-span-8">
-          <SectionHeader
-            title="Physical tilt"
-            description="Two perpendicular IMUs shown without extra commentary."
-          />
+          <SectionHeader title="Physical tilt" description="Two perpendicular IMUs shown without extra commentary." />
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs font-semibold">
-                <span className="text-neutral-900 dark:text-neutral-100">Sensor A</span>
-                <StatusBadge tone="neutral" className="font-mono text-[9px]">Horizontal</StatusBadge>
+              <div className="flex items-center justify-between text-sm font-medium">
+                <span>Sensor A</span>
+                <StatusBadge>Horizontal</StatusBadge>
               </div>
               <TiltInclinometer3D
                 rollDeg={tel?.imu1?.rollDeg}
@@ -376,9 +373,9 @@ export default function CommandCenterPage() {
               />
             </div>
             <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs font-semibold">
-                <span className="text-neutral-900 dark:text-neutral-100">Sensor B</span>
-                <StatusBadge tone="neutral" className="font-mono text-[9px]">Vertical</StatusBadge>
+              <div className="flex items-center justify-between text-sm font-medium">
+                <span>Sensor B</span>
+                <StatusBadge>Vertical</StatusBadge>
               </div>
               <TiltInclinometer3D
                 rollDeg={tel?.imu2?.rollDeg}
@@ -396,39 +393,28 @@ export default function CommandCenterPage() {
           <SectionHeader
             title="Outputs"
             action={
-              <Link
-                href="/dashboard/outputs"
-                className="text-xs font-semibold text-neutral-600 hover:text-black dark:text-neutral-400 dark:hover:text-white"
-              >
-                Open →
+              <Link href="/dashboard/outputs" className="text-sm font-medium text-neutral-600 hover:text-black dark:text-neutral-400 dark:hover:text-white">
+                Open
               </Link>
             }
           />
           <div className="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
-            <div className="flex items-center justify-center rounded-lg border border-neutral-100 bg-neutral-50/80 p-3 dark:border-neutral-900 dark:bg-neutral-900/40">
+            <div className="flex items-center justify-center rounded-lg bg-neutral-100 p-4 dark:bg-neutral-900">
               <LedMatrixDisplay
                 pattern={tel?.actuators?.ledMatrixPattern || "IDLE"}
                 isActive={tel?.actuators?.ledMatrixActive ?? true}
                 size="sm"
               />
             </div>
-            <div className="mt-3.5 flex items-center justify-between gap-3 border-t border-neutral-100 pt-3 dark:border-neutral-900">
+            <div className="mt-4 flex items-center justify-between gap-3">
               <div>
-                <div className="text-xs font-semibold text-neutral-950 dark:text-neutral-50">High-Decibel Siren</div>
-                <div className="text-[11px] font-mono text-neutral-500 dark:text-neutral-400">
-                  {tel?.actuators?.buzzerActive ? "SOUNDING (85 dB)" : "Standby"}
+                <div className="text-sm font-semibold text-black dark:text-white">Siren</div>
+                <div className="text-xs text-neutral-500 dark:text-neutral-400">
+                  {tel?.actuators?.buzzerActive ? "Sounding" : "Standby"}
                 </div>
               </div>
-              <Button
-                size="sm"
-                variant={tel?.actuators?.buzzerActive ? "destructive" : "outline"}
-                onClick={() => triggerActuatorTest("buzzer")}
-                className={cn(
-                  "h-7 text-xs font-semibold font-mono",
-                  !tel?.actuators?.buzzerActive && "border-neutral-200 bg-white text-neutral-900 hover:bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-100"
-                )}
-              >
-                {tel?.actuators?.buzzerActive ? "Silence" : "Test Siren"}
+              <Button size="sm" variant={tel?.actuators?.buzzerActive ? "destructive" : "outline"} onClick={() => triggerActuatorTest("buzzer")}>
+                {tel?.actuators?.buzzerActive ? "Silence" : "Test"}
               </Button>
             </div>
           </div>
