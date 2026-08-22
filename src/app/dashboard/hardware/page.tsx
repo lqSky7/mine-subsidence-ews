@@ -3,58 +3,65 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Layers, Cpu, Radio, Compass, Activity, ShieldCheck, Sun, Zap, CheckCircle2 } from "lucide-react";
+import { Layers, Cpu, Radio, Compass, Activity, ShieldCheck, Flame, Volume2, Grid3X3, CheckCircle2 } from "lucide-react";
 
 export default function HardwarePage() {
   const hardwareBOM = [
     {
-      component: "Main Processing MCU",
+      component: "Main MCU",
       part: "ESP32-WROOM-32D (Dual-Core 240MHz)",
-      interface: "SPI / I2C / UART / ADC",
+      interface: "I2C / SPI / GPIO / ADC / Wi-Fi",
       costInr: "₹240",
-      role: "Ultra-low-power sleep control, digital signal sampling, ESP-NOW / LoRa mesh routing",
+      role: "Core station controller, sensor sampling loop, threshold evaluations, and actuator signaling",
     },
     {
-      component: "Ground Tilt & Inclination",
-      part: "MPU6050 (3-Axis Accel + 3-Axis Gyro)",
-      interface: "I2C (SDA: GPIO21, SCL: GPIO22)",
-      costInr: "₹110",
-      role: "Measures micro-degree ground tilt and resultant surface inclination vectors",
+      component: "MPU #1 (Horizontal)",
+      part: "Gy87 AXL385 (3-Axis Accel + Gyro)",
+      interface: "I2C (SDA: GPIO21, SCL: GPIO22 · Addr 0x68)",
+      costInr: "₹180",
+      role: "Measures lateral / horizontal inclination, ground tilt vectors, and vibration dynamics",
     },
     {
-      component: "Vertical Displacement Sensor",
-      part: "HC-SR04 Ultrasonic Transducer",
+      component: "MPU #2 (Vertical)",
+      part: "Gy87 AXL385 (3-Axis Accel + Gyro)",
+      interface: "I2C (SDA: GPIO21, SCL: GPIO22 · Addr 0x69)",
+      costInr: "₹180",
+      role: "Mounted perpendicular to MPU #1 for true 3D orthogonal tilt and structural shift monitoring",
+    },
+    {
+      component: "Wall Clearance Sensor",
+      part: "Ultrasound Transducer Module",
       interface: "Digital (Trig: GPIO5, Echo: GPIO18)",
-      costInr: "₹85",
-      role: "Continuous benchmark distance measurement; computes vertical ground depression delta",
+      costInr: "₹95",
+      role: "Measures real-time distance from front rock wall; detects convergence and collapse approach",
     },
     {
-      component: "Micro-Vibration Switch",
-      part: "SW420 High-Sensitivity Vibration Module",
-      interface: "GPIO Interrupt (GPIO19)",
-      costInr: "₹55",
-      role: "Detects pre-failure rockburst micro-seismic vibrations and fault sliding pulses",
+      component: "Micro-Vibration Sensor",
+      part: "High-Sensitivity Vibration Switch",
+      interface: "Digital Interrupt (GPIO19)",
+      costInr: "₹45",
+      role: "Captures micro-seismic shockwaves, drilling vibrations, and pre-failure rock tremors",
     },
     {
-      component: "Tension Crack Sensor",
-      part: "Custom Fabricated Conductive Grid",
-      interface: "ADC Analog (GPIO34)",
+      component: "Flammable Gas Sensor",
+      part: "MQ-2 Gas Sensor Module",
+      interface: "Analog ADC (GPIO34 / ADC1_CH6)",
+      costInr: "₹110",
+      role: "Detects explosive methane, LPG, smoke, and combustible gas accumulation in mine chambers",
+    },
+    {
+      component: "Audible Siren Actuator",
+      part: "Active Piezo Buzzer Module (85dB)",
+      interface: "Digital PWM (GPIO25)",
       costInr: "₹35",
-      role: "Detects surface tensile fracture aperture widening through resistance impedance shift",
+      role: "High-decibel audible emergency siren triggered automatically on hazardous safety breaches",
     },
     {
-      component: "Long-Range Mesh Transceiver",
-      part: "Semtech SX1276 (865-867 MHz IN865)",
-      interface: "SPI (SCK: 14, MISO: 12, MOSI: 13, CS: 15)",
-      costInr: "₹320",
-      role: "Multi-hop wireless mesh packet relay up to 2.5 km line-of-sight per node link",
-    },
-    {
-      component: "Power & Solar Harvesting",
-      part: "18650 3.7V 2600mAh + TP4056 + 5V 1W Solar Panel",
-      interface: "DC Rail + ADC Voltage Divider",
-      costInr: "₹280",
-      role: "Complete 24/7 autonomous energy harvesting for remote coal mine surface deployment",
+      component: "Visual Beacon Matrix",
+      part: "8x8 Flash LED Dot Matrix (MAX7219)",
+      interface: "SPI (DIN: GPIO23, CS: GPIO15, CLK: GPIO14)",
+      costInr: "₹130",
+      role: "High-visibility flashing alert beacon rendering emergency symbols (Check, Danger, Arrows)",
     },
   ];
 
@@ -64,68 +71,68 @@ export default function HardwarePage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/70">
         <div>
           <div className="flex items-center gap-2">
-            <div className="size-8 rounded-xl bg-orange-100/80 flex items-center justify-center text-orange-700">
+            <div className="size-8 rounded-xl bg-orange-100 text-orange-700 flex items-center justify-center shadow-xs">
               <Layers className="size-4.5" />
             </div>
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-                Hardware Architecture & Low-Cost BOM
+                ESP Sensor Station Hardware BOM & Architecture
               </h1>
               <p className="text-xs text-slate-500">
-                Indigenous Made in India Smart Sensor Node Bill of Materials · Under ₹1,150 (~$13.50) per Node
+                Single/Multi-Node Station Specification · Dual Gy87 MPU + Ultrasound + MQ2 + Vibration + Buzzer + 8x8 LED Matrix
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Cost & Innovation Callouts */}
+      {/* Cost & Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card className="border-slate-200/80 shadow-xs bg-emerald-50/50 border-emerald-200">
           <CardHeader className="pb-2">
             <CardTitle className="text-xs font-bold text-emerald-800 uppercase tracking-wider">
-              Total Node Unit Cost
+              Total Station Unit Cost
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold font-mono text-emerald-900">₹1,125</div>
-            <p className="text-xs text-emerald-700 mt-1">&lt; $14 USD · Student Prototype Friendly</p>
+            <div className="text-3xl font-bold font-mono text-emerald-900">₹1,015</div>
+            <p className="text-xs text-emerald-700 mt-1">&lt; $13 USD · Low-Cost Mine Safety Station</p>
           </CardContent>
         </Card>
 
         <Card className="border-slate-200/80 shadow-xs">
           <CardHeader className="pb-2">
             <CardTitle className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              Commercial Imported Equivalent
+              Sensors per Node
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold font-mono text-slate-900">₹45,000+</div>
-            <p className="text-xs text-slate-500 mt-1">~ 97.5% Cost Reduction achieved</p>
+            <div className="text-3xl font-bold font-mono text-slate-900">5 Sensors</div>
+            <p className="text-xs text-slate-500 mt-1">2x MPU + Ultrasound + MQ2 + Vibration</p>
           </CardContent>
         </Card>
 
         <Card className="border-slate-200/80 shadow-xs">
           <CardHeader className="pb-2">
             <CardTitle className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              Surface Mesh Scalability
+              Alert Actuators
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold font-mono text-orange-600">64 Nodes / GW</div>
-            <p className="text-xs text-slate-500 mt-1">Coverage across 2.5 km² Panel</p>
+            <div className="text-3xl font-bold font-mono text-orange-600">2 Outputs</div>
+            <p className="text-xs text-slate-500 mt-1">Piezo Buzzer + 8x8 Flash LED Matrix</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Complete Hardware BOM Table */}
+      {/* Hardware BOM Table */}
       <Card className="rounded-2xl border-slate-200/80 shadow-xs overflow-hidden">
         <CardHeader className="pb-3 bg-slate-50/80 border-b border-slate-200">
           <CardTitle className="text-sm font-bold text-slate-900">
-            Smart Surface Sensor Node Component Breakdown
+            Station Hardware Component Breakdown & ESP32 Pin Connections
           </CardTitle>
           <CardDescription className="text-xs">
-            Open-source hardware specification utilizing readily available COTS components
+            Standardized pinout utilized across every identical ESP monitoring node
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
@@ -134,9 +141,9 @@ export default function HardwarePage() {
               <tr>
                 <th className="py-3 px-4">Subsystem</th>
                 <th className="py-3 px-4">Hardware Component</th>
-                <th className="py-3 px-4">Pin Interface</th>
-                <th className="py-3 px-4">Approx Cost</th>
-                <th className="py-3 px-4">Geotechnical Sensing Role</th>
+                <th className="py-3 px-4">ESP32 Pin Interface</th>
+                <th className="py-3 px-4">Est. Cost</th>
+                <th className="py-3 px-4">Functional Role in Mine Safety</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-normal">

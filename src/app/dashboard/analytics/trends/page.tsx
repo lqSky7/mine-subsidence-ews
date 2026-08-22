@@ -21,46 +21,64 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { TrendingUp, Download, Layers, Activity, Compass, AlertTriangle } from "lucide-react";
+import { TrendingUp, Download, Layers } from "lucide-react";
 import { generateTelemetryHistory } from "@/data/mock-engine";
 
 export default function TrendsPage() {
   const { nodes } = useTelemetryContext();
-  const [metric, setMetric] = useState<"displacement" | "tilt" | "vibration" | "crack">("displacement");
+  const [metric, setMetric] = useState<"gasPpm" | "wallDistanceCm" | "tiltMpu1" | "tiltMpu2" | "vibrationIntensity">("gasPpm");
   const [timeRange, setTimeRange] = useState("1h");
 
-  // Generate comparison history across key representative nodes
-  const node01History = useMemo(() => generateTelemetryHistory(metric, "NODE-01", 30), [metric, timeRange]);
-  const node03History = useMemo(() => generateTelemetryHistory(metric, "NODE-03", 30), [metric, timeRange]);
-  const node04History = useMemo(() => generateTelemetryHistory(metric, "NODE-04", 30), [metric, timeRange]);
-  const node07History = useMemo(() => generateTelemetryHistory(metric, "NODE-07", 30), [metric, timeRange]);
+  // Generate comparison history across nodes
+  const node01History = useMemo(() => generateTelemetryHistory("ESP-NODE-01", 30), [metric, timeRange]);
+  const node02History = useMemo(() => generateTelemetryHistory("ESP-NODE-02", 30), [metric, timeRange]);
+  const node03History = useMemo(() => generateTelemetryHistory("ESP-NODE-03", 30), [metric, timeRange]);
+  const node04History = useMemo(() => generateTelemetryHistory("ESP-NODE-04", 30), [metric, timeRange]);
 
   const combinedData = useMemo(() => {
     return node01History.map((d, idx) => ({
       time: d.time,
-      "NODE-01 (North Barrier)": d.value,
-      "NODE-03 (Extraction Face)": node03History[idx]?.value || 0,
-      "NODE-04 (Central Trough)": node04History[idx]?.value || 0,
-      "NODE-07 (Goaf Perimeter)": node07History[idx]?.value || 0,
+      "ESP-NODE-01 (Chamber 1)": d[metric] as number,
+      "ESP-NODE-02 (Chamber 2)": (node02History[idx]?.[metric] as number) || 0,
+      "ESP-NODE-03 (Chamber 3)": (node03History[idx]?.[metric] as number) || 0,
+      "ESP-NODE-04 (Chamber 4)": (node04History[idx]?.[metric] as number) || 0,
     }));
-  }, [node01History, node03History, node04History, node07History]);
+  }, [node01History, node02History, node03History, node04History, metric]);
 
-  const unit = metric === "displacement" ? "mm" : metric === "tilt" ? "°" : metric === "vibration" ? "pulses" : "mm";
+  const metricLabel =
+    metric === "gasPpm"
+      ? "MQ2 Gas Level (ppm)"
+      : metric === "wallDistanceCm"
+      ? "Ultrasound Wall Clearance (cm)"
+      : metric === "tiltMpu1"
+      ? "MPU-1 Horizontal Tilt (°)"
+      : metric === "tiltMpu2"
+      ? "MPU-2 Vertical Tilt (°)"
+      : "Micro-Vibration Intensity (%)";
+
+  const unit =
+    metric === "gasPpm"
+      ? "ppm"
+      : metric === "wallDistanceCm"
+      ? "cm"
+      : metric === "tiltMpu1" || metric === "tiltMpu2"
+      ? "°"
+      : "%";
 
   const handleExportCsv = () => {
-    const headers = ["Timestamp", "NODE-01", "NODE-03", "NODE-04", "NODE-07"];
+    const headers = ["Timestamp", "ESP-NODE-01", "ESP-NODE-02", "ESP-NODE-03", "ESP-NODE-04"];
     const rows = combinedData.map((d) => [
       d.time,
-      d["NODE-01 (North Barrier)"],
-      d["NODE-03 (Extraction Face)"],
-      d["NODE-04 (Central Trough)"],
-      d["NODE-07 (Goaf Perimeter)"],
+      d["ESP-NODE-01 (Chamber 1)"],
+      d["ESP-NODE-02 (Chamber 2)"],
+      d["ESP-NODE-03 (Chamber 3)"],
+      d["ESP-NODE-04 (Chamber 4)"],
     ]);
     const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `mine_subsidence_${metric}_trends.csv`);
+    link.setAttribute("download", `mine_${metric}_trends.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -72,15 +90,15 @@ export default function TrendsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/70">
         <div>
           <div className="flex items-center gap-2">
-            <div className="size-8 rounded-xl bg-orange-100/80 flex items-center justify-center text-orange-700">
+            <div className="size-8 rounded-xl bg-orange-100 text-orange-700 flex items-center justify-center shadow-xs">
               <TrendingUp className="size-4.5" />
             </div>
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-                Multi-Node Geotechnical Trends
+                Multi-Sensor Geotechnical Trends
               </h1>
               <p className="text-xs text-slate-500">
-                Comparative Time-Series Overlay across Mine Extraction Panels
+                Comparative Time-Series Overlay across ESP Node Stations
               </p>
             </div>
           </div>
@@ -89,14 +107,15 @@ export default function TrendsPage() {
         <div className="flex items-center gap-2">
           {/* Metric Selector */}
           <Select value={metric} onValueChange={(val: any) => setMetric(val)}>
-            <SelectTrigger className="w-[180px] text-xs font-semibold bg-white">
-              <SelectValue placeholder="Select Variable" />
+            <SelectTrigger className="w-[200px] text-xs font-semibold bg-white">
+              <SelectValue placeholder="Select Sensor" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="displacement">Displacement (mm)</SelectItem>
-              <SelectItem value="tilt">Ground Tilt (°)</SelectItem>
-              <SelectItem value="vibration">Vibration Events</SelectItem>
-              <SelectItem value="crack">Crack Aperture (mm)</SelectItem>
+              <SelectItem value="gasPpm">MQ2 Gas (ppm)</SelectItem>
+              <SelectItem value="wallDistanceCm">Wall Clearance (cm)</SelectItem>
+              <SelectItem value="tiltMpu1">MPU-1 Horizontal Tilt (°)</SelectItem>
+              <SelectItem value="tiltMpu2">MPU-2 Vertical Tilt (°)</SelectItem>
+              <SelectItem value="vibrationIntensity">Vibration Intensity (%)</SelectItem>
             </SelectContent>
           </Select>
 
@@ -124,10 +143,10 @@ export default function TrendsPage() {
         <CardHeader className="pb-3 bg-slate-50/80 border-b border-slate-200">
           <CardTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
             <Layers className="size-4 text-orange-600" />
-            Cross-Sector Overlay: {metric.toUpperCase()} ({unit})
+            Cross-Station Overlay: {metricLabel}
           </CardTitle>
           <CardDescription className="text-xs">
-            Comparing stable barrier benchmarks (NODE-01) vs extraction trough centers (NODE-03, NODE-04, NODE-07)
+            Comparing working face stations (ESP-01, ESP-02) vs return airway and intake shaft (ESP-03, ESP-04)
           </CardDescription>
         </CardHeader>
         <CardContent className="p-6">
@@ -141,28 +160,28 @@ export default function TrendsPage() {
                 <Legend wrapperStyle={{ fontSize: "11px" }} />
                 <Line
                   type="monotone"
-                  dataKey="NODE-04 (Central Trough)"
+                  dataKey="ESP-NODE-02 (Chamber 2)"
                   stroke="#E11D48"
                   strokeWidth={2.5}
                   dot={false}
                 />
                 <Line
                   type="monotone"
-                  dataKey="NODE-03 (Extraction Face)"
+                  dataKey="ESP-NODE-01 (Chamber 1)"
                   stroke="#F59E0B"
                   strokeWidth={2}
                   dot={false}
                 />
                 <Line
                   type="monotone"
-                  dataKey="NODE-07 (Goaf Perimeter)"
+                  dataKey="ESP-NODE-03 (Chamber 3)"
                   stroke="#8B5CF6"
                   strokeWidth={1.5}
                   dot={false}
                 />
                 <Line
                   type="monotone"
-                  dataKey="NODE-01 (North Barrier)"
+                  dataKey="ESP-NODE-04 (Chamber 4)"
                   stroke="#10B981"
                   strokeWidth={1.5}
                   strokeDasharray="4 4"

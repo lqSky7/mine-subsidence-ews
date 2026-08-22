@@ -20,22 +20,19 @@ import {
   Radio,
   Compass,
   Activity,
-  Battery,
   Search,
   LayoutGrid,
   List,
   ArrowUpRight,
-  ShieldCheck,
-  AlertTriangle,
   Flame,
+  Volume2,
+  Grid3X3,
 } from "lucide-react";
-import { SensorNodeSymbol } from "@/components/industrial/SensorNodeSymbol";
 import { cn } from "@/lib/utils";
 
 export default function MeshFleetPage() {
-  const { nodes, telemetry, predictions, selectedNodeId, setSelectedNodeId } = useTelemetryContext();
+  const { nodes, telemetry, thresholds } = useTelemetryContext();
   const [searchTerm, setSearchTerm] = useState("");
-  const [panelFilter, setPanelFilter] = useState("ALL");
   const [severityFilter, setSeverityFilter] = useState("ALL");
   const [viewMode, setViewMode] = useState<"table" | "grid">("table");
 
@@ -43,12 +40,12 @@ export default function MeshFleetPage() {
     return nodes.filter((node) => {
       const matchSearch =
         node.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        node.label.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchPanel = panelFilter === "ALL" || node.panelId === panelFilter;
+        node.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        node.location.toLowerCase().includes(searchTerm.toLowerCase());
       const matchSev = severityFilter === "ALL" || node.riskSeverity === severityFilter;
-      return matchSearch && matchPanel && matchSev;
+      return matchSearch && matchSev;
     });
-  }, [nodes, searchTerm, panelFilter, severityFilter]);
+  }, [nodes, searchTerm, severityFilter]);
 
   return (
     <div className="space-y-6 pb-12 font-sans text-slate-800">
@@ -56,15 +53,15 @@ export default function MeshFleetPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/70">
         <div>
           <div className="flex items-center gap-2">
-            <div className="size-8 rounded-xl bg-orange-100/80 flex items-center justify-center text-orange-700">
+            <div className="size-8 rounded-xl bg-orange-100 text-orange-700 flex items-center justify-center shadow-xs">
               <Cpu className="size-4.5" />
             </div>
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-                Surface Mesh Node Fleet
+                ESP Sensor Node Fleet
               </h1>
               <p className="text-xs text-slate-500">
-                Fleet Roster · Real-Time Geotechnical Telemetry & LoRa Link Diagnostics
+                Multi-Node Mine Monitoring Stations · Identical Dual MPU + Ultrasound + MQ2 + Vibration + Actuators
               </p>
             </div>
           </div>
@@ -99,7 +96,7 @@ export default function MeshFleetPage() {
           <div className="flex-1 min-w-[220px] max-w-sm relative">
             <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <Input
-              placeholder="Search by Node ID, sector..."
+              placeholder="Search by Node ID, sector, chamber..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-9 text-xs h-9 bg-slate-50 border-slate-200"
@@ -107,22 +104,7 @@ export default function MeshFleetPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 text-xs">
-            <span className="text-slate-500 font-semibold">Panel:</span>
-            {["ALL", "PANEL-4A", "PANEL-4B"].map((p) => (
-              <Button
-                key={p}
-                size="sm"
-                variant={panelFilter === p ? "default" : "outline"}
-                onClick={() => setPanelFilter(p)}
-                className="h-7 px-2.5 text-xs font-semibold rounded-lg"
-              >
-                {p}
-              </Button>
-            ))}
-
-            <div className="h-4 w-px bg-slate-200 mx-1" />
-
-            <span className="text-slate-500 font-semibold">Severity:</span>
+            <span className="text-slate-500 font-semibold">Severity Filter:</span>
             {["ALL", "CRITICAL", "WATCH", "STABLE"].map((sev) => (
               <Button
                 key={sev}
@@ -144,15 +126,73 @@ export default function MeshFleetPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {filteredNodes.map((node) => {
             const tel = telemetry[node.id];
+            const isCrit = node.riskSeverity === "CRITICAL";
+            const isWarn = node.riskSeverity === "WATCH";
+
             return (
-              <Link key={node.id} href={`/dashboard/nodes/${node.id}`}>
-                <SensorNodeSymbol
-                  node={node}
-                  telemetry={tel}
-                  size="lg"
-                  className="w-full h-full hover:shadow-md transition-shadow"
-                />
-              </Link>
+              <Card
+                key={node.id}
+                className={cn(
+                  "border rounded-2xl shadow-xs transition-all hover:shadow-md",
+                  isCrit ? "border-rose-300 bg-rose-50/20" : isWarn ? "border-amber-300 bg-amber-50/20" : "border-slate-200"
+                )}
+              >
+                <CardHeader className="pb-3 border-b border-slate-100">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-base font-bold font-mono text-slate-900">{node.id}</CardTitle>
+                      <p className="text-xs text-slate-500 truncate">{node.label}</p>
+                    </div>
+                    <Badge
+                      variant={isCrit ? "destructive" : isWarn ? "outline" : "secondary"}
+                      className={cn(
+                        "text-[10px] font-bold",
+                        isWarn && "bg-amber-100 text-amber-900 border-amber-300"
+                      )}
+                    >
+                      {node.riskSeverity}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-4 space-y-3 text-xs">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="p-2 bg-slate-50 rounded-lg">
+                      <span className="text-[10px] text-slate-400 block uppercase">MQ2 Gas</span>
+                      <span className="font-mono font-bold text-slate-900">{tel?.gas.mq2Ppm ?? "—"} ppm</span>
+                    </div>
+                    <div className="p-2 bg-slate-50 rounded-lg">
+                      <span className="text-[10px] text-slate-400 block uppercase">Wall Clearance</span>
+                      <span className="font-mono font-bold text-slate-900">{tel?.ultrasound.distanceCm.toFixed(1) ?? "—"} cm</span>
+                    </div>
+                    <div className="p-2 bg-slate-50 rounded-lg">
+                      <span className="text-[10px] text-slate-400 block uppercase">MPU-1 Tilt</span>
+                      <span className="font-mono font-bold text-slate-900">{tel?.mpu1.totalTiltDeg.toFixed(1) ?? "—"}°</span>
+                    </div>
+                    <div className="p-2 bg-slate-50 rounded-lg">
+                      <span className="text-[10px] text-slate-400 block uppercase">MPU-2 Tilt</span>
+                      <span className="font-mono font-bold text-slate-900">{tel?.mpu2.totalTiltDeg.toFixed(1) ?? "—"}°</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                    <div className="flex items-center gap-2 text-[11px]">
+                      {tel?.actuators.buzzerActive && (
+                        <Badge variant="destructive" className="text-[9px] px-1 py-0 h-4 font-mono">
+                          BUZZER
+                        </Badge>
+                      )}
+                      <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 font-mono">
+                        {tel?.actuators.ledMatrixPattern || "IDLE"}
+                      </Badge>
+                    </div>
+                    <Link href={`/dashboard/nodes/${node.id}`}>
+                      <Button size="sm" variant="ghost" className="h-7 text-xs font-semibold gap-1 text-orange-600 hover:text-orange-700">
+                        Inspect <ArrowUpRight className="size-3.5" />
+                      </Button>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
             );
           })}
         </div>
@@ -163,24 +203,23 @@ export default function MeshFleetPage() {
             <Table>
               <TableHeader className="bg-slate-50/80 border-b border-slate-200">
                 <TableRow>
-                  <TableHead className="w-[110px]">Node ID</TableHead>
-                  <TableHead className="w-[180px]">Deployment Sector</TableHead>
-                  <TableHead className="w-[100px]">Panel</TableHead>
+                  <TableHead className="w-[120px]">ESP Node ID</TableHead>
+                  <TableHead className="w-[200px]">Station Location</TableHead>
                   <TableHead className="w-[100px]">Status</TableHead>
-                  <TableHead className="w-[110px]">Geotech Risk</TableHead>
-                  <TableHead className="w-[110px]">Ground Tilt</TableHead>
-                  <TableHead className="w-[120px]">Displacement</TableHead>
-                  <TableHead className="w-[100px]">Crack State</TableHead>
-                  <TableHead className="w-[100px]">Battery</TableHead>
-                  <TableHead className="w-[120px]">LoRa Signal</TableHead>
+                  <TableHead className="w-[110px]">MQ2 Gas</TableHead>
+                  <TableHead className="w-[120px]">Wall Clearance</TableHead>
+                  <TableHead className="w-[110px]">MPU 1 (H)</TableHead>
+                  <TableHead className="w-[110px]">MPU 2 (V)</TableHead>
+                  <TableHead className="w-[110px]">Vibration</TableHead>
+                  <TableHead className="w-[140px]">Actuators</TableHead>
                   <TableHead className="w-[80px] text-right">Inspect</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredNodes.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={11} className="text-center py-8 text-slate-400 text-xs">
-                      No mesh nodes match your search filter.
+                    <TableCell colSpan={10} className="text-center py-8 text-slate-400 text-xs">
+                      No ESP sensor nodes match your search filter.
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -205,21 +244,8 @@ export default function MeshFleetPage() {
                           {node.id}
                         </TableCell>
                         <TableCell className="font-medium text-slate-700">
-                          {node.label}
-                        </TableCell>
-                        <TableCell className="font-mono text-slate-500">
-                          {node.panelId}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1.5 font-semibold">
-                            <span
-                              className={cn(
-                                "size-2 rounded-full",
-                                node.status === "ONLINE" ? "bg-emerald-500" : "bg-rose-500"
-                              )}
-                            />
-                            <span>{node.status}</span>
-                          </div>
+                          <div>{node.label}</div>
+                          <div className="text-[10px] text-slate-400 font-mono">{node.location}</div>
                         </TableCell>
                         <TableCell>
                           <Badge
@@ -232,26 +258,32 @@ export default function MeshFleetPage() {
                             {node.riskSeverity}
                           </Badge>
                         </TableCell>
+                        <TableCell className="font-mono font-bold text-slate-900">
+                          {tel?.gas.mq2Ppm ?? "—"} ppm
+                        </TableCell>
+                        <TableCell className="font-mono font-bold text-slate-900">
+                          {tel?.ultrasound.distanceCm.toFixed(1) ?? "—"} cm
+                        </TableCell>
                         <TableCell className="font-mono font-bold">
-                          {tel ? `${tel.tilt.totalTiltDeg.toFixed(2)}°` : "—"}
+                          {tel ? `${tel.mpu1.totalTiltDeg.toFixed(1)}°` : "—"}
                         </TableCell>
-                        <TableCell className="font-mono font-bold text-rose-700">
-                          {tel ? `+${tel.displacement.deltaMm.toFixed(1)} mm` : "—"}
-                        </TableCell>
-                        <TableCell>
-                          {tel?.crack.detected ? (
-                            <span className="font-bold text-rose-700 font-mono">
-                              {tel.crack.widthEstimateMm.toFixed(1)} mm
-                            </span>
-                          ) : (
-                            <span className="text-slate-400 font-mono">None</span>
-                          )}
+                        <TableCell className="font-mono font-bold">
+                          {tel ? `${tel.mpu2.totalTiltDeg.toFixed(1)}°` : "—"}
                         </TableCell>
                         <TableCell className="font-mono">
-                          {node.battery.voltage.toFixed(1)}V ({node.battery.percentage}%)
+                          {tel?.vibration.intensity ?? 0}%
                         </TableCell>
-                        <TableCell className="font-mono text-[11px] text-slate-500">
-                          {node.link.rssi} dBm · {node.link.hops}H
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            {tel?.actuators.buzzerActive && (
+                              <Badge variant="destructive" className="text-[9px] px-1 py-0 h-4 font-mono">
+                                BUZZER
+                              </Badge>
+                            )}
+                            <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 font-mono">
+                              {tel?.actuators.ledMatrixPattern || "IDLE"}
+                            </Badge>
+                          </div>
                         </TableCell>
                         <TableCell className="text-right">
                           <Link href={`/dashboard/nodes/${node.id}`}>

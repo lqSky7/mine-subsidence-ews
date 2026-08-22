@@ -84,7 +84,7 @@ export default function AlarmsPage() {
                 Early Warning Alerts & Hazard Logs
               </h1>
               <p className="text-xs text-slate-500">
-                DGMS Mine Safety Alarms · Geotechnical Threshold Breaches · Operator Acknowledgment Workflow
+                Real-Time MQ2 Gas, Wall Clearance, Dual MPU Tilt & Vibration Hazard Alarms
               </p>
             </div>
           </div>
@@ -100,7 +100,7 @@ export default function AlarmsPage() {
             </Label>
             <Input
               id="search"
-              placeholder="Filter by description, node ID, sector..."
+              placeholder="Filter by description, node ID, chamber..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="mt-1 text-xs h-9 bg-slate-50 border-slate-200"
@@ -127,9 +127,9 @@ export default function AlarmsPage() {
 
           {/* Category */}
           <div>
-            <Label className="text-xs font-semibold text-slate-600">Hazard Type</Label>
-            <div className="flex gap-1.5 mt-1">
-              {["ALL", "DISPLACEMENT", "TILT", "CRACK", "AI_PREDICTION"].map((cat) => (
+            <Label className="text-xs font-semibold text-slate-600">Sensor Category</Label>
+            <div className="flex flex-wrap gap-1.5 mt-1">
+              {["ALL", "GAS", "WALL_DISTANCE", "TILT_MPU1", "TILT_MPU2", "VIBRATION"].map((cat) => (
                 <Button
                   key={cat}
                   variant={categoryFilter === cat ? "default" : "outline"}
@@ -137,7 +137,7 @@ export default function AlarmsPage() {
                   onClick={() => setCategoryFilter(cat)}
                   className="h-8 text-xs font-semibold"
                 >
-                  {cat === "AI_PREDICTION" ? "AI Model" : cat}
+                  {cat === "WALL_DISTANCE" ? "Wall Dist" : cat}
                 </Button>
               ))}
             </div>
@@ -172,10 +172,10 @@ export default function AlarmsPage() {
                 <TableHead className="w-[100px]">Alarm ID</TableHead>
                 <TableHead className="w-[170px]">Timestamp</TableHead>
                 <TableHead className="w-[110px]">Severity</TableHead>
-                <TableHead className="w-[120px]">Hazard Type</TableHead>
-                <TableHead className="w-[160px]">Sensor Node</TableHead>
+                <TableHead className="w-[140px]">Sensor Type</TableHead>
+                <TableHead className="w-[180px]">Station Node</TableHead>
                 <TableHead className="w-[110px]">Trigger Value</TableHead>
-                <TableHead>Geotechnical Description</TableHead>
+                <TableHead>Safety Description</TableHead>
                 <TableHead className="w-[120px]">State</TableHead>
                 <TableHead className="w-[90px] text-right">Actions</TableHead>
               </TableRow>
@@ -184,7 +184,7 @@ export default function AlarmsPage() {
               {filteredAlarms.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={9} className="text-center py-8 text-slate-400 text-xs">
-                    No early warning alerts match the specified filter criteria.
+                    No hazard alerts match the specified filter criteria.
                   </TableCell>
                 </TableRow>
               ) : (
@@ -326,7 +326,7 @@ export default function AlarmsPage() {
               </Label>
               <Input
                 id="notes"
-                placeholder="e.g. Field inspection team dispatched to benchmark pillars..."
+                placeholder="e.g. Ventilation fan speed increased; clearance verified..."
                 value={ackNotes}
                 onChange={(e) => setAckNotes(e.target.value)}
                 className="text-xs"

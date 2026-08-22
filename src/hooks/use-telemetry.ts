@@ -3,24 +3,20 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { io, Socket } from "socket.io-client";
 import type {
-  MeshNode,
+  EspNode,
   NodeTelemetry,
-  SubsidencePrediction,
   Alarm,
-  MeshDiagnostics,
   AlertThresholdConfig,
+  LedMatrixPattern,
 } from "@/types";
 import {
-  generateMeshFleet,
+  generateEspFleet,
   generateAllNodesTelemetry,
-  generateAllPredictions,
   checkAndGenerateAlarms,
-  generateMeshDiagnostics,
   getAlarmHistory,
   acknowledgeAlarm as mockAcknowledgeAlarm,
   activeThresholds,
   updateAlertThresholds,
-  triggerSimulatedEvent as mockTriggerSimulatedEvent,
 } from "@/data/mock-engine";
 
 const getBackendUrl = () => {
@@ -37,69 +33,56 @@ const BACKEND_URL = getBackendUrl();
 const POLL_INTERVAL = 1000;
 
 export interface TelemetryState {
-  nodes: MeshNode[];
+  nodes: EspNode[];
   telemetry: Record<string, NodeTelemetry>;
-  predictions: Record<string, SubsidencePrediction>;
   alarms: Alarm[];
   recentAlarms: Alarm[];
-  diagnostics: MeshDiagnostics | null;
   thresholds: AlertThresholdConfig;
   isConnected: boolean;
   selectedNodeId: string;
 
   // Selected Node Helpers
-  selectedNode: MeshNode | null;
+  selectedNode: EspNode | null;
   selectedTelemetry: NodeTelemetry | null;
-  selectedPrediction: SubsidencePrediction | null;
 
   // Actions
   setSelectedNodeId: (id: string) => void;
   acknowledgeAlarm: (alarmId: string, notes?: string) => void;
   setThresholds: (thresholds: Partial<AlertThresholdConfig>) => void;
-  triggerFaultSimulation: (type: "SUBSIDENCE_SURGE" | "CRACK_BURST" | "SEISMIC_EVENT") => void;
+  triggerActuatorTest: (actuator: "buzzer" | "ledMatrix", pattern?: LedMatrixPattern) => void;
 }
 
 export function useTelemetry(): TelemetryState {
-  const [nodes, setNodes] = useState<MeshNode[]>([]);
+  const [nodes, setNodes] = useState<EspNode[]>([]);
   const [telemetry, setTelemetry] = useState<Record<string, NodeTelemetry>>({});
-  const [predictions, setPredictions] = useState<Record<string, SubsidencePrediction>>({});
   const [alarms, setAlarms] = useState<Alarm[]>([]);
   const [recentAlarms, setRecentAlarms] = useState<Alarm[]>([]);
-  const [diagnostics, setDiagnostics] = useState<MeshDiagnostics | null>(null);
   const [thresholds, setThresholdsState] = useState<AlertThresholdConfig>(activeThresholds);
   const [isConnected, setIsConnected] = useState(false);
-  const [selectedNodeId, setSelectedNodeId] = useState<string>("NODE-04");
+  const [selectedNodeId, setSelectedNodeId] = useState<string>("ESP-NODE-01");
 
   const socketRef = useRef<Socket | null>(null);
   const fallbackIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Fallback engine setup
+  // Fallback simulator engine
   const startFallbackSimulation = useCallback(() => {
     if (fallbackIntervalRef.current) return;
-    console.log("Mine EWS Edge Bridge offline. Running client-side geotechnical simulation.");
 
     // Immediate first tick
-    const fleet = generateMeshFleet();
     const telMap = generateAllNodesTelemetry();
-    const predMap = generateAllPredictions(telMap);
+    const fleet = generateEspFleet(telMap);
     setNodes(fleet);
     setTelemetry(telMap);
-    setPredictions(predMap);
-    setDiagnostics(generateMeshDiagnostics());
     setAlarms(getAlarmHistory());
 
     fallbackIntervalRef.current = setInterval(() => {
-      const liveFleet = generateMeshFleet();
       const liveTelMap = generateAllNodesTelemetry();
-      const livePredMap = generateAllPredictions(liveTelMap);
-      const liveDiag = generateMeshDiagnostics();
+      const liveFleet = generateEspFleet(liveTelMap);
 
       setNodes(liveFleet);
       setTelemetry(liveTelMap);
-      setPredictions(livePredMap);
-      setDiagnostics(liveDiag);
 
-      const newAlarms = checkAndGenerateAlarms(liveTelMap, livePredMap);
+      const newAlarms = checkAndGenerateAlarms(liveTelMap);
       if (newAlarms.length > 0) {
         setRecentAlarms((prev) => [...newAlarms, ...prev].slice(0, 10));
       }
@@ -115,7 +98,7 @@ export function useTelemetry(): TelemetryState {
   }, []);
 
   useEffect(() => {
-    // 1. Initialize Socket.IO Client connection to RPi4 gateway bridge
+    // 1. Initialize Socket.IO Client connection
     const socket = io(BACKEND_URL, {
       reconnectionAttempts: 5,
       timeout: 2000,
@@ -124,7 +107,6 @@ export function useTelemetry(): TelemetryState {
     socketRef.current = socket;
 
     socket.on("connect", () => {
-      console.log("Connected to Mine Subsidence EWS Gateway bridge.");
       setIsConnected(true);
       stopFallbackSimulation();
     });
@@ -139,8 +121,8 @@ export function useTelemetry(): TelemetryState {
       startFallbackSimulation();
     });
 
-    // 2. Mesh Telemetry Listeners
-    socket.on("mesh_nodes", (data: MeshNode[]) => {
+    // 2. Telemetry Listeners
+    socket.on("nodes", (data: EspNode[]) => {
       if (Array.isArray(data)) setNodes(data);
     });
 
@@ -154,14 +136,6 @@ export function useTelemetry(): TelemetryState {
       if (data) setTelemetry(data);
     });
 
-    socket.on("subsidence_predictions", (data: Record<string, SubsidencePrediction>) => {
-      if (data) setPredictions(data);
-    });
-
-    socket.on("mesh_diagnostics", (data: MeshDiagnostics) => {
-      if (data) setDiagnostics(data);
-    });
-
     socket.on("alarm_event", (data: Alarm) => {
       setRecentAlarms((prev) => [data, ...prev].slice(0, 10));
       setAlarms((prev) => {
@@ -171,7 +145,6 @@ export function useTelemetry(): TelemetryState {
       });
     });
 
-    // Initial fallback startup
     startFallbackSimulation();
 
     return () => {
@@ -193,44 +166,59 @@ export function useTelemetry(): TelemetryState {
   );
 
   // Update Thresholds Handler
-  const handleSetThresholds = useCallback((newThresholds: Partial<AlertThresholdConfig>) => {
-    updateAlertThresholds(newThresholds);
-    setThresholdsState((prev) => ({ ...prev, ...newThresholds }));
-    if (isConnected && socketRef.current) {
-      socketRef.current.emit("update_thresholds", newThresholds);
-    }
-  }, [isConnected]);
-
-  // Trigger Fault Simulation
-  const handleTriggerFaultSimulation = useCallback(
-    (type: "SUBSIDENCE_SURGE" | "CRACK_BURST" | "SEISMIC_EVENT") => {
-      mockTriggerSimulatedEvent(type);
+  const handleSetThresholds = useCallback(
+    (newThresholds: Partial<AlertThresholdConfig>) => {
+      updateAlertThresholds(newThresholds);
+      setThresholdsState((prev) => ({ ...prev, ...newThresholds }));
+      if (isConnected && socketRef.current) {
+        socketRef.current.emit("update_thresholds", newThresholds);
+      }
     },
-    []
+    [isConnected]
+  );
+
+  // Actuator Test Trigger
+  const handleTriggerActuatorTest = useCallback(
+    (actuator: "buzzer" | "ledMatrix", pattern?: LedMatrixPattern) => {
+      if (isConnected && socketRef.current) {
+        socketRef.current.emit("actuator_test", { actuator, pattern, nodeId: selectedNodeId });
+      }
+      setTelemetry((prev) => {
+        const nodeTel = prev[selectedNodeId];
+        if (!nodeTel) return prev;
+        return {
+          ...prev,
+          [selectedNodeId]: {
+            ...nodeTel,
+            actuators: {
+              ...nodeTel.actuators,
+              buzzerActive: actuator === "buzzer" ? !nodeTel.actuators.buzzerActive : nodeTel.actuators.buzzerActive,
+              ledMatrixPattern: pattern || (actuator === "ledMatrix" ? "DANGER_FLASH" : nodeTel.actuators.ledMatrixPattern),
+            },
+          },
+        };
+      });
+    },
+    [isConnected, selectedNodeId]
   );
 
   // Derived selected node data
   const selectedNode = nodes.find((n) => n.id === selectedNodeId) || nodes[0] || null;
   const selectedTelemetry = telemetry[selectedNodeId] || (selectedNode ? telemetry[selectedNode.id] : null) || null;
-  const selectedPrediction = predictions[selectedNodeId] || (selectedNode ? predictions[selectedNode.id] : null) || null;
 
   return {
     nodes,
     telemetry,
-    predictions,
     alarms,
     recentAlarms,
-    diagnostics,
     thresholds,
     isConnected,
     selectedNodeId,
     selectedNode,
     selectedTelemetry,
-    selectedPrediction,
     setSelectedNodeId,
     acknowledgeAlarm: handleAcknowledgeAlarm,
     setThresholds: handleSetThresholds,
-    triggerFaultSimulation: handleTriggerFaultSimulation,
+    triggerActuatorTest: handleTriggerActuatorTest,
   };
 }
-

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Bell, Radio, Shield, User, MapPin } from "lucide-react";
+import { Bell, Radio, User, MapPin } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
@@ -19,25 +19,20 @@ import { cn } from "@/lib/utils";
 
 const pathLabels: Record<string, string> = {
   dashboard: "Command Center",
-  map: "Deformation & Risk Map",
-  nodes: "Mesh Fleet Roster",
-  health: "Connectivity & Battery",
-  network: "LoRa Mesh Topology",
+  nodes: "ESP Node Fleet",
+  outputs: "Actuators & Outputs",
   alarms: "Early Warning Alerts",
-  analytics: "AI Analytics",
-  predictive: "Subsidence Predictive AI",
-  trends: "Multi-Node Trends",
-  history: "Historical Replay",
-  power: "Battery Power",
+  analytics: "Analytics",
+  trends: "Multi-Sensor Trends",
+  history: "Event Audit Logs",
   settings: "Settings",
   alerts: "Safety Thresholds",
-  hardware: "Hardware BOM",
-  security: "Gateway & Security",
+  hardware: "Hardware Architecture & BOM",
 };
 
 export function TopBar() {
   const pathname = usePathname();
-  const { isConnected, alarms, nodes, diagnostics } = useTelemetryContext();
+  const { isConnected, alarms, nodes } = useTelemetryContext();
   const segments = pathname.split("/").filter(Boolean);
 
   const activeCritical = alarms.filter((a) => a.state === "ACTIVE" && a.severity === "CRITICAL").length;
@@ -76,17 +71,17 @@ export function TopBar() {
 
       {/* Right side status indicators */}
       <div className="ml-auto flex items-center gap-3">
-        {/* Mine Location / Panel Badge */}
+        {/* Mine Location / Station Badge */}
         <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-xs font-semibold text-slate-700">
           <MapPin className="size-3 text-orange-600" />
-          <span>Jharia Coalfield · Panel 4A</span>
+          <span>Mine Station Grid</span>
         </div>
 
-        {/* LoRa Gateway Connection status */}
+        {/* Gateway Connection status */}
         <div className="flex items-center gap-1.5 text-xs">
           <Radio className={cn("size-3.5", isConnected ? "text-emerald-600" : "text-slate-400")} />
           <span className="text-slate-600 hidden lg:inline font-medium">
-            Gateway: <strong className="text-slate-800">{isConnected ? "Live Bridge" : "Simulated"}</strong> ({onlineNodes}/{nodes.length} Nodes)
+            ESP Bridge: <strong className="text-slate-800">{isConnected ? "Live Socket" : "Local Telemetry"}</strong> ({onlineNodes}/{nodes.length} Nodes)
           </span>
         </div>
 

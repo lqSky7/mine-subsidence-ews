@@ -1,102 +1,79 @@
 // ============================================================
-// Indigenous Mine Subsidence Early Warning System (EWS)
-// Shared Type Definitions for Wireless Surface Mesh Platform
+// Mine IoT Early Warning System (EWS)
+// Shared Type Definitions for Multi-Node ESP Sensor System
+// Hardware: 2x Gy87 AXL385 MPU (Perpendicular), Ultrasound,
+// Vibration, MQ2 Gas Sensor, Buzzer & 8x8 Flash LED Matrix
 // ============================================================
 
 export type NodeStatus = "ONLINE" | "WARNING" | "OFFLINE" | "CRITICAL";
 export type HazardSeverity = "STABLE" | "WATCH" | "CRITICAL";
 export type AlarmSeverity = "CRITICAL" | "WARNING" | "INFO";
 export type AlarmState = "ACTIVE" | "ACKNOWLEDGED" | "RESOLVED";
-export type UserRole = "ADMIN" | "SAFETY_OFFICER" | "MINING_ENGINEER" | "OPERATOR" | "VIEWER";
+export type LedMatrixPattern = "IDLE" | "NORMAL_CHECK" | "WARNING_PULSE" | "DANGER_FLASH" | "EVACUATE_ARROW";
 
-// ---- Mesh Node Entity ----
-export interface MeshNode {
-  id: string; // e.g. "NODE-01"
-  label: string; // e.g. "Panel 4A — North Zone"
-  panelId: string; // e.g. "PANEL-4A"
+// ---- Single MPU Sensor Readings (Gy87 AXL385) ----
+export interface MpuSensorData {
+  accelX: number; // m/s^2 or g
+  accelY: number;
+  accelZ: number;
+  gyroX: number;  // deg/s
+  gyroY: number;
+  gyroZ: number;
+  rollDeg: number;
+  pitchDeg: number;
+  totalTiltDeg: number;
+}
+
+// ---- Multi-Node ESP Unit Entity ----
+export interface EspNode {
+  id: string; // e.g. "ESP-NODE-01"
+  label: string; // e.g. "Tunnel Section 3 — Face North"
+  location: string; // e.g. "Chamber 4B"
   status: NodeStatus;
   riskSeverity: HazardSeverity;
-  position: {
-    gridX: number; // 0 to 100 on surface schematic
-    gridY: number; // 0 to 100 on surface schematic
-    elevationMeters?: number;
-    lat?: number;
-    lng?: number;
-  };
+  ipAddress: string;
   lastSeen: string;
   firmware: string;
-  battery: {
-    voltage: number; // 3.3V to 4.2V
-    percentage: number; // 0 to 100%
-    chargeState: "CHARGING" | "DISCHARGING" | "LOW";
-    solarCurrentMa?: number;
-  };
-  link: {
-    rssi: number; // dBm (e.g. -78)
-    snr: number; // dB (e.g. 9.2)
-    packetLoss: number; // % (e.g. 0.2)
-    hops: number; // 1 = direct to RPi4 gateway, 2+ = multi-hop mesh
-    parentHopId?: string; // ID of upstream mesh repeater node
-  };
+  rssi?: number;
 }
 
 // ---- Live Node Sensor Telemetry ----
 export interface NodeTelemetry {
   nodeId: string;
   timestamp: string;
-  tilt: {
-    rollDeg: number;
-    pitchDeg: number;
-    totalTiltDeg: number;
-    accelX: number;
-    accelY: number;
-    accelZ: number;
-    gyroX: number;
-    gyroY: number;
-    gyroZ: number;
+
+  // Dual Perpendicular MPU Sensors (Gy87 AXL385)
+  mpu1: MpuSensorData; // Sensor A - Horizontal / Lateral Plane
+  mpu2: MpuSensorData; // Sensor B - Vertical / Longitudinal Plane (Perpendicular)
+
+  // Ultrasound Distance Sensor (Front Wall Clearance)
+  ultrasound: {
+    distanceCm: number;
+    baselineCm: number;
+    deltaCm: number;
+    approachRateCmPerMin: number;
   };
+
+  // Micro-Vibration Sensor
   vibration: {
     triggered: boolean;
     eventCount: number;
-    intensity: number; // 0 to 100 normalized
-    peakFreqHz?: number;
+    intensity: number; // 0 - 100 normalized
   };
-  displacement: {
-    distanceCm: number;
-    baselineCm: number;
-    deltaMm: number; // positive = ground subsidence / dropping
-    rateMmPerHour: number;
-  };
-  crack: {
-    detected: boolean;
-    widthEstimateMm: number;
-    resistanceOhms?: number;
-  };
-  environment: {
-    ambientTemp: number;
-    humidity: number;
-  };
-}
 
-// ---- AI/ML Subsidence Risk Prediction ----
-export interface SubsidencePrediction {
-  nodeId: string;
-  timestamp: string;
-  stabilityIndex: number; // 0 (imminent collapse) to 100% (fully stable)
-  deformationScore: number; // -1.0 (severe anomaly) to +1.0 (nominal baseline)
-  isAnomaly: boolean;
-  severity: HazardSeverity;
-  factors: string[]; // e.g. ["Tilt angle rate > 0.4°/hr", "Displacement +14.2mm"]
-  estimatedTimeToCriticalHours?: number; // Estimated hours before exceeding safe subsidence envelope
-  features?: {
-    total_tilt_deg?: number;
-    tilt_rate_10m?: number;
-    disp_delta_mm?: number;
-    disp_slope_30m?: number;
-    vib_event_count_10m?: number;
-    crack_width_mm?: number;
-    battery_v?: number;
-    link_rssi?: number;
+  // MQ2 Gas Sensor (Flammable Gas / Smoke / Methane)
+  gas: {
+    mq2Ppm: number;
+    rawAdc: number;
+    status: "NORMAL" | "WARNING" | "DANGER";
+  };
+
+  // Alert Actuators / Outputs
+  actuators: {
+    buzzerActive: boolean;
+    buzzerFrequencyHz?: number;
+    ledMatrixPattern: LedMatrixPattern;
+    ledMatrixActive: boolean;
   };
 }
 
@@ -104,10 +81,10 @@ export interface SubsidencePrediction {
 export interface Alarm {
   id: string;
   timestamp: string;
-  source: string; // e.g. "NODE-03"
+  source: string; // e.g. "ESP-NODE-01"
   sourceLabel: string;
   severity: AlarmSeverity;
-  category: "TILT" | "DISPLACEMENT" | "CRACK" | "VIBRATION" | "BATTERY" | "NETWORK" | "AI_PREDICTION";
+  category: "GAS" | "TILT_MPU1" | "TILT_MPU2" | "WALL_DISTANCE" | "VIBRATION" | "SYSTEM";
   value: string;
   description: string;
   state: AlarmState;
@@ -117,49 +94,32 @@ export interface Alarm {
   notes?: string;
 }
 
-// ---- Mesh Network Diagnostics ----
-export interface MeshDiagnostics {
-  gatewayId: string;
-  gatewayStatus: "ONLINE" | "OFFLINE";
-  ipAddress: string;
-  totalPackets: number;
-  successfulPackets: number;
-  packetLossRate: number;
-  crcErrors: number;
-  avgHopCount: number;
-  activeRoutes: number;
-  meshDutyCyclePercent: number;
-  lastSyncTime: string;
-}
-
 // ---- Safety Alert Thresholds ----
 export interface AlertThresholdConfig {
-  tiltDegWarning: number; // default 2.0°
-  tiltDegCritical: number; // default 4.5°
-  displacementMmWarning: number; // default 10.0 mm
-  displacementMmCritical: number; // default 25.0 mm
-  vibrationCountThreshold: number; // default 10 events / 10m
-  crackWidthMmWarning: number; // default 1.5 mm
-  crackWidthMmCritical: number; // default 4.0 mm
-  batteryLowVoltage: number; // default 3.4 V
-  notificationChannels: {
-    sms: boolean;
-    email: boolean;
-    sound: boolean;
-    webhook: boolean;
-  };
+  // Gas (MQ2) Thresholds (ppm)
+  gasPpmWarning: number;   // default: 400 ppm
+  gasPpmCritical: number;  // default: 800 ppm
+
+  // Wall Distance Clearance (Ultrasound) (cm)
+  wallDistanceMinWarningCm: number;  // default: 30 cm
+  wallDistanceMinCriticalCm: number; // default: 15 cm
+
+  // Tilt Thresholds for MPU 1 & MPU 2 (deg)
+  tiltDegWarning: number;  // default: 3.0 deg
+  tiltDegCritical: number; // default: 7.0 deg
+
+  // Vibration Threshold (events / intensity)
+  vibrationIntensityThreshold: number; // default: 60
+
+  // Actuator Trigger Settings
+  buzzerEnabled: boolean;
+  ledMatrixEnabled: boolean;
+  autoTriggerActuatorsOnCritical: boolean;
 }
 
 // ---- Telemetry History Point ----
 export interface TelemetryDataPoint {
   timestamp: string;
-  [key: string]: string | number | undefined;
-}
-
-// ---- User / Auth ----
-export interface User {
-  id: string;
-  username: string;
-  role: UserRole;
-  displayName: string;
+  time: string;
+  [key: string]: string | number | boolean | undefined;
 }

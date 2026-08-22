@@ -1,73 +1,58 @@
 /**
- * Mock Data & Geotechnical Subsidence Simulation Engine
- * Indigenous Mine Subsidence Early Warning System (EWS)
- * Simulates localized wireless surface mesh sensor nodes over underground coal mine panels.
+ * Real-Time Telemetry Engine for Mine IoT Early Warning System
+ * Hardware Per Node:
+ * - 2x Gy87 AXL385 MPU Sensors (Perpendicular: Horizontal & Vertical)
+ * - 1x Ultrasound Sensor (Wall Distance / Clearance)
+ * - 1x Micro-Vibration Sensor
+ * - 1x MQ2 Gas Sensor (Flammable Gas / Smoke / Methane)
+ * - 1x Buzzer (Audible Alarm)
+ * - 1x 8x8 Flash LED Matrix (Visual Alarm)
  */
 
 import type {
-  MeshNode,
+  EspNode,
   NodeTelemetry,
-  SubsidencePrediction,
+  MpuSensorData,
   Alarm,
   AlarmSeverity,
-  MeshDiagnostics,
   AlertThresholdConfig,
   TelemetryDataPoint,
   HazardSeverity,
+  LedMatrixPattern,
 } from "@/types";
 
-// ---- Global Simulation State ----
 let tick = 0;
-let simulationSpeed = 1;
-let simulatedEventActive: "NONE" | "SUBSIDENCE_SURGE" | "CRACK_BURST" | "SEISMIC_EVENT" = "NONE";
-let simulatedEventTicks = 0;
 
-// Configurable Alert Thresholds
+// Configurable Safety Thresholds
 export let activeThresholds: AlertThresholdConfig = {
-  tiltDegWarning: 2.0,
-  tiltDegCritical: 4.5,
-  displacementMmWarning: 10.0,
-  displacementMmCritical: 25.0,
-  vibrationCountThreshold: 10,
-  crackWidthMmWarning: 1.5,
-  crackWidthMmCritical: 4.0,
-  batteryLowVoltage: 3.4,
-  notificationChannels: {
-    sms: true,
-    email: true,
-    sound: true,
-    webhook: false,
-  },
+  gasPpmWarning: 400,
+  gasPpmCritical: 800,
+  wallDistanceMinWarningCm: 35.0,
+  wallDistanceMinCriticalCm: 20.0,
+  tiltDegWarning: 3.0,
+  tiltDegCritical: 7.0,
+  vibrationIntensityThreshold: 60,
+  buzzerEnabled: true,
+  ledMatrixEnabled: true,
+  autoTriggerActuatorsOnCritical: true,
 };
 
 const alarmHistory: Alarm[] = [];
-let alarmIdCounter = 1000;
+let alarmIdCounter = 100;
 
-// ---- Fixed Base Fleet Topology across Mine Panel 4A / 4B ----
-const initialFleetData: Array<{
+// ---- Fleet of Multi-Node ESP Sensor Units ----
+export const initialFleetData: Array<{
   id: string;
   label: string;
-  panelId: string;
-  gridX: number;
-  gridY: number;
-  lat: number;
-  lng: number;
-  elevationMeters: number;
-  hops: number;
-  parentHopId?: string;
-  isSubsidenceZone: boolean;
+  location: string;
+  ipAddress: string;
 }> = [
-  { id: "NODE-01", label: "Panel 4A — North Pillar", panelId: "PANEL-4A", gridX: 20, gridY: 20, lat: 23.7845, lng: 86.4182, elevationMeters: 215.4, hops: 1, isSubsidenceZone: false },
-  { id: "NODE-02", label: "Panel 4A — NW Boundary", panelId: "PANEL-4A", gridX: 45, gridY: 18, lat: 23.7852, lng: 86.4195, elevationMeters: 216.1, hops: 1, isSubsidenceZone: false },
-  { id: "NODE-03", label: "Panel 4A — Extraction Face", panelId: "PANEL-4A", gridX: 35, gridY: 48, lat: 23.7831, lng: 86.4190, elevationMeters: 212.8, hops: 1, isSubsidenceZone: true },
-  { id: "NODE-04", label: "Panel 4A — Central Trough", panelId: "PANEL-4A", gridX: 55, gridY: 52, lat: 23.7828, lng: 86.4208, elevationMeters: 210.5, hops: 2, parentHopId: "NODE-03", isSubsidenceZone: true },
-  { id: "NODE-05", label: "Panel 4A — South Barrier", panelId: "PANEL-4A", gridX: 75, gridY: 35, lat: 23.7840, lng: 86.4225, elevationMeters: 217.3, hops: 2, parentHopId: "NODE-02", isSubsidenceZone: false },
-  { id: "NODE-06", label: "Panel 4B — Overburden East", panelId: "PANEL-4B", gridX: 85, gridY: 65, lat: 23.7820, lng: 86.4240, elevationMeters: 218.0, hops: 3, parentHopId: "NODE-05", isSubsidenceZone: false },
-  { id: "NODE-07", label: "Panel 4A — Goaf Perimeter", panelId: "PANEL-4A", gridX: 40, gridY: 78, lat: 23.7812, lng: 86.4196, elevationMeters: 211.9, hops: 2, parentHopId: "NODE-03", isSubsidenceZone: true },
-  { id: "NODE-08", label: "Panel 4B — SE Outlier", panelId: "PANEL-4B", gridX: 70, gridY: 82, lat: 23.7808, lng: 86.4230, elevationMeters: 215.7, hops: 3, parentHopId: "NODE-07", isSubsidenceZone: false },
+  { id: "ESP-NODE-01", label: "Chamber 1 — Working Face North", location: "Gallery North AA", ipAddress: "192.168.1.101" },
+  { id: "ESP-NODE-02", label: "Chamber 2 — Central Extraction Header", location: "Header Section 4B", ipAddress: "192.168.1.102" },
+  { id: "ESP-NODE-03", label: "Chamber 3 — Return Airway Intersection", location: "Airway Crosscut 2", ipAddress: "192.168.1.103" },
+  { id: "ESP-NODE-04", label: "Chamber 4 — Intake Shaft Boundary", location: "Intake Pillar 7", ipAddress: "192.168.1.104" },
 ];
 
-// ---- Math Utilities ----
 function noise(amplitude: number): number {
   return (Math.random() - 0.5) * 2 * amplitude;
 }
@@ -77,181 +62,145 @@ function clamp(value: number, min: number, max: number): number {
 }
 
 function sinWave(period: number, amplitude: number, offset: number = 0): number {
-  return Math.sin(((tick * simulationSpeed) / period) * Math.PI * 2 + offset) * amplitude;
+  return Math.sin(((tick) / period) * Math.PI * 2 + offset) * amplitude;
 }
 
 function isoNow(): string {
   return new Date().toISOString();
 }
 
-// ---- Live Fleet Generator ----
-export function generateMeshFleet(): MeshNode[] {
-  return initialFleetData.map((node) => {
-    // Determine risk status based on subsidence progression in active zones
-    let riskSeverity: HazardSeverity = "STABLE";
-    let status: import("@/types").NodeStatus = "ONLINE";
-
-    if (node.isSubsidenceZone) {
-      if (node.id === "NODE-04") {
-        riskSeverity = simulatedEventActive !== "NONE" ? "CRITICAL" : "WATCH";
-      } else if (node.id === "NODE-03") {
-        riskSeverity = simulatedEventActive === "SUBSIDENCE_SURGE" || simulatedEventActive === "SEISMIC_EVENT" ? "CRITICAL" : "WATCH";
-      } else if (node.id === "NODE-07") {
-        riskSeverity = simulatedEventActive !== "NONE" ? "WATCH" : "STABLE";
-      }
-    }
-
-    if (riskSeverity === "CRITICAL") status = "CRITICAL";
-    else if (riskSeverity === "WATCH") status = "WARNING";
-
-    // Battery voltage simulation (3.7V nominal, slight solar charge cycle)
-    const solarFactor = Math.max(0, sinWave(300, 0.4, 0.5));
-    const baseVoltage = 3.85 - (node.hops * 0.05) + solarFactor * 0.25 + noise(0.02);
-    const voltage = clamp(baseVoltage, 3.3, 4.2);
-    const percentage = Math.round(((voltage - 3.3) / 0.9) * 100);
-
-    // LoRa link metrics
-    const baseRssi = -70 - (node.hops * 7) + noise(2);
-    const baseSnr = 10.5 - (node.hops * 1.5) + noise(0.5);
-
-    return {
-      id: node.id,
-      label: node.label,
-      panelId: node.panelId,
-      status,
-      riskSeverity,
-      position: {
-        gridX: node.gridX,
-        gridY: node.gridY,
-        elevationMeters: Math.round((node.elevationMeters - (node.isSubsidenceZone ? 0.015 * (tick % 100) : 0)) * 10) / 10,
-        lat: node.lat,
-        lng: node.lng,
-      },
-      lastSeen: isoNow(),
-      firmware: "ESP32-MESH-v2.1.0",
-      battery: {
-        voltage: Math.round(voltage * 100) / 100,
-        percentage: clamp(percentage, 10, 100),
-        chargeState: solarFactor > 0.1 ? "CHARGING" : percentage < 20 ? "LOW" : "DISCHARGING",
-        solarCurrentMa: solarFactor > 0.1 ? Math.round(solarFactor * 85) : 0,
-      },
-      link: {
-        rssi: Math.round(baseRssi),
-        snr: Math.round(baseSnr * 10) / 10,
-        packetLoss: Math.round((0.1 * node.hops + Math.max(0, noise(0.2))) * 10) / 10,
-        hops: node.hops,
-        parentHopId: node.parentHopId,
-      },
-    };
-  });
-}
-
-// ---- Per-Node Telemetry Generator ----
-export function generateNodeTelemetry(nodeId: string): NodeTelemetry {
-  const nodeDef = initialFleetData.find((n) => n.id === nodeId) || initialFleetData[0];
-  const isTargetZone = nodeDef.isSubsidenceZone;
-
-  // Base ground stability vs Subsidence zone drift
-  let baseTilt = isTargetZone ? 2.4 : 0.25;
-  let baseDispMm = isTargetZone ? 14.5 : 1.2;
-  let baseCrackWidth = isTargetZone ? 1.8 : 0.0;
-  let vibTriggerCount = isTargetZone ? 8 : 1;
-
-  if (nodeDef.id === "NODE-04") {
-    baseTilt = 4.8;
-    baseDispMm = 28.6;
-    baseCrackWidth = 3.9;
-    vibTriggerCount = 22;
-  }
-
-  // Active interactive event escalation
-  if (simulatedEventActive === "SUBSIDENCE_SURGE" && isTargetZone) {
-    baseTilt += 2.2;
-    baseDispMm += 16.0;
-    baseCrackWidth += 2.1;
-  } else if (simulatedEventActive === "CRACK_BURST" && isTargetZone) {
-    baseCrackWidth += 3.5;
-    baseTilt += 1.5;
-  } else if (simulatedEventActive === "SEISMIC_EVENT") {
-    vibTriggerCount += 35;
-    baseTilt += 0.8;
-  }
-
-  // MPU6050 Accelerometer / Tilt math
-  const roll = baseTilt + sinWave(40, 0.3) + noise(0.08);
-  const pitch = (baseTilt * 0.8) + sinWave(45, 0.25) + noise(0.08);
+// Generate single MPU sensor data (Gy87 AXL385)
+function generateMpuData(baseRoll: number, basePitch: number, isVerticalAxis: boolean = false): MpuSensorData {
+  const roll = baseRoll + sinWave(30, 0.4, isVerticalAxis ? 1.5 : 0) + noise(0.08);
+  const pitch = basePitch + sinWave(35, 0.35, isVerticalAxis ? 2.0 : 0.5) + noise(0.08);
   const totalTilt = Math.sqrt(roll * roll + pitch * pitch);
 
-  // Accel vector (1G total vector)
   const radRoll = (roll * Math.PI) / 180;
   const radPitch = (pitch * Math.PI) / 180;
-  const accelX = Math.sin(radRoll) + noise(0.005);
-  const accelY = Math.sin(radPitch) + noise(0.005);
-  const accelZ = Math.cos(Math.max(radRoll, radPitch)) * 9.81 + noise(0.02);
 
-  // HC-SR04 displacement sensor
-  const baselineCm = 50.0;
-  const currentDeltaMm = Math.max(0, baseDispMm + sinWave(60, 0.6) + noise(0.15));
-  const distanceCm = baselineCm + (currentDeltaMm / 10.0);
-  const rateMmPerHour = isTargetZone ? (0.4 + (baseDispMm > 20 ? 0.8 : 0.1) + noise(0.05)) : 0.02;
+  let accelX = Math.sin(radRoll) + noise(0.01);
+  let accelY = Math.sin(radPitch) + noise(0.01);
+  let accelZ = Math.cos(Math.max(Math.abs(radRoll), Math.abs(radPitch))) * 9.81 + noise(0.03);
 
-  // SW420 Vibration Switch
-  const isVibTriggered = (isTargetZone && Math.random() < 0.35) || simulatedEventActive === "SEISMIC_EVENT";
-  const vibIntensity = isTargetZone ? clamp(35 + (baseTilt * 8) + noise(5), 5, 100) : clamp(8 + noise(3), 2, 20);
+  if (isVerticalAxis) {
+    const tmp = accelX;
+    accelX = accelZ;
+    accelZ = tmp;
+  }
 
-  // Crack Sensor
-  const crackDetected = baseCrackWidth > 0.5;
-  const crackWidth = crackDetected ? Math.max(0.2, baseCrackWidth + sinWave(50, 0.15) + noise(0.05)) : 0.0;
+  return {
+    rollDeg: Math.round(roll * 100) / 100,
+    pitchDeg: Math.round(pitch * 100) / 100,
+    totalTiltDeg: Math.round(totalTilt * 100) / 100,
+    accelX: Math.round(accelX * 1000) / 1000,
+    accelY: Math.round(accelY * 1000) / 1000,
+    accelZ: Math.round(accelZ * 100) / 100,
+    gyroX: Math.round(noise(1.8) * 10) / 10,
+    gyroY: Math.round(noise(1.8) * 10) / 10,
+    gyroZ: Math.round(noise(1.2) * 10) / 10,
+  };
+}
+
+// ---- Per-Node Live Telemetry Generator ----
+export function generateNodeTelemetry(nodeId: string): NodeTelemetry {
+  const isNode2 = nodeId === "ESP-NODE-02";
+  const isNode3 = nodeId === "ESP-NODE-03";
+
+  // MPU 1: Horizontal plane
+  const baseRoll1 = isNode2 ? 3.4 : isNode3 ? 1.8 : 0.6;
+  const basePitch1 = isNode2 ? 2.8 : isNode3 ? 1.4 : 0.4;
+  const mpu1 = generateMpuData(baseRoll1, basePitch1, false);
+
+  // MPU 2: Vertical plane (perpendicular mounting)
+  const baseRoll2 = isNode2 ? 4.1 : isNode3 ? 1.2 : 0.8;
+  const basePitch2 = isNode2 ? 3.1 : isNode3 ? 0.9 : 0.5;
+  const mpu2 = generateMpuData(baseRoll2, basePitch2, true);
+
+  // Ultrasound sensor (Distance to front wall in cm)
+  const baselineCm = 80.0;
+  const baseDelta = isNode2 ? 52.0 : isNode3 ? 24.0 : 6.0;
+  const deltaCm = Math.max(0, baseDelta + sinWave(40, 2.0) + noise(0.5));
+  const currentDistanceCm = clamp(baselineCm - deltaCm, 8.0, 150.0);
+  const approachRate = isNode2 ? 1.4 : 0.1;
+
+  // Micro-Vibration sensor
+  const vibTriggered = isNode2 || Math.random() < 0.2;
+  const vibIntensity = isNode2 ? Math.round(clamp(65 + sinWave(20, 15) + noise(5), 20, 95)) : Math.round(clamp(15 + noise(8), 2, 35));
+  const vibEventCount = isNode2 ? 42 + (tick % 8) : 6 + (tick % 3);
+
+  // MQ2 Gas Sensor (ppm)
+  const baseGasPpm = isNode2 ? 520 : isNode3 ? 280 : 140;
+  const gasPpm = Math.round(clamp(baseGasPpm + sinWave(25, 40) + noise(15), 50, 1200));
+  const rawAdc = Math.round((gasPpm / 1200) * 4095);
+  const gasStatus: "NORMAL" | "WARNING" | "DANGER" =
+    gasPpm >= activeThresholds.gasPpmCritical
+      ? "DANGER"
+      : gasPpm >= activeThresholds.gasPpmWarning
+      ? "WARNING"
+      : "NORMAL";
+
+  // Actuators & Alerts
+  const isCriticalHazard =
+    gasPpm >= activeThresholds.gasPpmCritical ||
+    currentDistanceCm <= activeThresholds.wallDistanceMinCriticalCm ||
+    mpu1.totalTiltDeg >= activeThresholds.tiltDegCritical ||
+    mpu2.totalTiltDeg >= activeThresholds.tiltDegCritical;
+
+  const isWarningHazard =
+    !isCriticalHazard &&
+    (gasPpm >= activeThresholds.gasPpmWarning ||
+      currentDistanceCm <= activeThresholds.wallDistanceMinWarningCm ||
+      mpu1.totalTiltDeg >= activeThresholds.tiltDegWarning ||
+      mpu2.totalTiltDeg >= activeThresholds.tiltDegWarning ||
+      vibIntensity >= activeThresholds.vibrationIntensityThreshold);
+
+  let ledMatrixPattern: LedMatrixPattern = "IDLE";
+  let buzzerActive = false;
+
+  if (isCriticalHazard && activeThresholds.autoTriggerActuatorsOnCritical) {
+    ledMatrixPattern = "DANGER_FLASH";
+    buzzerActive = activeThresholds.buzzerEnabled;
+  } else if (isWarningHazard) {
+    ledMatrixPattern = "WARNING_PULSE";
+    buzzerActive = false;
+  } else {
+    ledMatrixPattern = "NORMAL_CHECK";
+    buzzerActive = false;
+  }
 
   return {
     nodeId,
     timestamp: isoNow(),
-    tilt: {
-      rollDeg: Math.round(roll * 100) / 100,
-      pitchDeg: Math.round(pitch * 100) / 100,
-      totalTiltDeg: Math.round(totalTilt * 100) / 100,
-      accelX: Math.round(accelX * 1000) / 1000,
-      accelY: Math.round(accelY * 1000) / 1000,
-      accelZ: Math.round(accelZ * 100) / 100,
-      gyroX: Math.round(noise(1.5) * 10) / 10,
-      gyroY: Math.round(noise(1.5) * 10) / 10,
-      gyroZ: Math.round(noise(1.0) * 10) / 10,
+    mpu1,
+    mpu2,
+    ultrasound: {
+      distanceCm: Math.round(currentDistanceCm * 10) / 10,
+      baselineCm,
+      deltaCm: Math.round(deltaCm * 10) / 10,
+      approachRateCmPerMin: Math.round(approachRate * 100) / 100,
     },
     vibration: {
-      triggered: isVibTriggered,
-      eventCount: Math.round(vibTriggerCount + (tick % 5)),
-      intensity: Math.round(vibIntensity),
-      peakFreqHz: isTargetZone ? 18.5 : 4.2,
+      triggered: vibTriggered,
+      eventCount: vibEventCount,
+      intensity: vibIntensity,
     },
-    displacement: {
-      distanceCm: Math.round(distanceCm * 100) / 100,
-      baselineCm,
-      deltaMm: Math.round(currentDeltaMm * 10) / 10,
-      rateMmPerHour: Math.round(rateMmPerHour * 100) / 100,
+    gas: {
+      mq2Ppm: gasPpm,
+      rawAdc,
+      status: gasStatus,
     },
-    crack: {
-      detected: crackDetected,
-      widthEstimateMm: Math.round(crackWidth * 10) / 10,
-      resistanceOhms: crackDetected ? Math.round(4500 + crackWidth * 1200) : 120,
-    },
-    environment: {
-      ambientTemp: Math.round((31.5 + sinWave(200, 3) + noise(0.4)) * 10) / 10,
-      humidity: Math.round((62 + sinWave(250, 8) + noise(1)) * 10) / 10,
+    actuators: {
+      buzzerActive,
+      buzzerFrequencyHz: buzzerActive ? 2800 : undefined,
+      ledMatrixPattern,
+      ledMatrixActive: activeThresholds.ledMatrixEnabled,
     },
   };
 }
 
-// ---- All Nodes Telemetry Map Generator ----
+// ---- All Fleet Nodes Telemetry Map ----
 export function generateAllNodesTelemetry(): Record<string, NodeTelemetry> {
   tick++;
-  if (simulatedEventActive !== "NONE") {
-    simulatedEventTicks++;
-    if (simulatedEventTicks > 25) {
-      simulatedEventActive = "NONE";
-      simulatedEventTicks = 0;
-    }
-  }
-
   const map: Record<string, NodeTelemetry> = {};
   for (const node of initialFleetData) {
     map[node.id] = generateNodeTelemetry(node.id);
@@ -259,119 +208,158 @@ export function generateAllNodesTelemetry(): Record<string, NodeTelemetry> {
   return map;
 }
 
-// ---- Subsidence AI Prediction Generator ----
-export function generateSubsidencePrediction(nodeTelemetry: NodeTelemetry): SubsidencePrediction {
-  const tilt = nodeTelemetry.tilt.totalTiltDeg;
-  const dispMm = nodeTelemetry.displacement.deltaMm;
-  const crackMm = nodeTelemetry.crack.widthEstimateMm;
-  const vibCount = nodeTelemetry.vibration.eventCount;
+// ---- Fleet Node Status Generator ----
+export function generateEspFleet(telemetryMap?: Record<string, NodeTelemetry>): EspNode[] {
+  const telMap = telemetryMap || generateAllNodesTelemetry();
 
-  // Calculate Geotechnical Stability Index (100 = safe, 0 = imminent failure)
-  let stability = 100.0 - (tilt * 7.5) - (dispMm * 1.4) - (crackMm * 6.5) - (vibCount * 0.4);
-  stability = clamp(stability, 8.0, 99.5);
+  return initialFleetData.map((node) => {
+    const tel = telMap[node.id];
+    let riskSeverity: HazardSeverity = "STABLE";
+    let status: import("@/types").NodeStatus = "ONLINE";
 
-  const isCritical = stability < 55 || tilt > activeThresholds.tiltDegCritical || dispMm > activeThresholds.displacementMmCritical;
-  const isWarning = !isCritical && (stability < 80 || tilt > activeThresholds.tiltDegWarning || dispMm > activeThresholds.displacementMmWarning || crackMm > activeThresholds.crackWidthMmWarning);
+    if (tel) {
+      const isCrit =
+        tel.gas.mq2Ppm >= activeThresholds.gasPpmCritical ||
+        tel.ultrasound.distanceCm <= activeThresholds.wallDistanceMinCriticalCm ||
+        tel.mpu1.totalTiltDeg >= activeThresholds.tiltDegCritical ||
+        tel.mpu2.totalTiltDeg >= activeThresholds.tiltDegCritical;
 
-  const severity: HazardSeverity = isCritical ? "CRITICAL" : isWarning ? "WATCH" : "STABLE";
-  const deformationScore = isCritical ? -0.74 : isWarning ? -0.18 : +0.62;
+      const isWarn =
+        tel.gas.mq2Ppm >= activeThresholds.gasPpmWarning ||
+        tel.ultrasound.distanceCm <= activeThresholds.wallDistanceMinWarningCm ||
+        tel.mpu1.totalTiltDeg >= activeThresholds.tiltDegWarning ||
+        tel.mpu2.totalTiltDeg >= activeThresholds.tiltDegWarning ||
+        tel.vibration.intensity >= activeThresholds.vibrationIntensityThreshold;
 
-  const factors: string[] = [];
-  if (tilt > activeThresholds.tiltDegCritical) {
-    factors.push(`Ground tilt (${tilt.toFixed(1)}°) exceeds critical limit of ${activeThresholds.tiltDegCritical}°`);
-  } else if (tilt > activeThresholds.tiltDegWarning) {
-    factors.push(`Ground inclination (${tilt.toFixed(1)}°) elevated above baseline`);
-  }
+      if (isCrit) {
+        riskSeverity = "CRITICAL";
+        status = "CRITICAL";
+      } else if (isWarn) {
+        riskSeverity = "WATCH";
+        status = "WARNING";
+      }
+    }
 
-  if (dispMm > activeThresholds.displacementMmCritical) {
-    factors.push(`Vertical displacement (${dispMm.toFixed(1)} mm) exceeds safe envelope`);
-  } else if (dispMm > activeThresholds.displacementMmWarning) {
-    factors.push(`Ground subsidence progression (+${dispMm.toFixed(1)} mm) detected`);
-  }
-
-  if (crackMm > activeThresholds.crackWidthMmWarning) {
-    factors.push(`Surface crack initiation/widening (${crackMm.toFixed(1)} mm)`);
-  }
-
-  if (vibCount > activeThresholds.vibrationCountThreshold) {
-    factors.push(`Micro-seismic vibration burst count elevated (${vibCount} events)`);
-  }
-
-  const estimatedTimeToCriticalHours = isCritical ? 14 : isWarning ? 78 : undefined;
-
-  return {
-    nodeId: nodeTelemetry.nodeId,
-    timestamp: isoNow(),
-    stabilityIndex: Math.round(stability * 10) / 10,
-    deformationScore: Math.round(deformationScore * 100) / 100,
-    isAnomaly: severity !== "STABLE",
-    severity,
-    factors,
-    estimatedTimeToCriticalHours,
-    features: {
-      total_tilt_deg: tilt,
-      tilt_rate_10m: nodeTelemetry.displacement.rateMmPerHour * 0.4,
-      disp_delta_mm: dispMm,
-      disp_slope_30m: nodeTelemetry.displacement.rateMmPerHour,
-      vib_event_count_10m: vibCount,
-      crack_width_mm: crackMm,
-      battery_v: 3.8,
-      link_rssi: -76,
-    },
-  };
+    return {
+      id: node.id,
+      label: node.label,
+      location: node.location,
+      status,
+      riskSeverity,
+      ipAddress: node.ipAddress,
+      lastSeen: isoNow(),
+      firmware: "ESP32-EWS-v3.2.0",
+      rssi: -62 + Math.round(noise(4)),
+    };
+  });
 }
 
-// ---- All Predictions Map Generator ----
-export function generateAllPredictions(telemetryMap: Record<string, NodeTelemetry>): Record<string, SubsidencePrediction> {
-  const predictions: Record<string, SubsidencePrediction> = {};
-  for (const [nodeId, tel] of Object.entries(telemetryMap)) {
-    predictions[nodeId] = generateSubsidencePrediction(tel);
-  }
-  return predictions;
-}
-
-// ---- Early Warning Alarm Engine ----
-export function checkAndGenerateAlarms(
-  telemetryMap: Record<string, NodeTelemetry>,
-  predictions: Record<string, SubsidencePrediction>
-): Alarm[] {
+// ---- Automatic Threshold & Alarm Engine ----
+export function checkAndGenerateAlarms(telemetryMap: Record<string, NodeTelemetry>): Alarm[] {
   const newAlarms: Alarm[] = [];
 
   for (const [nodeId, tel] of Object.entries(telemetryMap)) {
     const nodeDef = initialFleetData.find((n) => n.id === nodeId);
     const label = nodeDef?.label || nodeId;
 
-    // Critical Tilt
-    if (tel.tilt.totalTiltDeg >= activeThresholds.tiltDegCritical) {
-      newAlarms.push(createAlarm(nodeId, label, "CRITICAL", "TILT", `${tel.tilt.totalTiltDeg}°`, `Ground tilt exceeded critical safe limit of ${activeThresholds.tiltDegCritical}°`));
-    } else if (tel.tilt.totalTiltDeg >= activeThresholds.tiltDegWarning && !hasRecentAlarm(nodeId, "TILT")) {
-      newAlarms.push(createAlarm(nodeId, label, "WARNING", "TILT", `${tel.tilt.totalTiltDeg}°`, `Ground inclination elevated at ${tel.tilt.totalTiltDeg}°`));
+    // 1. MQ2 Gas Alarms
+    if (tel.gas.mq2Ppm >= activeThresholds.gasPpmCritical) {
+      newAlarms.push(
+        createAlarm(
+          nodeId,
+          label,
+          "CRITICAL",
+          "GAS",
+          `${tel.gas.mq2Ppm} ppm`,
+          `MQ2 Gas level (${tel.gas.mq2Ppm} ppm) breached critical threshold (${activeThresholds.gasPpmCritical} ppm)`
+        )
+      );
+    } else if (tel.gas.mq2Ppm >= activeThresholds.gasPpmWarning && !hasRecentAlarm(nodeId, "GAS")) {
+      newAlarms.push(
+        createAlarm(
+          nodeId,
+          label,
+          "WARNING",
+          "GAS",
+          `${tel.gas.mq2Ppm} ppm`,
+          `MQ2 Gas concentration elevated at ${tel.gas.mq2Ppm} ppm`
+        )
+      );
     }
 
-    // Displacement Subsidence
-    if (tel.displacement.deltaMm >= activeThresholds.displacementMmCritical) {
-      newAlarms.push(createAlarm(nodeId, label, "CRITICAL", "DISPLACEMENT", `+${tel.displacement.deltaMm} mm`, `Severe surface subsidence detected (+${tel.displacement.deltaMm} mm)`));
-    } else if (tel.displacement.deltaMm >= activeThresholds.displacementMmWarning && !hasRecentAlarm(nodeId, "DISPLACEMENT")) {
-      newAlarms.push(createAlarm(nodeId, label, "WARNING", "DISPLACEMENT", `+${tel.displacement.deltaMm} mm`, `Subsidence threshold warning (+${tel.displacement.deltaMm} mm)`));
+    // 2. Ultrasound Wall Distance Alarms
+    if (tel.ultrasound.distanceCm <= activeThresholds.wallDistanceMinCriticalCm) {
+      newAlarms.push(
+        createAlarm(
+          nodeId,
+          label,
+          "CRITICAL",
+          "WALL_DISTANCE",
+          `${tel.ultrasound.distanceCm} cm`,
+          `Ultrasound front-wall clearance dropped to critical level (${tel.ultrasound.distanceCm} cm)`
+        )
+      );
+    } else if (
+      tel.ultrasound.distanceCm <= activeThresholds.wallDistanceMinWarningCm &&
+      !hasRecentAlarm(nodeId, "WALL_DISTANCE")
+    ) {
+      newAlarms.push(
+        createAlarm(
+          nodeId,
+          label,
+          "WARNING",
+          "WALL_DISTANCE",
+          `${tel.ultrasound.distanceCm} cm`,
+          `Front-wall distance approaching warning threshold (${tel.ultrasound.distanceCm} cm)`
+        )
+      );
     }
 
-    // Crack widening
-    if (tel.crack.widthEstimateMm >= activeThresholds.crackWidthMmCritical) {
-      newAlarms.push(createAlarm(nodeId, label, "CRITICAL", "CRACK", `${tel.crack.widthEstimateMm} mm`, `Major surface tension fracture detected (${tel.crack.widthEstimateMm} mm)`));
-    } else if (tel.crack.widthEstimateMm >= activeThresholds.crackWidthMmWarning && !hasRecentAlarm(nodeId, "CRACK")) {
-      newAlarms.push(createAlarm(nodeId, label, "WARNING", "CRACK", `${tel.crack.widthEstimateMm} mm`, `Early crack initiation detected on overburden`));
+    // 3. MPU 1 Tilt (Horizontal)
+    if (tel.mpu1.totalTiltDeg >= activeThresholds.tiltDegCritical) {
+      newAlarms.push(
+        createAlarm(
+          nodeId,
+          label,
+          "CRITICAL",
+          "TILT_MPU1",
+          `${tel.mpu1.totalTiltDeg}°`,
+          `MPU-1 (Horizontal) tilt inclination reached critical angle (${tel.mpu1.totalTiltDeg}°)`
+        )
+      );
     }
 
-    // AI Anomaly Alarm
-    const pred = predictions[nodeId];
-    if (pred && pred.severity === "CRITICAL" && !hasRecentAlarm(nodeId, "AI_PREDICTION")) {
-      newAlarms.push(createAlarm(nodeId, label, "CRITICAL", "AI_PREDICTION", `Score: ${pred.deformationScore}`, `AI Early Warning: Multi-parameter subsidence pattern identified`));
+    // 4. MPU 2 Tilt (Vertical / Perpendicular)
+    if (tel.mpu2.totalTiltDeg >= activeThresholds.tiltDegCritical) {
+      newAlarms.push(
+        createAlarm(
+          nodeId,
+          label,
+          "CRITICAL",
+          "TILT_MPU2",
+          `${tel.mpu2.totalTiltDeg}°`,
+          `MPU-2 (Vertical) tilt inclination reached critical angle (${tel.mpu2.totalTiltDeg}°)`
+        )
+      );
+    }
+
+    // 5. Micro-Vibration Alarms
+    if (tel.vibration.intensity >= activeThresholds.vibrationIntensityThreshold && !hasRecentAlarm(nodeId, "VIBRATION")) {
+      newAlarms.push(
+        createAlarm(
+          nodeId,
+          label,
+          "WARNING",
+          "VIBRATION",
+          `${tel.vibration.intensity}%`,
+          `Micro-vibration burst intensity exceeded normal profile`
+        )
+      );
     }
   }
 
-  // Prepend new alarms and cap history
   newAlarms.forEach((a) => alarmHistory.unshift(a));
-  if (alarmHistory.length > 250) alarmHistory.length = 250;
+  if (alarmHistory.length > 200) alarmHistory.length = 200;
 
   return newAlarms;
 }
@@ -387,12 +375,12 @@ function createAlarm(
   source: string,
   sourceLabel: string,
   severity: AlarmSeverity,
-  category: "TILT" | "DISPLACEMENT" | "CRACK" | "VIBRATION" | "BATTERY" | "NETWORK" | "AI_PREDICTION",
+  category: "GAS" | "TILT_MPU1" | "TILT_MPU2" | "WALL_DISTANCE" | "VIBRATION" | "SYSTEM",
   value: string,
   description: string
 ): Alarm {
   return {
-    id: `EWS-${++alarmIdCounter}`,
+    id: `ALM-${++alarmIdCounter}`,
     timestamp: isoNow(),
     source,
     sourceLabel,
@@ -405,48 +393,6 @@ function createAlarm(
 }
 
 export function getAlarmHistory(): Alarm[] {
-  // Pre-seed some realistic historical alarms if empty
-  if (alarmHistory.length === 0) {
-    alarmHistory.push(
-      {
-        id: "EWS-0997",
-        timestamp: new Date(Date.now() - 3600000 * 2).toISOString(),
-        source: "NODE-04",
-        sourceLabel: "Panel 4A — Central Trough",
-        severity: "CRITICAL",
-        category: "DISPLACEMENT",
-        value: "+26.2 mm",
-        description: "Vertical ground displacement surpassed 25 mm safe tolerance",
-        state: "ACTIVE",
-      },
-      {
-        id: "EWS-0998",
-        timestamp: new Date(Date.now() - 3600000 * 3.5).toISOString(),
-        source: "NODE-04",
-        sourceLabel: "Panel 4A — Central Trough",
-        severity: "WARNING",
-        category: "TILT",
-        value: "3.8°",
-        description: "Ground inclination elevated along main fault line",
-        state: "ACKNOWLEDGED",
-        acknowledgedBy: "SAFETY_OFFICER_01",
-        acknowledgedAt: new Date(Date.now() - 3600000 * 3).toISOString(),
-        notes: "Field survey team dispatched to inspect overburden benchmarks.",
-      },
-      {
-        id: "EWS-0999",
-        timestamp: new Date(Date.now() - 3600000 * 6).toISOString(),
-        source: "NODE-03",
-        sourceLabel: "Panel 4A — Extraction Face",
-        severity: "WARNING",
-        category: "CRACK",
-        value: "2.1 mm",
-        description: "Early crack initiation detected on overburden",
-        state: "RESOLVED",
-        resolvedAt: new Date(Date.now() - 3600000 * 4).toISOString(),
-      }
-    );
-  }
   return alarmHistory;
 }
 
@@ -460,70 +406,39 @@ export function acknowledgeAlarm(alarmId: string, notes?: string): void {
   }
 }
 
-// ---- Mesh Diagnostics Generator ----
-export function generateMeshDiagnostics(): MeshDiagnostics {
-  const total = 14500 + tick * 4;
-  const crc = Math.floor(total * 0.001) + Math.round(noise(1));
-  const lost = Math.floor(total * 0.003) + Math.round(noise(2));
-  const successful = total - crc - lost;
-
-  return {
-    gatewayId: "RPI4-MESH-GW-01",
-    gatewayStatus: "ONLINE",
-    ipAddress: "192.168.4.1",
-    totalPackets: total,
-    successfulPackets: successful,
-    packetLossRate: Math.round(((lost + crc) / total) * 1000) / 10,
-    crcErrors: Math.max(0, crc),
-    avgHopCount: 1.75,
-    activeRoutes: 8,
-    meshDutyCyclePercent: 4.8,
-    lastSyncTime: isoNow(),
-  };
+export function updateAlertThresholds(newThresholds: Partial<AlertThresholdConfig>): void {
+  activeThresholds = { ...activeThresholds, ...newThresholds };
 }
 
-// ---- Telemetry History Generator ----
+// Generate multi-sensor time-series history
 export function generateTelemetryHistory(
-  variable: "displacement" | "tilt" | "vibration" | "crack",
-  nodeId: string = "NODE-04",
-  points: number = 60
+  nodeId: string = "ESP-NODE-01",
+  points: number = 30
 ): TelemetryDataPoint[] {
   const data: TelemetryDataPoint[] = [];
   const now = Date.now();
-  const isSubsidence = nodeId === "NODE-04" || nodeId === "NODE-03";
+  const isNode2 = nodeId === "ESP-NODE-02";
 
   for (let i = 0; i < points; i++) {
-    const t = now - (points - i) * 60000; // 1 minute per point
+    const t = now - (points - i) * 60000;
     const progress = i / points;
 
-    let val = 0;
-    if (variable === "displacement") {
-      val = isSubsidence ? 12.0 + (progress * 16.0) + Math.sin(i / 5) * 0.8 + noise(0.2) : 1.0 + noise(0.1);
-    } else if (variable === "tilt") {
-      val = isSubsidence ? 1.5 + (progress * 3.2) + Math.sin(i / 6) * 0.3 + noise(0.05) : 0.3 + noise(0.04);
-    } else if (variable === "vibration") {
-      val = isSubsidence ? Math.floor(4 + (progress * 18) + (Math.random() > 0.8 ? 8 : 0)) : Math.floor(1 + Math.random() * 2);
-    } else if (variable === "crack") {
-      val = isSubsidence ? Math.max(0, 0.4 + (progress * 3.4) + noise(0.1)) : 0;
-    }
+    const gasVal = isNode2 ? 320 + progress * 210 + Math.sin(i / 3) * 20 : 120 + progress * 20 + noise(5);
+    const wallDistVal = isNode2 ? 70 - progress * 42 + Math.sin(i / 4) * 2 : 78 - progress * 5 + noise(0.5);
+    const tilt1Val = isNode2 ? 1.5 + progress * 2.1 + Math.sin(i / 5) * 0.2 : 0.6 + noise(0.04);
+    const tilt2Val = isNode2 ? 1.8 + progress * 2.4 + Math.sin(i / 5) * 0.25 : 0.8 + noise(0.05);
+    const vibVal = isNode2 ? Math.round(35 + progress * 35 + (Math.random() > 0.8 ? 15 : 0)) : Math.round(10 + Math.random() * 10);
 
     data.push({
       timestamp: new Date(t).toISOString(),
       time: new Date(t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      value: Math.round(val * 100) / 100,
+      gasPpm: Math.round(gasVal),
+      wallDistanceCm: Math.round(wallDistVal * 10) / 10,
+      tiltMpu1: Math.round(tilt1Val * 100) / 100,
+      tiltMpu2: Math.round(tilt2Val * 100) / 100,
+      vibrationIntensity: vibVal,
     });
   }
 
   return data;
 }
-
-// ---- Interactive Fault Simulator Actions ----
-export function triggerSimulatedEvent(type: "SUBSIDENCE_SURGE" | "CRACK_BURST" | "SEISMIC_EVENT"): void {
-  simulatedEventActive = type;
-  simulatedEventTicks = 0;
-}
-
-export function updateAlertThresholds(newThresholds: Partial<AlertThresholdConfig>): void {
-  activeThresholds = { ...activeThresholds, ...newThresholds };
-}
-
