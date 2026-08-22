@@ -232,6 +232,7 @@ export function useTelemetry(): TelemetryState {
         reconnectionAttempts: 3,
         timeout: 3000,
         autoConnect: true,
+        transports: ["websocket", "polling"],
         extraHeaders: {
           "ngrok-skip-browser-warning": "1",
         },
@@ -241,6 +242,10 @@ export function useTelemetry(): TelemetryState {
 
       socket.on("connect", () => {
         setIsConnected(true);
+      });
+
+      socket.on("connect_error", () => {
+        // Fall back gracefully to REST polling without throwing unhandled errors
       });
 
       socket.on("disconnect", () => {

@@ -2,8 +2,6 @@
 
 import React, { useState, useMemo } from "react";
 import { useTelemetryContext } from "@/components/layout/telemetry-provider";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,15 +21,116 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Icon } from "@/components/ui/icon";
+import {
+  EmptyState,
+  PageHeader,
+  PageShell,
+  StatStrip,
+  StatusBadge,
+  Toolbar,
+} from "@/components/uber/dashboard-primitives";
 import type { MinePhoto } from "@/types";
+import { cn } from "@/lib/utils";
 
 const BACKEND_BASE = process.env.NEXT_PUBLIC_BACKEND_URL
   ? process.env.NEXT_PUBLIC_BACKEND_URL.replace("/api/v1", "")
   : "https://commute-overrule-employer.ngrok-free.dev";
-const S3_FALLBACK_URL = "https://mine-iot-photos-697114252450.s3.us-east-1.amazonaws.com/photos/PHOTO-001.jpg";
+
+function getFallbackSvgDataUri(photo?: Partial<MinePhoto>): string {
+  const category = photo?.category || "TUNNEL";
+  const title = photo?.title || "Underground Gallery";
+  const location = photo?.location || "Chamber 1 - Gallery North";
+  const timestamp = photo?.timestamp ? new Date(photo.timestamp).toLocaleTimeString() : "Live Feed";
+
+  let strokeColor = "#00ffff";
+  let beamColor = "#00e676";
+  let bgGradient1 = "#07090e";
+  let bgGradient2 = "#111827";
+
+  if (category === "THERMAL_SCAN") {
+    strokeColor = "#ff3d00";
+    beamColor = "#ff9100";
+    bgGradient1 = "#1a0500";
+    bgGradient2 = "#3e0a00";
+  } else if (category === "WORKING_FACE") {
+    strokeColor = "#ffd600";
+    beamColor = "#ffab00";
+    bgGradient1 = "#0a0a0c";
+    bgGradient2 = "#18181b";
+  } else if (category === "SUBSIDENCE_SURFACE") {
+    strokeColor = "#38bdf8";
+    beamColor = "#818cf8";
+    bgGradient1 = "#030712";
+    bgGradient2 = "#0f172a";
+  }
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500">
+    <defs>
+      <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="${bgGradient1}" />
+        <stop offset="50%" stop-color="${bgGradient2}" />
+        <stop offset="100%" stop-color="#030407" />
+      </linearGradient>
+      <radialGradient id="beaconGlow" cx="50%" cy="44%" r="40%">
+        <stop offset="0%" stop-color="${strokeColor}" stop-opacity="0.8" />
+        <stop offset="30%" stop-color="${beamColor}" stop-opacity="0.3" />
+        <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+      </radialGradient>
+      <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="1" />
+      </pattern>
+    </defs>
+    
+    <rect width="800" height="500" fill="url(#bgGrad)" />
+    <rect width="800" height="500" fill="url(#grid)" />
+    
+    <!-- Perspective Tunnel Arch Ribs -->
+    <path d="M 50 500 L 280 220 L 520 220 L 750 500" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="3" />
+    <path d="M 120 500 L 320 220 L 480 220 L 680 500" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="2.5" />
+    <path d="M 200 500 L 360 220 L 440 220 L 600 500" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="2" />
+    
+    <!-- Ground Rails -->
+    <line x1="400" y1="220" x2="160" y2="500" stroke="${strokeColor}" stroke-width="2.5" stroke-opacity="0.7" />
+    <line x1="400" y1="220" x2="640" y2="500" stroke="${strokeColor}" stroke-width="2.5" stroke-opacity="0.7" />
+    
+    <!-- Rail Ties -->
+    <line x1="380" y1="260" x2="420" y2="260" stroke="${strokeColor}" stroke-width="1.5" stroke-opacity="0.4" />
+    <line x1="350" y1="310" x2="450" y2="310" stroke="${strokeColor}" stroke-width="1.5" stroke-opacity="0.4" />
+    <line x1="310" y1="370" x2="490" y2="370" stroke="${strokeColor}" stroke-width="2" stroke-opacity="0.4" />
+    <line x1="250" y1="440" x2="550" y2="440" stroke="${strokeColor}" stroke-width="2.5" stroke-opacity="0.5" />
+
+    <!-- Center Light Beacon -->
+    <circle cx="400" cy="220" r="70" fill="url(#beaconGlow)" />
+    <circle cx="400" cy="220" r="5" fill="#ffffff" />
+    
+    <!-- Camera HUD Telemetry Overlay -->
+    <g opacity="0.85">
+      <!-- Top Left Label -->
+      <rect x="24" y="24" width="6" height="6" fill="${beamColor}" />
+      <text x="36" y="30" fill="#ffffff" font-family="monospace" font-size="11" font-weight="bold" letter-spacing="1">ESP32-CAM • ${category}</text>
+      <text x="36" y="46" fill="#9ca3af" font-family="monospace" font-size="10">${location.toUpperCase()}</text>
+      
+      <!-- Top Right Timestamp -->
+      <text x="776" y="30" text-anchor="end" fill="#ffffff" font-family="monospace" font-size="11" font-weight="bold">REC [LIVE]</text>
+      <text x="776" y="46" text-anchor="end" fill="#9ca3af" font-family="monospace" font-size="10">${timestamp}</text>
+      
+      <!-- Center Reticle -->
+      <circle cx="400" cy="250" r="30" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1" stroke-dasharray="4 4" />
+      <line x1="390" y1="250" x2="410" y2="250" stroke="rgba(255,255,255,0.5)" stroke-width="1" />
+      <line x1="400" y1="240" x2="400" y2="260" stroke="rgba(255,255,255,0.5)" stroke-width="1" />
+      
+      <!-- Bottom Metadata Bar -->
+      <rect x="24" y="460" width="752" height="1" fill="rgba(255,255,255,0.15)" />
+      <text x="24" y="480" fill="#9ca3af" font-family="monospace" font-size="10">FOV: 120° · RES: 1080P · ISO: 800 · EXPOSURE: 1/60s</text>
+      <text x="776" y="480" text-anchor="end" fill="#9ca3af" font-family="monospace" font-size="10">${title}</text>
+    </g>
+  </svg>`;
+
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
 
 export default function PhotosPage() {
-  const { photos, nodes, ingestPhoto, uploadPhoto } = useTelemetryContext();
+  const { photos, nodes, ingestPhoto, uploadPhoto, isConnected } = useTelemetryContext();
 
   const [categoryFilter, setCategoryFilter] = useState<string>("ALL");
   const [searchTerm, setSearchTerm] = useState("");
@@ -101,412 +200,403 @@ export default function PhotosPage() {
     }
   };
 
-  const getFullImageUrl = (path?: string) => {
-    if (!path) return S3_FALLBACK_URL;
-    if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  const getFullImageUrl = (path?: string, photo?: Partial<MinePhoto>) => {
+    if (!path) return getFallbackSvgDataUri(photo);
+    if (path.startsWith("http://") || path.startsWith("https://") || path.startsWith("data:")) return path;
     return `${BACKEND_BASE}${path}`;
   };
 
   return (
-    <div className="space-y-6 pb-16 font-sans text-slate-800 dark:text-slate-200">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/70 dark:border-slate-800">
-        <div>
+    <PageShell>
+      {/* Uber Base Page Header */}
+      <PageHeader
+        eyebrow="Visual Evidence"
+        title="Optical inspections"
+        description="ESP32-CAM optical and infrared underground gallery monitoring feed. Structural clearance scans, rock strata inspection, and drone subsidence tracking."
+        meta={
           <div className="flex items-center gap-2">
-            <div className="size-8 rounded-xl bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-400 flex items-center justify-center shadow-xs">
-              <Icon icon="solar:camera-bold-duotone" className="size-4.5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-                  Visual Tunnel & Camera Inspections
-                </h1>
-                <Badge variant="outline" className="text-[10px] font-bold border-emerald-300 text-emerald-700 bg-emerald-50 dark:bg-emerald-950/60 dark:text-emerald-300">
-                  {photos.length} SCANS ON RECORD
-                </Badge>
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                ESP32-CAM Night Vision & Thermal Underground Gallery Visual Monitoring Feed
-              </p>
-            </div>
+            <StatusBadge tone={isConnected ? "live" : "neutral"}>
+              {isConnected ? "Gateway live" : "Gateway offline"}
+            </StatusBadge>
+            <StatusBadge tone="neutral" className="font-mono text-[9px]">
+              {photos.length} SCANS ON RECORD
+            </StatusBadge>
           </div>
-        </div>
-
-        <div className="flex items-center gap-2">
+        }
+        actions={
           <Button
             size="sm"
             onClick={() => setIsCaptureOpen(true)}
-            className="text-xs font-bold h-8 bg-orange-600 hover:bg-orange-700 text-white gap-1.5 shadow-xs"
+            className="bg-black text-white hover:bg-neutral-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
           >
-            <Icon icon="solar:camera-minimalistic-bold" className="size-3.5" />
+            <Icon icon="solar:camera-minimalistic-bold" className="mr-1.5 size-4" />
             Capture Inspection Scan
           </Button>
-        </div>
-      </div>
+        }
+      />
+
+      {/* Summary StatStrip */}
+      <StatStrip
+        items={[
+          { label: "Total Scans", value: `${photos.length} Record${photos.length === 1 ? "" : "s"}` },
+          { label: "Active Camera Source", value: latestPhoto?.nodeId || "ESP-NODE-01", tone: isConnected ? "live" : "neutral" },
+          { label: "Night Vision Optics", value: "ESP32-CAM (IR 850nm)" },
+          { label: "Latest Scan Timestamp", value: latestPhoto ? new Date(latestPhoto.timestamp).toLocaleTimeString() : "Standby" },
+        ]}
+      />
 
       {/* Featured Latest Camera Feed Banner */}
       {latestPhoto && (
-        <Card className="border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-xs">
+        <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-xs dark:border-neutral-800 dark:bg-neutral-950">
           <div className="grid grid-cols-1 lg:grid-cols-12">
-            <div className="lg:col-span-7 bg-slate-950 relative min-h-[280px] flex items-center justify-center cursor-pointer group" onClick={() => setSelectedPhoto(latestPhoto)}>
+            <div
+              className="relative flex min-h-[300px] cursor-pointer items-center justify-center bg-black lg:col-span-7"
+              onClick={() => setSelectedPhoto(latestPhoto)}
+            >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={getFullImageUrl(latestPhoto.imageUrl)}
+                src={getFullImageUrl(latestPhoto.imageUrl, latestPhoto)}
                 alt={latestPhoto.title}
-                className="w-full h-full object-cover max-h-[360px]"
+                onError={(e) => {
+                  e.currentTarget.src = getFallbackSvgDataUri(latestPhoto);
+                }}
+                className="max-h-[380px] w-full object-cover transition-opacity duration-300"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-slate-950/40" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40" />
               <div className="absolute top-3 left-3 flex items-center gap-2">
-                <Badge className="bg-rose-600 text-white font-bold text-[10px] flex items-center gap-1">
-                  <span className="size-1.5 rounded-full bg-white animate-ping" /> LIVE FEED SNAPSHOT
-                </Badge>
-                <Badge variant="secondary" className="text-[10px] font-bold bg-slate-900/80 text-slate-200 backdrop-blur-md">
+                <span className="inline-flex items-center gap-1 rounded bg-red-600 px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-white">
+                  <span className="size-1.5 rounded-full bg-white animate-pulse" />
+                  Live Feed Snapshot
+                </span>
+                <span className="rounded bg-black/70 px-2 py-0.5 font-mono text-[9px] font-semibold text-neutral-200 backdrop-blur-md">
                   {latestPhoto.nodeId || "ESP-NODE-01"}
-                </Badge>
+                </span>
               </div>
-              <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between">
+              <div className="absolute right-3 bottom-3 left-3 flex items-end justify-between">
                 <div>
-                  <h3 className="text-white font-bold text-sm drop-shadow-md">{latestPhoto.title}</h3>
-                  <p className="text-slate-300 text-xs mt-0.5 drop-shadow-sm">{latestPhoto.location || "Underground Gallery"}</p>
+                  <h3 className="text-sm font-semibold text-white drop-shadow-md">{latestPhoto.title}</h3>
+                  <p className="mt-0.5 text-xs text-neutral-300 drop-shadow-sm">{latestPhoto.location || "Underground Gallery"}</p>
                 </div>
-                <Button size="sm" variant="secondary" className="h-7 text-xs font-semibold gap-1 bg-white/90 text-slate-900 hover:bg-white">
-                  <Icon icon="solar:maximize-square-minimalistic-bold" className="size-3.5" /> Enlarge
+                <Button size="xs" variant="outline" className="border-neutral-700 bg-black/70 text-white hover:bg-black">
+                  <Icon icon="solar:maximize-square-minimalistic-bold" className="mr-1 size-3.5" /> Enlarge
                 </Button>
               </div>
             </div>
 
-            <div className="lg:col-span-5 p-6 flex flex-col justify-between space-y-4 bg-slate-50/50 dark:bg-slate-900/30">
+            <div className="flex flex-col justify-between space-y-4 p-6 lg:col-span-5">
               <div>
-                <span className="text-[10px] font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wider block mb-1">
+                <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                   Active Gallery Station Feed
                 </span>
-                <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                <h2 className="mt-1 text-lg font-semibold text-neutral-950 dark:text-neutral-50">
                   {latestPhoto.title}
                 </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                <p className="mt-1.5 text-xs leading-relaxed text-neutral-600 dark:text-neutral-400">
                   Optical tunnel clearance inspection verifying track stability, arch rib supports, and structural integrity at {latestPhoto.location}.
                 </p>
               </div>
 
-              <div className="space-y-2 border-t border-slate-200 dark:border-slate-800 pt-4 text-xs">
-                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800/60">
-                  <span className="text-slate-500 font-medium">Timestamp</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200">
+              <div className="space-y-2 border-t border-neutral-100 pt-4 text-xs dark:border-neutral-900">
+                <div className="flex justify-between py-1 border-b border-neutral-100 dark:border-neutral-900">
+                  <span className="text-neutral-500">Timestamp</span>
+                  <span className="font-mono font-medium text-neutral-900 dark:text-neutral-100">
                     {new Date(latestPhoto.timestamp).toLocaleString()}
                   </span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800/60">
-                  <span className="text-slate-500 font-medium">Station Source</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200">{latestPhoto.nodeId || "ESP-NODE-01"}</span>
+                <div className="flex justify-between py-1 border-b border-neutral-100 dark:border-neutral-900">
+                  <span className="text-neutral-500">Station Source</span>
+                  <span className="font-mono font-semibold text-neutral-900 dark:text-neutral-100">{latestPhoto.nodeId || "ESP-NODE-01"}</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800/60">
-                  <span className="text-slate-500 font-medium">Inspection Category</span>
-                  <Badge variant="outline" className="text-[9px] font-bold">
+                <div className="flex justify-between py-1 border-b border-neutral-100 dark:border-neutral-900">
+                  <span className="text-neutral-500">Category</span>
+                  <span className="rounded bg-neutral-100 px-2 py-0.5 font-mono text-[9px] font-semibold text-neutral-800 dark:bg-neutral-900 dark:text-neutral-200">
                     {latestPhoto.category || "TUNNEL"}
-                  </Badge>
+                  </span>
                 </div>
                 <div className="flex justify-between py-1">
-                  <span className="text-slate-500 font-medium">Camera Optics</span>
-                  <span className="font-medium text-slate-700 dark:text-slate-300">
+                  <span className="text-neutral-500">Camera Optics</span>
+                  <span className="font-mono text-neutral-700 dark:text-neutral-300">
                     {String(latestPhoto.metadata?.cameraModel || "ESP32-CAM-IR-NightVision")}
                   </span>
                 </div>
               </div>
             </div>
           </div>
-        </Card>
+        </div>
       )}
 
-      {/* Filter and Search Bar */}
-      <Card className="border-slate-200/80 dark:border-slate-800 shadow-xs">
-        <CardContent className="p-4 flex flex-wrap gap-4 items-center justify-between">
-          <div className="flex-1 min-w-[220px] max-w-sm relative">
-            <Icon icon="solar:magnifer-linear" className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <Input
-              placeholder="Search camera scans by title, chamber, station..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 text-xs h-9 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800"
-            />
-          </div>
+      {/* Filter and Search Toolbar */}
+      <Toolbar>
+        <div className="relative w-full max-w-sm">
+          <Icon icon="solar:magnifer-linear" className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-neutral-400" />
+          <Input
+            placeholder="Search scans by title, chamber, station..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="h-9 rounded-md border-neutral-300 bg-white pl-9 text-xs dark:border-neutral-700 dark:bg-black"
+          />
+        </div>
 
-          <div className="flex flex-wrap items-center gap-1.5 text-xs">
-            <span className="text-slate-500 dark:text-slate-400 font-semibold mr-1">Category:</span>
-            {["ALL", "TUNNEL", "WORKING_FACE", "SUBSIDENCE_SURFACE", "THERMAL_SCAN", "INSPECTION"].map((cat) => (
-              <Button
-                key={cat}
-                size="sm"
-                variant={categoryFilter === cat ? "default" : "outline"}
-                onClick={() => setCategoryFilter(cat)}
-                className={`h-7 px-2.5 text-xs font-semibold rounded-lg ${
-                  categoryFilter === cat ? "bg-orange-600 hover:bg-orange-700 text-white font-bold" : ""
-                }`}
-              >
-                {cat.replace("_", " ")}
-              </Button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+        <div className="flex flex-wrap items-center gap-1.5 text-xs">
+          <span className="mr-1 text-xs font-semibold text-neutral-500 dark:text-neutral-400">Category:</span>
+          {["ALL", "TUNNEL", "WORKING_FACE", "SUBSIDENCE_SURFACE", "THERMAL_SCAN", "INSPECTION"].map((cat) => (
+            <Button
+              key={cat}
+              size="sm"
+              variant={categoryFilter === cat ? "default" : "outline"}
+              onClick={() => setCategoryFilter(cat)}
+              className={cn(
+                "h-7 px-2.5 font-mono text-[11px]",
+                categoryFilter === cat
+                  ? "bg-black text-white dark:bg-white dark:text-black"
+                  : "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-300"
+              )}
+            >
+              {cat.replace("_", " ")}
+            </Button>
+          ))}
+        </div>
+      </Toolbar>
 
       {/* Photo Gallery Grid */}
       {filteredPhotos.length === 0 ? (
-        <Card className="border-dashed border-slate-200 dark:border-slate-800 p-12 text-center">
-          <div className="size-12 rounded-full bg-slate-100 dark:bg-slate-800 mx-auto flex items-center justify-center text-slate-400 mb-3">
-            <Icon icon="solar:camera-broken" className="size-6" />
-          </div>
-          <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
-            No Visual Inspection Scans Found
-          </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto mt-1">
-            Capture a new camera snapshot from an active ESP station to record visual ground conditions.
-          </p>
-        </Card>
+        <EmptyState
+          title="No Visual Inspection Scans Found"
+          description="Capture a new camera snapshot from an active ESP station to record visual ground conditions."
+        />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {filteredPhotos.map((photo) => (
-            <Card
+            <div
               key={photo.id}
-              className="border-slate-200/80 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between"
               onClick={() => setSelectedPhoto(photo)}
+              className="group flex cursor-pointer flex-col justify-between overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-xs transition-all hover:border-neutral-300 hover:shadow-md dark:border-neutral-800 dark:bg-neutral-950 dark:hover:border-neutral-700"
             >
               <div>
-                <div className="bg-slate-950 aspect-video relative overflow-hidden flex items-center justify-center">
+                <div className="relative aspect-video overflow-hidden bg-black">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={getFullImageUrl(photo.thumbnailUrl || photo.imageUrl)}
+                    src={getFullImageUrl(photo.thumbnailUrl || photo.imageUrl, photo)}
                     alt={photo.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    onError={(e) => {
+                      e.currentTarget.src = getFallbackSvgDataUri(photo);
+                    }}
+                    className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                   <div className="absolute top-2.5 left-2.5">
-                    <Badge variant="outline" className="text-[9px] font-bold bg-slate-900/90 text-white border-slate-700 backdrop-blur-md">
+                    <span className="rounded bg-black/80 px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-tight text-white backdrop-blur-md">
                       {photo.category || "INSPECTION"}
-                    </Badge>
+                    </span>
                   </div>
                   <div className="absolute top-2.5 right-2.5">
-                    <span className="text-[10px] text-slate-200 bg-black/60 px-2 py-0.5 rounded-md font-mono">
+                    <span className="rounded bg-black/70 px-2 py-0.5 font-mono text-[10px] text-neutral-200">
                       {new Date(photo.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                     </span>
                   </div>
                 </div>
 
-                <CardHeader className="p-4 pb-2">
-                  <CardTitle className="text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:text-orange-600 transition-colors line-clamp-1">
+                <div className="p-4 pb-2">
+                  <h3 className="line-clamp-1 text-sm font-semibold text-neutral-950 transition-colors group-hover:text-neutral-600 dark:text-neutral-50 dark:group-hover:text-neutral-300">
                     {photo.title}
-                  </CardTitle>
-                  <CardDescription className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                  </h3>
+                  <p className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">
                     {photo.location || "Underground Station"}
-                  </CardDescription>
-                </CardHeader>
+                  </p>
+                </div>
               </div>
 
-              <CardContent className="p-4 pt-0 border-t border-slate-100 dark:border-slate-800/80 mt-3 flex items-center justify-between text-xs text-slate-500">
-                <span className="font-semibold text-slate-700 dark:text-slate-300">
+              <div className="mt-3 flex items-center justify-between border-t border-neutral-100 p-4 pt-3 text-xs text-neutral-500 dark:border-neutral-900">
+                <span className="font-mono font-medium text-neutral-800 dark:text-neutral-200">
                   {photo.nodeId || "ESP Node"}
                 </span>
-                <span className="text-[11px] text-orange-600 dark:text-orange-400 font-bold flex items-center gap-1 group-hover:underline">
+                <span className="flex items-center gap-1 font-semibold text-neutral-950 group-hover:underline dark:text-neutral-100">
                   Inspect <Icon icon="solar:arrow-right-up-linear" className="size-3.5" />
                 </span>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ))}
         </div>
       )}
 
       {/* Enlarged Inspection Modal */}
       <Dialog open={!!selectedPhoto} onOpenChange={(open) => !open && setSelectedPhoto(null)}>
-        <DialogContent className="sm:max-w-3xl p-0 overflow-hidden bg-slate-950 text-slate-100 border-slate-800">
+        <DialogContent className="overflow-hidden border-neutral-800 bg-neutral-950 p-0 text-neutral-100 sm:max-w-3xl">
           {selectedPhoto && (
             <div>
               <div className="relative aspect-video w-full bg-black flex items-center justify-center">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={getFullImageUrl(selectedPhoto.imageUrl)}
+                  src={getFullImageUrl(selectedPhoto.imageUrl, selectedPhoto)}
                   alt={selectedPhoto.title}
-                  className="w-full h-full object-contain max-h-[480px]"
+                  onError={(e) => {
+                    e.currentTarget.src = getFallbackSvgDataUri(selectedPhoto);
+                  }}
+                  className="max-h-[480px] w-full object-contain"
                 />
               </div>
 
-              <div className="p-6 space-y-4 bg-slate-900/90">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div>
-                    <h3 className="text-lg font-bold text-white">{selectedPhoto.title}</h3>
-                    <p className="text-xs text-slate-400 mt-0.5">{selectedPhoto.location}</p>
+              <div className="space-y-4 bg-neutral-900/90 p-6">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="rounded bg-neutral-800 px-2.5 py-0.5 font-mono text-[10px] font-bold text-neutral-300">
+                      {selectedPhoto.category || "TUNNEL"}
+                    </span>
+                    <span className="font-mono text-xs text-neutral-400">
+                      {new Date(selectedPhoto.timestamp).toLocaleString()}
+                    </span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-xs font-semibold border-slate-700 text-slate-300">
-                      {selectedPhoto.category}
-                    </Badge>
-                    <Badge className="bg-orange-600 text-white font-bold text-xs">
-                      {selectedPhoto.nodeId || "ESP-NODE-01"}
-                    </Badge>
+                  <DialogTitle className="mt-2 text-lg font-bold text-white">
+                    {selectedPhoto.title}
+                  </DialogTitle>
+                  <DialogDescription className="mt-1 text-xs text-neutral-400">
+                    Location: {selectedPhoto.location || "Underground Station"} · Source: {selectedPhoto.nodeId || "ESP-NODE-01"}
+                  </DialogDescription>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 border-t border-neutral-800 pt-4 text-xs sm:grid-cols-4 font-mono">
+                  <div className="rounded border border-neutral-800 bg-neutral-950 p-2.5">
+                    <span className="text-[10px] uppercase text-neutral-500">Optics</span>
+                    <span className="mt-0.5 block font-bold text-neutral-200">
+                      {String(selectedPhoto.metadata?.cameraModel || "ESP32-CAM")}
+                    </span>
+                  </div>
+                  <div className="rounded border border-neutral-800 bg-neutral-950 p-2.5">
+                    <span className="text-[10px] uppercase text-neutral-500">ISO</span>
+                    <span className="mt-0.5 block font-bold text-neutral-200">
+                      {String(selectedPhoto.metadata?.iso || "800")}
+                    </span>
+                  </div>
+                  <div className="rounded border border-neutral-800 bg-neutral-950 p-2.5">
+                    <span className="text-[10px] uppercase text-neutral-500">Exposure</span>
+                    <span className="mt-0.5 block font-bold text-neutral-200">
+                      {String(selectedPhoto.metadata?.exposure || "1/60s")}
+                    </span>
+                  </div>
+                  <div className="rounded border border-neutral-800 bg-neutral-950 p-2.5">
+                    <span className="text-[10px] uppercase text-neutral-500">Light Level</span>
+                    <span className="mt-0.5 block font-bold text-neutral-200">
+                      {String(selectedPhoto.metadata?.lightLevelLux || "45")} Lux
+                    </span>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 bg-slate-950/60 rounded-xl border border-slate-800 text-xs">
-                  <div>
-                    <span className="text-[10px] text-slate-500 uppercase font-medium block">Timestamp</span>
-                    <span className="font-semibold text-slate-200">{new Date(selectedPhoto.timestamp).toLocaleString()}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-500 uppercase font-medium block">Camera Model</span>
-                    <span className="font-semibold text-slate-200">{String(selectedPhoto.metadata?.cameraModel || "ESP32-CAM-IR")}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-500 uppercase font-medium block">Light Level</span>
-                    <span className="font-semibold text-slate-200">{selectedPhoto.metadata?.lightLevelLux ? `${selectedPhoto.metadata.lightLevelLux} Lux` : "Infrared"}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-500 uppercase font-medium block">Audit ID</span>
-                    <span className="font-mono text-slate-200">{selectedPhoto.id}</span>
-                  </div>
-                </div>
-
-                <div className="flex justify-end gap-2 pt-2">
-                  <Button variant="outline" size="sm" onClick={() => setSelectedPhoto(null)} className="text-xs bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700">
-                    Close Preview
+                <DialogFooter className="border-t border-neutral-800 pt-3">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setSelectedPhoto(null)}
+                    className="border-neutral-700 bg-neutral-900 text-neutral-200 hover:bg-neutral-800"
+                  >
+                    Close
                   </Button>
-                </div>
+                </DialogFooter>
               </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
 
-      {/* Capture Inspection Dialog */}
+      {/* Capture / Upload Dialog */}
       <Dialog open={isCaptureOpen} onOpenChange={setIsCaptureOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-950 sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-slate-900 dark:text-slate-100">
-              <Icon icon="solar:camera-bold-duotone" className="size-5 text-orange-600" />
-              Capture Remote Gallery Inspection
+            <DialogTitle className="text-base font-bold text-neutral-950 dark:text-neutral-50">
+              Capture Inspection Scan
             </DialogTitle>
-            <DialogDescription className="text-xs">
-              Command an underground ESP32-CAM node to snapshot and index visual tunnel conditions.
+            <DialogDescription className="text-xs text-neutral-500 dark:text-neutral-400">
+              Trigger a manual camera snapshot from an underground station or upload a visual inspection file.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-2 text-xs font-sans">
-            <div className="space-y-1">
-              <Label htmlFor="title" className="text-xs font-semibold">
-                Inspection Title / Description
-              </Label>
+          <div className="space-y-4 py-2 text-xs">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">Scan Title / Description</Label>
               <Input
-                id="title"
-                placeholder="e.g. Gallery North AA Support Ribs Check"
+                placeholder="e.g., Chamber 1 Gallery Face - Support Rib Crack Check"
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
-                className="text-xs h-9"
+                className="h-9 rounded-md border-neutral-300 bg-white text-xs dark:border-neutral-700 dark:bg-black"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className="text-xs font-semibold">Station Node</Label>
-                <Select value={newNodeId} onValueChange={(val) => {
-                  if (val) {
-                    setNewNodeId(val);
-                    const n = nodes.find(x => x.id === val);
-                    if (n?.location) setNewLocation(n.location);
-                  }
-                }}>
-                  <SelectTrigger className="text-xs h-9">
-                    <SelectValue placeholder="Select Node" />
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">Station Source</Label>
+                <Select value={newNodeId} onValueChange={(val) => val && setNewNodeId(val)}>
+                  <SelectTrigger className="h-9 rounded-md border-neutral-300 bg-white text-xs dark:border-neutral-700 dark:bg-black">
+                    <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
-                    {nodes.length > 0 ? (
-                      nodes.map((n) => (
-                        <SelectItem key={n.id} value={n.id}>
-                          {n.id} ({n.label})
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <>
-                        <SelectItem value="ESP-NODE-01">ESP-NODE-01</SelectItem>
-                        <SelectItem value="ESP-NODE-02">ESP-NODE-02</SelectItem>
-                      </>
-                    )}
+                  <SelectContent className="border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-950">
+                    {nodes.map((n) => (
+                      <SelectItem key={n.id} value={n.id}>
+                        {n.id} ({n.location})
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <Label className="text-xs font-semibold">Category</Label>
-                <Select value={newCategory} onValueChange={(val) => {
-                  if (val) setNewCategory(val as MinePhoto["category"]);
-                }}>
-                  <SelectTrigger className="text-xs h-9">
-                    <SelectValue placeholder="Select Category" />
+                <Select
+                  value={newCategory}
+                  onValueChange={(val) => val && setNewCategory(val as MinePhoto["category"])}
+                >
+                  <SelectTrigger className="h-9 rounded-md border-neutral-300 bg-white text-xs dark:border-neutral-700 dark:bg-black">
+                    <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-950">
                     <SelectItem value="TUNNEL">Tunnel Clearance</SelectItem>
                     <SelectItem value="WORKING_FACE">Working Face</SelectItem>
                     <SelectItem value="SUBSIDENCE_SURFACE">Subsidence Surface</SelectItem>
                     <SelectItem value="THERMAL_SCAN">Thermal Scan</SelectItem>
-                    <SelectItem value="INSPECTION">Inspection</SelectItem>
+                    <SelectItem value="INSPECTION">Inspection Vault</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="loc" className="text-xs font-semibold">
-                Tunnel Location / Section
-              </Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">Location Detail</Label>
               <Input
-                id="loc"
-                placeholder="e.g. Gallery North AA - Working Face 1"
+                placeholder="Gallery North AA - Working Face 1"
                 value={newLocation}
                 onChange={(e) => setNewLocation(e.target.value)}
-                className="text-xs h-9"
+                className="h-9 rounded-md border-neutral-300 bg-white text-xs dark:border-neutral-700 dark:bg-black"
               />
             </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="photo-file" className="text-xs font-semibold">
-                Upload Camera Snapshot Image (S3 Direct)
-              </Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">Attach Image File (Optional)</Label>
               <Input
-                id="photo-file"
                 type="file"
                 accept="image/*"
                 onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                className="text-xs h-9 cursor-pointer file:text-xs file:font-semibold file:text-orange-600 file:bg-orange-50 file:border-0 file:rounded-md file:mr-2"
+                className="h-9 cursor-pointer rounded-md border-neutral-300 bg-white text-xs dark:border-neutral-700 dark:bg-black"
               />
-              <p className="text-[10px] text-slate-400">
-                Optional. Leave empty to automatically trigger optical capture on the selected node.
-              </p>
             </div>
           </div>
 
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter className="gap-2">
             <Button
-              variant="outline"
               size="sm"
+              variant="outline"
               onClick={() => setIsCaptureOpen(false)}
-              className="text-xs"
-              disabled={isSubmitting}
+              className="border-neutral-300 bg-white dark:border-neutral-700 dark:bg-black"
             >
               Cancel
             </Button>
             <Button
               size="sm"
               onClick={handleCaptureSnapshot}
-              disabled={!newTitle.trim() || isSubmitting}
-              className="bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs gap-1.5"
+              disabled={isSubmitting || !newTitle.trim()}
+              className="bg-black text-white hover:bg-neutral-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
             >
-              {isSubmitting ? (
-                <>Capturing...</>
-              ) : (
-                <>
-                  <Icon icon="solar:camera-minimalistic-bold" className="size-3.5" />
-                  Trigger Camera Scan
-                </>
-              )}
+              {isSubmitting ? "Recording..." : "Save Inspection Scan"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageShell>
   );
 }
