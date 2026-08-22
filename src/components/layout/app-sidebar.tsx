@@ -89,6 +89,11 @@ export function AppSidebar() {
           href: "/dashboard/analytics/history",
           icon: "solar:history-bold-duotone",
         },
+        {
+          title: "AI Health & Safety Logs",
+          href: "/dashboard/ai-logs",
+          icon: "solar:heart-pulse-bold-duotone",
+        },
       ],
     },
     {

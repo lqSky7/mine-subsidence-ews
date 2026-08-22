@@ -231,72 +231,42 @@ export default function CommandCenterPage() {
         </div>
       </div>
 
-      {/* AI Mine Heartbeat & Geotechnical Risk Score Banner */}
+      {/* AI Mine Heartbeat & Safety Index Card */}
       {mineHealth && (
-        <Card className="border-slate-200/80 dark:border-slate-800 bg-gradient-to-r from-slate-900 via-slate-900 to-slate-950 text-white rounded-2xl shadow-xs overflow-hidden">
-          <CardContent className="p-5 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
-            <div className="flex items-start gap-4">
-              <div className="size-12 rounded-2xl bg-orange-500/20 border border-orange-500/30 flex items-center justify-center text-orange-400 shrink-0 shadow-lg shadow-orange-500/10">
-                <Icon icon="solar:heart-pulse-bold-duotone" className="size-7 animate-pulse text-orange-400" />
-              </div>
-              <div className="space-y-1">
-                <div className="flex items-center gap-2.5">
-                  <span className="text-xs font-bold text-orange-400 uppercase tracking-widest">
-                    AI Mine Heartbeat & Safety Index
-                  </span>
-                  <Badge
-                    className={`text-[10px] font-bold ${
-                      mineHealth.riskLevel === "LOW"
-                        ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
-                        : mineHealth.riskLevel === "MODERATE"
-                        ? "bg-amber-500/20 text-amber-300 border-amber-500/40"
-                        : "bg-rose-500/20 text-rose-300 border-rose-500/40 animate-pulse"
-                    }`}
-                  >
-                    RISK: {mineHealth.riskLevel}
-                  </Badge>
-                  <span className="text-[10px] text-slate-400 font-mono">
-                    Model: {mineHealth.modelVersion}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
-                  {mineHealth.summary || "Real-time geotechnical stability model running across all active sensor telemetry arrays."}
-                </p>
-                {mineHealth.contributingFactors && mineHealth.contributingFactors.length > 0 && (
-                  <div className="flex flex-wrap gap-2 pt-1">
-                    {mineHealth.contributingFactors.map((f, i) => (
-                      <span key={i} className="text-[10px] bg-slate-800/80 px-2 py-0.5 rounded-md text-slate-300 border border-slate-700 flex items-center gap-1">
-                        <Icon icon="solar:danger-triangle-bold" className="size-2.5 text-amber-400" />
-                        {f.factor} (Impact: -{f.impact} pts)
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
+        <Link
+          href="/dashboard/ai-logs"
+          className={`group w-full max-w-xs sm:w-72 md:w-80 min-h-[140px] p-5 rounded-2xl shadow-xs flex items-center justify-between transition-all hover:shadow-md hover:scale-[1.01] cursor-pointer ${
+            mineHealth.overallScore >= 75
+              ? "bg-emerald-500"
+              : mineHealth.overallScore >= 50
+              ? "bg-amber-500"
+              : "bg-rose-500"
+          }`}
+        >
+          {/* Left: Health Number & Active Nodes Count */}
+          <div className="flex flex-col justify-between h-full py-0.5">
+            <span className="text-5xl font-black text-white tracking-tight tabular-nums leading-none">
+              {Math.round(mineHealth.overallScore)}
+            </span>
+            <span className="mt-4 text-xs font-semibold text-white/90">
+              {nodes.filter((n) => n.status !== "OFFLINE").length}{" "}
+              {nodes.filter((n) => n.status !== "OFFLINE").length === 1 ? "node active" : "nodes active"}
+            </span>
+          </div>
 
-            <div className="flex items-center gap-4 shrink-0 bg-slate-800/60 border border-slate-700/80 p-3.5 rounded-2xl">
-              <div className="text-right">
-                <span className="text-[10px] text-slate-400 uppercase font-semibold block">Safety Health</span>
-                <span className="text-3xl font-extrabold tracking-tight tabular-nums text-white">
-                  {mineHealth.overallScore}<span className="text-xs font-normal text-slate-400">/100</span>
-                </span>
-              </div>
-              <div className="w-16 bg-slate-700 rounded-full h-2 overflow-hidden">
-                <div
-                  className={`h-full ${
-                    mineHealth.overallScore >= 75
-                      ? "bg-emerald-500"
-                      : mineHealth.overallScore >= 50
-                      ? "bg-amber-500"
-                      : "bg-rose-500"
-                  }`}
-                  style={{ width: `${Math.min(100, Math.max(0, mineHealth.overallScore))}%` }}
-                />
-              </div>
+          {/* Divider */}
+          <div className="w-px bg-white/25 self-stretch my-1 mx-4" />
+
+          {/* Right: Arrow to Live AI Logs */}
+          <div className="flex flex-col items-center justify-center shrink-0">
+            <div className="size-11 rounded-2xl bg-white/20 flex items-center justify-center text-white group-hover:bg-white/30 group-hover:scale-105 transition-all shadow-xs">
+              <Icon icon="solar:arrow-right-linear" className="size-6 group-hover:translate-x-0.5 transition-transform" />
             </div>
-          </CardContent>
-        </Card>
+            <span className="text-[10px] font-semibold text-white/80 mt-1.5 whitespace-nowrap">
+              AI Logs
+            </span>
+          </div>
+        </Link>
       )}
 
       {/* Critical Hazard Alert Banner */}
