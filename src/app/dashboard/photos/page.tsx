@@ -200,11 +200,18 @@ export default function PhotosPage() {
     }
   };
 
-  // Resolve photo URL supporting S3 bucket URLs, backend endpoints, and base64 Data URIs (SparkleYR)
+  // Resolve photo URL supporting Data URIs, API image endpoints, and direct static URLs (SparkleYR)
   const getFullImageUrl = (path?: string, photo?: Partial<MinePhoto>) => {
-    if (!path) return getFallbackSvgDataUri(photo);
-    if (path.startsWith("http://") || path.startsWith("https://") || path.startsWith("data:")) return path;
-    return `${BACKEND_BASE}${path}`;
+    if (path && (path.startsWith("http://") || path.startsWith("https://") || path.startsWith("data:"))) {
+      return path;
+    }
+    if (photo?.id) {
+      return `${BACKEND_BASE}/api/v1/photos/${photo.id}/image`;
+    }
+    if (path) {
+      return `${BACKEND_BASE}${path}`;
+    }
+    return getFallbackSvgDataUri(photo);
   };
 
   return (
