@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { Minus, Plus, Target, TrendingUp, TrendingDown } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 
 export interface SetpointSliderProps {
   label: string;
@@ -94,10 +94,10 @@ export function SetpointSlider({
   const incrementDisabled = Boolean(isDisabled || value >= max);
 
   return (
-    <Card className={cn("bg-white border-slate-300 shadow-md", className)}>
-      <CardHeader className="border-b border-slate-200 pb-3">
-        <CardTitle className="text-sm font-semibold text-slate-600 uppercase tracking-wider flex items-center gap-2">
-          <Target className="size-4" />
+    <Card className={cn("bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-xs", className)}>
+      <CardHeader className="border-b border-slate-100 dark:border-slate-800 pb-3">
+        <CardTitle className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
+          <Icon icon="solar:target-bold-duotone" className="size-4 text-orange-600" />
           {label}
         </CardTitle>
       </CardHeader>
@@ -106,13 +106,13 @@ export function SetpointSlider({
           <Button
             onClick={handleDecrement}
             disabled={decrementDisabled}
-            className="h-14 w-14 bg-slate-600 hover:bg-slate-700 text-white font-bold border-2 border-slate-700 shadow-md disabled:opacity-30"
+            className="h-12 w-12 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 font-bold border border-slate-200 dark:border-slate-700 shadow-xs disabled:opacity-30"
             size="icon"
           >
-            <Minus className="size-6" />
+            <Icon icon="solar:minus-bold" className="size-5" />
           </Button>
 
-          <div className="flex-1 bg-slate-100 border-2 border-slate-400 rounded-lg p-4 text-center">
+          <div className="flex-1 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-center">
             <Input
               type="text"
               value={inputValue}
@@ -120,22 +120,22 @@ export function SetpointSlider({
               onBlur={handleInputBlur}
               onKeyDown={handleInputKeyDown}
               disabled={isDisabled}
-              className="text-4xl font-bold  text-slate-900 text-center border-0 bg-transparent tabular-nums p-0 h-auto focus-visible:ring-0"
+              className="text-3xl font-bold text-slate-900 dark:text-slate-100 text-center border-0 bg-transparent tabular-nums p-0 h-auto focus-visible:ring-0"
             />
-            <div className="text-sm font-semibold text-slate-600 uppercase mt-1">{unit}</div>
+            <div className="text-xs font-semibold text-slate-500 uppercase mt-0.5">{unit}</div>
           </div>
 
           <Button
             onClick={handleIncrement}
             disabled={incrementDisabled}
-            className="h-14 w-14 bg-slate-600 hover:bg-slate-700 text-white font-bold border-2 border-slate-700 shadow-md disabled:opacity-30"
+            className="h-12 w-12 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 font-bold border border-slate-200 dark:border-slate-700 shadow-xs disabled:opacity-30"
             size="icon"
           >
-            <Plus className="size-6" />
+            <Icon icon="solar:add-bold" className="size-5" />
           </Button>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-2">
           <input
             type="range"
             min={min}
@@ -144,20 +144,17 @@ export function SetpointSlider({
             value={value}
             onChange={handleSliderChange}
             disabled={isDisabled}
-            className="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{
-              background: `linear-gradient(to right, #10b981 0%, #10b981 ${percentage}%, #e2e8f0 ${percentage}%, #e2e8f0 100%)`,
-            }}
+            className="w-full h-2.5 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
           />
 
-          <div className="flex justify-between text-xs font-semibold text-slate-600">
+          <div className="flex justify-between text-xs font-semibold text-slate-500 tabular-nums">
             <span>{min} {unit}</span>
             <span>{max} {unit}</span>
           </div>
         </div>
 
         {showTrend && currentValue !== undefined && (
-          <div className="bg-slate-50 border border-slate-300 rounded-lg p-4 space-y-2">
+          <div className="bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-500 uppercase">Current Value</span>
               {trend && (
@@ -167,24 +164,24 @@ export function SetpointSlider({
                   trend === "decreasing" ? "text-rose-600" :
                   "text-slate-600"
                 )}>
-                  {trend === "increasing" && <TrendingUp className="size-3" />}
-                  {trend === "decreasing" && <TrendingDown className="size-3" />}
+                  {trend === "increasing" && <Icon icon="solar:chart-2-bold-duotone" className="size-3" />}
+                  {trend === "decreasing" && <Icon icon="solar:chart-2-bold-duotone" className="size-3 rotate-180" />}
                   {trend}
                 </div>
               )}
             </div>
-            <div className="text-2xl font-bold  text-slate-900 tabular-nums">
-              {currentValue.toFixed(0)} <span className="text-sm text-slate-600">{unit}</span>
+            <div className="text-xl font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+              {currentValue.toFixed(0)} <span className="text-xs text-slate-500 font-normal">{unit}</span>
             </div>
 
-            <div className="relative h-2 bg-slate-200 rounded-full overflow-hidden">
+            <div className="relative h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
               {currentPercentage !== null && (
                 <div
                   className={cn(
                     "h-full transition-all duration-500",
                     trend === "increasing" ? "bg-emerald-500" :
                     trend === "decreasing" ? "bg-rose-500" :
-                    "bg-blue-500"
+                    "bg-orange-500"
                   )}
                   style={{ width: `${Math.min(100, Math.max(0, currentPercentage))}%` }}
                 />
@@ -204,7 +201,8 @@ export function SetpointSlider({
               key={preset.label}
               onClick={() => onChange(preset.value)}
               disabled={isDisabled}
-              className="h-8 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-xs border border-slate-400 disabled:opacity-30"
+              variant="outline"
+              className="h-7 text-xs font-bold"
             >
               {preset.label}
             </Button>

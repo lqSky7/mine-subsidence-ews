@@ -15,12 +15,7 @@ import {
 } from "recharts";
 import { AestheticChartTooltip } from "./ChartTooltip";
 import { Button } from "@/components/ui/button";
-import {
-  TrendingUp,
-  TrendingDown,
-  ShieldAlert,
-  Inbox,
-} from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 
 export interface SeriesConfig {
   key: string;
@@ -222,7 +217,7 @@ export function AestheticAreaTrendChart({
                   : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300"
               }`}
             >
-              <ShieldAlert className="size-3" />
+              <Icon icon="solar:shield-warning-bold-duotone" className="size-3.5" />
               {showThresholds ? "Limits Visible" : "Limits Hidden"}
             </Button>
           )}
@@ -292,9 +287,9 @@ export function AestheticAreaTrendChart({
             {stats ? (
               <>
                 {stats.deltaPercent >= 0 ? (
-                  <TrendingUp className="size-4 text-rose-500" />
+                  <Icon icon="solar:chart-2-bold-duotone" className="size-4 text-rose-500" />
                 ) : (
-                  <TrendingDown className="size-4 text-emerald-500" />
+                  <Icon icon="solar:chart-2-bold-duotone" className="size-4 text-emerald-500 rotate-180" />
                 )}
                 <span
                   className={`text-sm font-bold tabular-nums ${
@@ -325,7 +320,7 @@ export function AestheticAreaTrendChart({
           {!hasData ? (
             <div className="h-full w-full flex flex-col items-center justify-center border border-dashed border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/40 dark:bg-slate-900/20 text-center p-6">
               <div className="size-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 mb-2">
-                <Inbox className="size-5" />
+                <Icon icon="solar:inbox-line-linear" className="size-5" />
               </div>
               <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">
                 No Telemetry Recorded Yet

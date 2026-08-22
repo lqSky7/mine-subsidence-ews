@@ -7,20 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { ThresholdSlider } from "@/components/industrial/ThresholdSlider";
-import {
-  Settings,
-  Sliders,
-  Save,
-  RotateCcw,
-  CheckCircle2,
-  Volume2,
-  Grid3X3,
-  Flame,
-  Radio,
-  Compass,
-  Activity,
-  Zap,
-} from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 
 export default function AlertSettingsPage() {
   const { thresholds, setThresholds } = useTelemetryContext();
@@ -56,223 +43,300 @@ export default function AlertSettingsPage() {
     setTimeout(() => setSavedSuccess(false), 3000);
   };
 
-  const handleResetDefaults = () => {
+  const handleReset = () => {
     setGasWarn(400);
     setGasCrit(800);
-    setWallWarn(35.0);
-    setWallCrit(20.0);
+    setWallWarn(30);
+    setWallCrit(15);
     setTiltWarn(3.0);
     setTiltCrit(7.0);
     setVibThresh(60);
     setBuzzerEnabled(true);
     setLedMatrixEnabled(true);
     setAutoTrigger(true);
-
-    setThresholds({
-      gasPpmWarning: 400,
-      gasPpmCritical: 800,
-      wallDistanceMinWarningCm: 35.0,
-      wallDistanceMinCriticalCm: 20.0,
-      tiltDegWarning: 3.0,
-      tiltDegCritical: 7.0,
-      vibrationIntensityThreshold: 60,
-      buzzerEnabled: true,
-      ledMatrixEnabled: true,
-      autoTriggerActuatorsOnCritical: true,
-    });
   };
 
   return (
-    <div className="space-y-6 pb-16 font-sans text-slate-800">
+    <div className="space-y-6 pb-16 font-sans text-slate-800 dark:text-slate-200 max-w-5xl">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/70">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/70 dark:border-slate-800">
         <div>
           <div className="flex items-center gap-2">
-            <div className="size-8 rounded-xl bg-orange-100 text-orange-700 flex items-center justify-center shadow-xs">
-              <Sliders className="size-4.5" />
+            <div className="size-8 rounded-xl bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-400 flex items-center justify-center shadow-xs">
+              <Icon icon="solar:settings-bold-duotone" className="size-4.5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-                Safety Thresholds & Alert Configuration
+              <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+                Safety Thresholds & Actuator Automation
               </h1>
-              <p className="text-xs text-slate-500">
-                Multi-Sensor Threshold Calibration & Automatic Actuator Siren / LED Matrix Trigger Rules
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Adjust Early Warning Limits for Gas, Wall Convergence, Dual Tilt, and Siren Triggers
               </p>
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          {savedSuccess && (
-            <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
-              <CheckCircle2 className="size-4" /> Thresholds Saved!
-            </span>
-          )}
-          <Button size="sm" variant="outline" onClick={handleResetDefaults} className="h-9 px-3 text-xs bg-white">
-            <RotateCcw className="size-3.5 mr-1" /> Reset Defaults
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleReset}
+            className="text-xs font-semibold h-8 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 gap-1.5"
+          >
+            <Icon icon="solar:restart-bold" className="size-3.5" /> Reset Defaults
           </Button>
-          <Button size="sm" onClick={handleSave} className="h-9 px-4 text-xs bg-orange-600 hover:bg-orange-700 text-white font-bold shadow-xs">
-            <Save className="size-3.5 mr-1.5" /> Save Thresholds
+          <Button
+            size="sm"
+            onClick={handleSave}
+            className="text-xs font-bold h-8 bg-orange-600 hover:bg-orange-700 text-white gap-1.5"
+          >
+            {savedSuccess ? (
+              <>
+                <Icon icon="solar:check-circle-bold-duotone" className="size-3.5" /> Saved to Gateway!
+              </>
+            ) : (
+              <>
+                <Icon icon="solar:diskette-bold" className="size-3.5" /> Save Configuration
+              </>
+            )}
           </Button>
         </div>
       </div>
 
-      {/* Sensor Calibration Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* 1. MQ2 Gas Sensor Thresholds */}
-        <Card className="border-slate-200/80 shadow-xs">
-          <CardHeader className="pb-3 bg-slate-50/70 border-b border-slate-100">
-            <CardTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <Flame className="size-4 text-orange-600" />
-              MQ2 Gas Concentration Thresholds
-            </CardTitle>
-            <CardDescription className="text-xs">
-              Flammable gas / methane / smoke concentration alarm triggers in ppm
-            </CardDescription>
+      {savedSuccess && (
+        <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-900 rounded-xl text-xs text-emerald-800 dark:text-emerald-300 font-semibold flex items-center gap-2">
+          <Icon icon="solar:check-circle-bold-duotone" className="size-4 text-emerald-600" />
+          Safety threshold configuration has been broadcasted to all ESP monitoring stations.
+        </div>
+      )}
+
+      {/* Sensor Threshold Controls */}
+      <div className="space-y-4">
+        {/* Section 1: MQ2 Gas Sensor */}
+        <Card className="rounded-2xl border-slate-200/80 dark:border-slate-800 shadow-xs">
+          <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-2">
+              <div className="size-7 rounded-xl bg-orange-100 dark:bg-orange-950/60 text-orange-600 flex items-center justify-center">
+                <Icon icon="solar:flame-bold-duotone" className="size-4" />
+              </div>
+              <div>
+                <CardTitle className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                  MQ2 Flammable Gas Sensor Thresholds
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Trigger limits for combustible gas, methane, LPG, and toxic smoke accumulation
+                </CardDescription>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent className="p-5 space-y-4">
+          <CardContent className="p-5 space-y-6">
             <ThresholdSlider
-              label="Gas Warning Level (ppm)"
-              description="Triggers early safety notification on elevated gas presence"
+              label="Warning Threshold (PPM)"
+              description="Initial early warning alert trigger limit"
               value={gasWarn}
               min={100}
-              max={600}
-              step={20}
+              max={1500}
+              step={25}
               unit="ppm"
-              warningZone={400}
+              color="amber"
               onChange={setGasWarn}
             />
             <ThresholdSlider
-              label="Gas Critical Hazard Level (ppm)"
-              description="Triggers mandatory evacuation buzzer & flashing LED beacon"
+              label="Critical Danger Threshold (PPM)"
+              description="Evacuation trigger limit; automatically sounds sirens and flashes beacon"
               value={gasCrit}
-              min={600}
-              max={1500}
+              min={200}
+              max={2500}
               step={50}
               unit="ppm"
-              criticalZone={800}
+              color="rose"
               onChange={setGasCrit}
             />
           </CardContent>
         </Card>
 
-        {/* 2. Ultrasound Front-Wall Distance Thresholds */}
-        <Card className="border-slate-200/80 shadow-xs">
-          <CardHeader className="pb-3 bg-slate-50/70 border-b border-slate-100">
-            <CardTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <Radio className="size-4 text-blue-600" />
-              Ultrasound Wall Clearance Thresholds
-            </CardTitle>
-            <CardDescription className="text-xs">
-              Front-wall proximity / minimum distance safety envelope in cm
-            </CardDescription>
+        {/* Section 2: Ultrasound Wall Distance */}
+        <Card className="rounded-2xl border-slate-200/80 dark:border-slate-800 shadow-xs">
+          <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-2">
+              <div className="size-7 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-600 flex items-center justify-center">
+                <Icon icon="solar:radar-2-bold-duotone" className="size-4" />
+              </div>
+              <div>
+                <CardTitle className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                  Ultrasound Wall Clearance & Convergence Thresholds
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Minimum safe clearance from rock faces; detects sidewall deformation and collapse risk
+                </CardDescription>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent className="p-5 space-y-4">
+          <CardContent className="p-5 space-y-6">
             <ThresholdSlider
-              label="Wall Proximity Warning Limit (cm)"
-              description="Alert when distance from front wall falls below this threshold"
+              label="Convergence Warning Limit (Min cm)"
+              description="Triggers watch alert if distance to wall drops below this value"
               value={wallWarn}
-              min={25.0}
-              max={60.0}
-              step={1.0}
+              min={10}
+              max={100}
+              step={5}
               unit="cm"
-              warningZone={35.0}
+              color="amber"
               onChange={setWallWarn}
             />
             <ThresholdSlider
-              label="Wall Proximity Critical Limit (cm)"
-              description="Immediate hazard alert for dangerous wall closeness"
+              label="Critical Rock Incursion / Collapse Limit (Min cm)"
+              description="Immediate structural breach alarm threshold"
               value={wallCrit}
-              min={10.0}
-              max={30.0}
-              step={1.0}
+              min={5}
+              max={60}
+              step={5}
               unit="cm"
-              criticalZone={20.0}
+              color="rose"
               onChange={setWallCrit}
             />
           </CardContent>
         </Card>
 
-        {/* 3. Dual MPU Tilt Angle Limits */}
-        <Card className="border-slate-200/80 shadow-xs">
-          <CardHeader className="pb-3 bg-slate-50/70 border-b border-slate-100">
-            <CardTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <Compass className="size-4 text-purple-600" />
-              Dual MPU (Gy87 AXL385) Tilt Limits
-            </CardTitle>
-            <CardDescription className="text-xs">
-              Applies to both Horizontal (MPU-1) and Vertical (MPU-2) perpendicular sensors
-            </CardDescription>
+        {/* Section 3: Dual Gy87 Tilt Sensors */}
+        <Card className="rounded-2xl border-slate-200/80 dark:border-slate-800 shadow-xs">
+          <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-2">
+              <div className="size-7 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-600 flex items-center justify-center">
+                <Icon icon="solar:compass-bold-duotone" className="size-4" />
+              </div>
+              <div>
+                <CardTitle className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                  Dual Gy87 Inclinometer Inclination Thresholds
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Angular deflection limits for Sensor A (Horizontal) and Sensor B (Vertical Perpendicular)
+                </CardDescription>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent className="p-5 space-y-4">
+          <CardContent className="p-5 space-y-6">
             <ThresholdSlider
-              label="Tilt Warning Angle (°)"
-              description="Initial inclination / slope deviation limit"
+              label="Angular Incline Warning Limit (Deg)"
+              description="Deflection angle triggering geotechnical watch status"
               value={tiltWarn}
               min={1.0}
-              max={5.0}
+              max={10.0}
               step={0.5}
               unit="°"
-              warningZone={3.0}
+              color="amber"
               onChange={setTiltWarn}
             />
             <ThresholdSlider
-              label="Tilt Critical Angle (°)"
-              description="Severe structural / rock wall displacement trigger"
+              label="Critical Structural Tilt Deflection (Deg)"
+              description="Emergency subsidence trigger angle; indicates imminent ground failure"
               value={tiltCrit}
-              min={5.0}
-              max={15.0}
+              min={3.0}
+              max={20.0}
               step={0.5}
               unit="°"
-              criticalZone={7.0}
+              color="rose"
               onChange={setTiltCrit}
             />
           </CardContent>
         </Card>
 
-        {/* 4. Actuator Automation & Linkages */}
-        <Card className="border-slate-200/80 shadow-xs">
-          <CardHeader className="pb-3 bg-slate-50/70 border-b border-slate-100">
-            <CardTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <Zap className="size-4 text-amber-600" />
-              Emergency Actuator Automation
-            </CardTitle>
-            <CardDescription className="text-xs">
-              Hardware sirens and visual matrix output triggers
-            </CardDescription>
+        {/* Section 4: Vibration Sensor */}
+        <Card className="rounded-2xl border-slate-200/80 dark:border-slate-800 shadow-xs">
+          <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-2">
+              <div className="size-7 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 flex items-center justify-center">
+                <Icon icon="solar:graph-up-bold-duotone" className="size-4" />
+              </div>
+              <div>
+                <CardTitle className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                  Micro-Vibration Sensor Thresholds
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Sensitivity settings for micro-seismic shockwave event detection
+                </CardDescription>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent className="p-5 space-y-4 text-xs">
-            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200/80">
-              <div className="flex items-center gap-2.5">
-                <Volume2 className="size-4 text-rose-600" />
-                <div>
-                  <span className="font-bold text-slate-900 block">Audible Buzzer Siren</span>
-                  <span className="text-slate-500">Allow system to sound physical buzzer on hazard</span>
-                </div>
+          <CardContent className="p-5">
+            <ThresholdSlider
+              label="Vibration Shock Intensity Threshold (%)"
+              description="Threshold percentage for seismic shockwave spike detection"
+              value={vibThresh}
+              min={20}
+              max={100}
+              step={5}
+              unit="%"
+              color="amber"
+              onChange={setVibThresh}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Section 5: Actuator Automation Toggles */}
+        <Card className="rounded-2xl border-slate-200/80 dark:border-slate-800 shadow-xs">
+          <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-2">
+              <div className="size-7 rounded-xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 flex items-center justify-center">
+                <Icon icon="solar:volume-loud-bold-duotone" className="size-4" />
               </div>
-              <Switch checked={buzzerEnabled} onCheckedChange={setBuzzerEnabled} />
+              <div>
+                <CardTitle className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                  Physical Alert Actuator Automation
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Automate 8x8 LED flash beacon and piezo siren responses on critical alerts
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-5 space-y-4 text-xs font-sans">
+            <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-950/40 rounded-xl border border-slate-100 dark:border-slate-800">
+              <div className="space-y-0.5">
+                <Label htmlFor="autoTrigger" className="font-bold text-slate-800 dark:text-slate-200 cursor-pointer">
+                  Auto-Engage Actuators on Critical Hazard
+                </Label>
+                <p className="text-slate-500 text-[11px]">
+                  Automatically trigger both siren and LED hazard matrix whenever critical limits are breached
+                </p>
+              </div>
+              <Switch
+                id="autoTrigger"
+                checked={autoTrigger}
+                onCheckedChange={setAutoTrigger}
+              />
             </div>
 
-            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200/80">
-              <div className="flex items-center gap-2.5">
-                <Grid3X3 className="size-4 text-orange-600" />
-                <div>
-                  <span className="font-bold text-slate-900 block">8x8 Flash LED Matrix</span>
-                  <span className="text-slate-500">Render real-time visual warning patterns</span>
-                </div>
+            <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-950/40 rounded-xl border border-slate-100 dark:border-slate-800">
+              <div className="space-y-0.5">
+                <Label htmlFor="buzzerEnable" className="font-bold text-slate-800 dark:text-slate-200 cursor-pointer">
+                  Audible Siren Master Enable
+                </Label>
+                <p className="text-slate-500 text-[11px]">
+                  Allow ESP stations to sound high-decibel piezo buzzer
+                </p>
               </div>
-              <Switch checked={ledMatrixEnabled} onCheckedChange={setLedMatrixEnabled} />
+              <Switch
+                id="buzzerEnable"
+                checked={buzzerEnabled}
+                onCheckedChange={setBuzzerEnabled}
+              />
             </div>
 
-            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200/80">
-              <div className="flex items-center gap-2.5">
-                <Zap className="size-4 text-amber-600" />
-                <div>
-                  <span className="font-bold text-slate-900 block">Auto-Trigger on Critical</span>
-                  <span className="text-slate-500">Instantly activate siren & danger flash on critical breach</span>
-                </div>
+            <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-950/40 rounded-xl border border-slate-100 dark:border-slate-800">
+              <div className="space-y-0.5">
+                <Label htmlFor="ledEnable" className="font-bold text-slate-800 dark:text-slate-200 cursor-pointer">
+                  Visual 8x8 LED Beacon Master Enable
+                </Label>
+                <p className="text-slate-500 text-[11px]">
+                  Allow ESP stations to drive MAX7219 8x8 LED pattern matrix
+                </p>
               </div>
-              <Switch checked={autoTrigger} onCheckedChange={setAutoTrigger} />
+              <Switch
+                id="ledEnable"
+                checked={ledMatrixEnabled}
+                onCheckedChange={setLedMatrixEnabled}
+              />
             </div>
           </CardContent>
         </Card>

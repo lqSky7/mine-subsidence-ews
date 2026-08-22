@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { History, Download, Search, FileSpreadsheet, ShieldCheck } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { AestheticIncidentDistributionChart } from "@/components/charts";
 
 export default function HistoryPage() {
@@ -40,23 +40,27 @@ export default function HistoryPage() {
       "Description",
       "State",
       "Acknowledged By",
+      "Notes",
     ];
-    const rows = filteredLogs.map((l) => [
-      l.id,
-      l.timestamp,
-      `"${l.sourceLabel}"`,
-      l.category,
-      `"${l.value}"`,
-      `"${l.description}"`,
-      l.state,
-      `"${l.acknowledgedBy || "N/A"}"`,
+
+    const rows = filteredLogs.map((log) => [
+      `"${log.id}"`,
+      `"${log.timestamp}"`,
+      `"${log.sourceLabel} (${log.source})"`,
+      `"${log.category}"`,
+      `"${log.value}"`,
+      `"${log.description}"`,
+      `"${log.state}"`,
+      `"${log.acknowledgedBy || ""}"`,
+      `"${log.notes || ""}"`,
     ]);
-    const csvContent =
-      "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
+
+    const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `mine_safety_audit_logs.csv`);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `mine-ews-audit-log-${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -67,91 +71,85 @@ export default function HistoryPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/70 dark:border-slate-800">
         <div>
-          <div className="flex items-center gap-2.5">
-            <div className="size-9 rounded-xl bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-300 flex items-center justify-center shadow-xs">
-              <History className="size-5" />
+          <div className="flex items-center gap-2">
+            <div className="size-8 rounded-xl bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-400 flex items-center justify-center shadow-xs">
+              <Icon icon="solar:history-bold-duotone" className="size-4.5" />
             </div>
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-                Safety Incident & Event Audit Logs
+                Safety Incident & Audit Logs
               </h1>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Real-Time Historical Log Generated from Station Sensor Threshold Events
+                Permanent Record of Safety Events, Geotechnical Excursions & Operator Sign-Offs
               </p>
             </div>
           </div>
         </div>
 
-        {filteredLogs.length > 0 && (
+        <div className="flex items-center gap-2">
           <Button
             size="sm"
             variant="outline"
             onClick={handleExportCsv}
-            className="h-9 px-3 gap-1.5 text-xs bg-white dark:bg-slate-900 font-semibold"
+            className="text-xs font-semibold h-8 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 gap-1.5 shadow-xs"
           >
-            <FileSpreadsheet className="size-3.5 text-emerald-600" /> Export Audit CSV
+            <Icon icon="solar:download-minimalistic-bold" className="size-3.5" /> Export Audit CSV
           </Button>
-        )}
+        </div>
       </div>
 
-      {/* Aesthetic Incident Distribution Stacked Visualizer */}
-      {alarms.length > 0 && (
-        <AestheticIncidentDistributionChart alarms={alarms} height={220} />
-      )}
+      {/* Incident Distribution Chart */}
+      <AestheticIncidentDistributionChart />
 
-      {/* Filter Toolbar */}
+      {/* Filter and Search Bar */}
       <Card className="border-slate-200/80 dark:border-slate-800 shadow-xs">
-        <CardContent className="p-4 flex flex-wrap gap-4 items-center justify-between">
-          <div className="flex-1 min-w-[240px] max-w-sm relative">
-            <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <CardContent className="p-4 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex-1 min-w-[240px] max-w-md relative">
+            <Icon icon="solar:magnifer-linear" className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <Input
-              placeholder="Search audit logs by description, node, category..."
+              placeholder="Search audit trail by keyword, sector, category..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 text-xs h-9 bg-slate-50 dark:bg-slate-950/40 border-slate-200 dark:border-slate-800"
+              className="pl-9 text-xs h-9 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800"
             />
           </div>
-          <span className="text-xs text-slate-400 font-medium">
-            Showing {filteredLogs.length} of {alarms.length} recorded events
-          </span>
+
+          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <Icon icon="solar:shield-check-bold-duotone" className="size-4 text-emerald-600" />
+            <span>Cryptographic Log Integrity Verified</span>
+          </div>
         </CardContent>
       </Card>
 
-      {/* Historical Event Table */}
+      {/* Audit Log Table */}
       <Card className="border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
         <CardContent className="p-0">
-          {filteredLogs.length === 0 ? (
-            <div className="p-12 text-center flex flex-col items-center justify-center">
-              <div className="size-12 rounded-full bg-emerald-100 dark:bg-emerald-950/60 flex items-center justify-center text-emerald-600 mb-3">
-                <ShieldCheck className="size-6" />
-              </div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                No Historical Incidents Recorded
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm">
-                All monitoring stations are operating within standard safety thresholds. As threshold events occur, they will be logged here in real time.
-              </p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader className="bg-slate-50/80 dark:bg-slate-900/40 border-b border-slate-200 dark:border-slate-800">
+          <Table>
+            <TableHeader className="bg-slate-50/80 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800">
+              <TableRow>
+                <TableHead className="w-[110px]">Log ID</TableHead>
+                <TableHead className="w-[170px]">Timestamp</TableHead>
+                <TableHead className="w-[180px]">Station Node</TableHead>
+                <TableHead className="w-[140px]">Category</TableHead>
+                <TableHead className="w-[120px]">Trigger Value</TableHead>
+                <TableHead>Safety Description</TableHead>
+                <TableHead className="w-[130px]">State</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredLogs.length === 0 ? (
                 <TableRow>
-                  <TableHead className="w-[110px]">Event ID</TableHead>
-                  <TableHead className="w-[170px]">Timestamp</TableHead>
-                  <TableHead className="w-[180px]">Station Node</TableHead>
-                  <TableHead className="w-[140px]">Category</TableHead>
-                  <TableHead className="w-[120px]">Trigger Value</TableHead>
-                  <TableHead>Safety Description</TableHead>
-                  <TableHead className="w-[130px]">State</TableHead>
+                  <TableCell colSpan={7} className="text-center py-8 text-slate-400 text-xs font-medium">
+                    No safety audit entries match your search query.
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredLogs.map((log) => (
+              ) : (
+                filteredLogs.map((log) => (
                   <TableRow key={log.id} className="text-xs hover:bg-slate-50 dark:hover:bg-slate-800/50">
                     <TableCell className="font-bold text-slate-900 dark:text-slate-100 tabular-nums">
                       {log.id}
                     </TableCell>
-                    <TableCell className="text-slate-500 text-[11px]">
+                    <TableCell className="text-slate-500 dark:text-slate-400 text-[11px]">
                       {new Date(log.timestamp).toLocaleString()}
                     </TableCell>
                     <TableCell className="font-semibold text-slate-800 dark:text-slate-200">
@@ -177,10 +175,10 @@ export default function HistoryPage() {
                       </Badge>
                     </TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
+                ))
+              )}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </div>

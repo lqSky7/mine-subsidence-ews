@@ -1,19 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  LayoutDashboard,
-  Cpu,
-  Bell,
-  Layers,
-  Settings,
-  Flame,
-  Volume2,
-  TrendingUp,
-  History,
-} from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import {
   Sidebar,
   SidebarContent,
@@ -34,7 +23,7 @@ import { useTelemetryContext } from "./telemetry-provider";
 interface NavItem {
   title: string;
   href: string;
-  icon: React.ElementType;
+  icon: string;
   badge?: string;
 }
 
@@ -53,17 +42,17 @@ export function AppSidebar() {
         {
           title: "Command Center",
           href: "/dashboard",
-          icon: LayoutDashboard,
+          icon: "solar:widget-2-bold-duotone",
         },
         {
           title: "ESP Node Fleet",
           href: "/dashboard/nodes",
-          icon: Cpu,
+          icon: "solar:cpu-bolt-bold-duotone",
         },
         {
           title: "Actuators & Outputs",
           href: "/dashboard/outputs",
-          icon: Volume2,
+          icon: "solar:volume-loud-bold-duotone",
           badge: "ACTUATORS",
         },
       ],
@@ -74,13 +63,13 @@ export function AppSidebar() {
         {
           title: "Early Warning Alerts",
           href: "/dashboard/alarms",
-          icon: Bell,
+          icon: "solar:bell-bold-duotone",
           badge: totalActiveAlarms > 0 ? String(totalActiveAlarms) : undefined,
         },
         {
           title: "Safety Thresholds",
           href: "/dashboard/settings/alerts",
-          icon: Settings,
+          icon: "solar:settings-bold-duotone",
         },
       ],
     },
@@ -90,12 +79,12 @@ export function AppSidebar() {
         {
           title: "Multi-Sensor Trends",
           href: "/dashboard/analytics/trends",
-          icon: TrendingUp,
+          icon: "solar:chart-2-bold-duotone",
         },
         {
           title: "Event Audit Logs",
           href: "/dashboard/analytics/history",
-          icon: History,
+          icon: "solar:history-bold-duotone",
         },
       ],
     },
@@ -105,7 +94,7 @@ export function AppSidebar() {
         {
           title: "Hardware BOM & Pinout",
           href: "/dashboard/hardware",
-          icon: Layers,
+          icon: "solar:layers-minimalistic-bold-duotone",
         },
       ],
     },
@@ -119,11 +108,11 @@ export function AppSidebar() {
             <SidebarMenuButton size="lg" render={<Link href="/dashboard" />}>
               <div className="flex items-center gap-2.5">
                 <div className="flex size-8.5 items-center justify-center rounded-xl bg-orange-600 text-white shadow-xs">
-                  <Flame className="size-4.5 fill-current" />
+                  <Icon icon="solar:fire-bold-duotone" className="size-5" />
                 </div>
                 <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-bold text-sm text-slate-900 tracking-tight">Mine EWS Platform</span>
-                  <span className="text-[10px] text-slate-500 font-medium">
+                  <span className="font-bold text-sm text-slate-900 dark:text-slate-100 tracking-tight">Mine EWS Platform</span>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
                     ESP Sensor & Early Warning
                   </span>
                 </div>
@@ -147,14 +136,14 @@ export function AppSidebar() {
                       render={<Link href={item.href} />}
                       isActive={pathname === item.href}
                     >
-                      <item.icon className="size-4" />
+                      <Icon icon={item.icon} className="size-4" />
                       <span>{item.title}</span>
                       {item.badge && (
                         <Badge
                           variant={item.badge === "ACTUATORS" ? "secondary" : "destructive"}
                           className={cn(
                             "ml-auto h-5 px-1.5 text-[10px] font-bold",
-                            item.badge === "ACTUATORS" && "bg-blue-100 text-blue-800 border-blue-300"
+                            item.badge === "ACTUATORS" && "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-950 dark:text-blue-300"
                           )}
                         >
                           {item.badge}
@@ -172,10 +161,10 @@ export function AppSidebar() {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <div className="p-3 bg-slate-50/90 rounded-xl border border-slate-200/80 flex items-center justify-between text-xs">
+            <div className="p-3 bg-slate-50/90 dark:bg-slate-900/60 rounded-xl border border-slate-200/80 dark:border-slate-800 flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
                 <span className={cn("size-2 rounded-full", isConnected ? "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)]" : "bg-slate-400")} />
-                <span className="font-semibold text-slate-700">{isConnected ? "Multi-Node Active" : "Disconnected"}</span>
+                <span className="font-semibold text-slate-700 dark:text-slate-300">{isConnected ? "Multi-Node Active" : "Disconnected"}</span>
               </div>
               <span className="text-[10px] font-semibold text-slate-500">{nodes.length > 0 ? `${nodes.length} ESPs` : "-"}</span>
             </div>

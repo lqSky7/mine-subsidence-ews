@@ -15,14 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Cpu,
-  Search,
-  LayoutGrid,
-  List,
-  ArrowUpRight,
-  Inbox,
-} from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 
 export default function MeshFleetPage() {
@@ -49,7 +42,7 @@ export default function MeshFleetPage() {
         <div>
           <div className="flex items-center gap-2">
             <div className="size-8 rounded-xl bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-400 flex items-center justify-center shadow-xs">
-              <Cpu className="size-4.5" />
+              <Icon icon="solar:cpu-bolt-bold-duotone" className="size-4.5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -81,21 +74,21 @@ export default function MeshFleetPage() {
               size="sm"
               variant={viewMode === "table" ? "default" : "ghost"}
               onClick={() => setViewMode("table")}
-              className={`h-7 px-2.5 text-xs font-semibold rounded-lg ${
+              className={`h-7 px-2.5 text-xs font-semibold rounded-lg gap-1.5 ${
                 viewMode === "table" ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs font-bold" : ""
               }`}
             >
-              <List className="size-3.5 mr-1" /> Table
+              <Icon icon="solar:list-bold" className="size-3.5" /> Table
             </Button>
             <Button
               size="sm"
               variant={viewMode === "grid" ? "default" : "ghost"}
               onClick={() => setViewMode("grid")}
-              className={`h-7 px-2.5 text-xs font-semibold rounded-lg ${
+              className={`h-7 px-2.5 text-xs font-semibold rounded-lg gap-1.5 ${
                 viewMode === "grid" ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs font-bold" : ""
               }`}
             >
-              <LayoutGrid className="size-3.5 mr-1" /> Cards
+              <Icon icon="solar:widget-2-bold-duotone" className="size-3.5" /> Cards
             </Button>
           </div>
         </div>
@@ -105,7 +98,7 @@ export default function MeshFleetPage() {
       <Card className="border-slate-200/80 dark:border-slate-800 shadow-xs">
         <CardContent className="p-4 flex flex-wrap gap-4 items-center justify-between">
           <div className="flex-1 min-w-[220px] max-w-sm relative">
-            <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Icon icon="solar:magnifer-linear" className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <Input
               placeholder="Search by Node ID, sector, chamber..."
               value={searchTerm}
@@ -135,7 +128,7 @@ export default function MeshFleetPage() {
       {nodes.length === 0 ? (
         <Card className="border-dashed border-slate-200 dark:border-slate-800 p-12 text-center">
           <div className="size-12 rounded-full bg-slate-100 dark:bg-slate-800 mx-auto flex items-center justify-center text-slate-400 mb-3">
-            <Inbox className="size-6" />
+            <Icon icon="solar:inbox-line-linear" className="size-6" />
           </div>
           <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
             No ESP Sensor Nodes Discovered
@@ -222,7 +215,7 @@ export default function MeshFleetPage() {
                     </div>
                     <Link href={`/dashboard/nodes/${node.id}`}>
                       <Button size="sm" variant="ghost" className="h-7 text-xs font-semibold gap-1 text-orange-600 hover:text-orange-700">
-                        Inspect <ArrowUpRight className="size-3.5" />
+                        Inspect <Icon icon="solar:arrow-right-up-linear" className="size-3.5" />
                       </Button>
                     </Link>
                   </div>
@@ -323,7 +316,7 @@ export default function MeshFleetPage() {
                         <TableCell className="text-right">
                           <Link href={`/dashboard/nodes/${node.id}`}>
                             <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">
-                              <ArrowUpRight className="size-4" />
+                              <Icon icon="solar:arrow-right-up-linear" className="size-4" />
                             </Button>
                           </Link>
                         </TableCell>

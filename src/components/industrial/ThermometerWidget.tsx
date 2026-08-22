@@ -2,7 +2,7 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
-import { Thermometer } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 
 interface ThermometerWidgetProps {
   value: number;
@@ -56,19 +56,19 @@ export function ThermometerWidget({
   return (
     <div
       className={cn(
-        "flex flex-col items-center bg-white rounded-lg border border-slate-300 shadow-md p-4",
+        "flex flex-col items-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs p-4 font-sans",
         className
       )}
     >
       {/* Title */}
-      <span className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-3 flex items-center gap-2">
-        <Thermometer className="size-4" />
+      <span className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2">
+        <Icon icon="solar:thermometer-bold-duotone" className="size-4 text-orange-600" />
         {label}
       </span>
 
-      <svg width="100" height="210" viewBox="0 0 100 210" className="overflow-visible">
+      <svg width="100" height="210" viewBox="0 0 100 210" className="overflow-visible font-sans">
         {/* ---- Scale markings (right side of tube) ---- */}
-        <g className=" text-[10px] font-bold fill-slate-600">
+        <g className="text-[10px] font-bold fill-slate-500">
           {ticks.map((temp) => {
             const y = tubeBot - ((temp - min) / (max - min)) * tubeH;
             return (
@@ -165,7 +165,7 @@ export function ThermometerWidget({
           y={bulbCy + 1}
           textAnchor="middle"
           dominantBaseline="middle"
-          className="text-[9px]  font-bold fill-white"
+          className="text-[9px] font-bold fill-white"
         >
           {value.toFixed(1)}
         </text>
@@ -182,11 +182,11 @@ export function ThermometerWidget({
       </svg>
 
       {/* Digital readout */}
-      <div className="mt-3 bg-slate-50 rounded-lg px-6 py-3 border border-slate-300 text-center">
+      <div className="mt-3 bg-slate-50 dark:bg-slate-950/40 rounded-xl px-6 py-2.5 border border-slate-200 dark:border-slate-800 text-center">
         <div className="flex items-baseline justify-center gap-1.5">
           <span
             className={cn(
-              "text-3xl  font-bold tabular-nums",
+              "text-3xl font-bold tabular-nums",
               isHigh ? "text-rose-600" : isLow ? "text-blue-600" : "text-emerald-600"
             )}
           >
@@ -199,12 +199,12 @@ export function ThermometerWidget({
       {/* Status pill */}
       <div
         className={cn(
-          "mt-3 px-4 py-1.5 rounded-full text-xs font-bold border-2",
+          "mt-3 px-3 py-1 rounded-full text-xs font-bold border",
           isHigh
-            ? "bg-rose-50 text-rose-700 border-rose-500"
+            ? "bg-rose-50 text-rose-700 border-rose-300 dark:bg-rose-950 dark:text-rose-300"
             : isLow
-            ? "bg-blue-50 text-blue-700 border-blue-500"
-            : "bg-emerald-50 text-emerald-700 border-emerald-500"
+            ? "bg-blue-50 text-blue-700 border-blue-300 dark:bg-blue-950 dark:text-blue-300"
+            : "bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300"
         )}
       >
         {isHigh ? "● HIGH TEMP" : isLow ? "● LOW TEMP" : "● NORMAL"}

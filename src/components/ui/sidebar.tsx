@@ -23,7 +23,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { PanelLeftIcon } from "lucide-react"
+import { Icon } from "@/components/ui/icon"
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
@@ -271,7 +271,7 @@ function SidebarTrigger({
       }}
       {...props}
     >
-      <PanelLeftIcon />
+      <Icon icon="solar:sidebar-minimalistic-bold-duotone" className="size-4 text-slate-700 dark:text-slate-300" />
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   )

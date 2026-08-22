@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Bell, Radio, User, MapPin } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
@@ -57,7 +57,7 @@ export function TopBar() {
               <React.Fragment key={seg}>
                 <BreadcrumbItem>
                   {isLast ? (
-                    <BreadcrumbPage className="font-semibold text-slate-800">{label}</BreadcrumbPage>
+                    <BreadcrumbPage className="font-semibold text-slate-800 dark:text-slate-200">{label}</BreadcrumbPage>
                   ) : (
                     <BreadcrumbLink href={href}>{label}</BreadcrumbLink>
                   )}
@@ -72,16 +72,19 @@ export function TopBar() {
       {/* Right side status indicators */}
       <div className="ml-auto flex items-center gap-3">
         {/* Mine Location / Station Badge */}
-        <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-xs font-semibold text-slate-700">
-          <MapPin className="size-3 text-orange-600" />
+        <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300">
+          <Icon icon="solar:map-point-bold-duotone" className="size-3.5 text-orange-600" />
           <span>Mine Station Grid</span>
         </div>
 
         {/* Gateway Connection status */}
         <div className="flex items-center gap-1.5 text-xs">
-          <Radio className={cn("size-3.5", isConnected ? "text-emerald-600" : "text-slate-400")} />
-          <span className="text-slate-600 hidden lg:inline font-medium">
-            ESP Bridge: <strong className="text-slate-800">{isConnected ? "Live Socket" : "Disconnected"}</strong> ({nodes.length > 0 ? `${onlineNodes}/${nodes.length} Nodes` : "-"})
+          <Icon
+            icon="solar:radio-bold-duotone"
+            className={cn("size-3.5", isConnected ? "text-emerald-600" : "text-slate-400")}
+          />
+          <span className="text-slate-600 dark:text-slate-400 hidden lg:inline font-medium">
+            ESP Bridge: <strong className="text-slate-800 dark:text-slate-200">{isConnected ? "Live Socket" : "Disconnected"}</strong> ({nodes.length > 0 ? `${onlineNodes}/${nodes.length} Nodes` : "-"})
           </span>
         </div>
 
@@ -89,7 +92,10 @@ export function TopBar() {
 
         {/* Active Hazard Alarm Badge */}
         <div className="flex items-center gap-1.5">
-          <Bell className={cn("size-3.5", totalActive > 0 ? "text-rose-600" : "text-muted-foreground")} />
+          <Icon
+            icon="solar:bell-bold-duotone"
+            className={cn("size-4", totalActive > 0 ? "text-rose-600 animate-pulse" : "text-muted-foreground")}
+          />
           {totalActive > 0 ? (
             <Badge variant="destructive" className="h-5 min-w-5 px-1.5 text-[10px] font-bold">
               {totalActive} HAZARDS
@@ -103,8 +109,8 @@ export function TopBar() {
 
         {/* User role */}
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <User className="size-3.5" />
-          <span className="hidden lg:inline font-medium text-slate-700">SAFETY OFFICER</span>
+          <Icon icon="solar:user-circle-bold-duotone" className="size-4 text-slate-500" />
+          <span className="hidden lg:inline font-medium text-slate-700 dark:text-slate-300">SAFETY OFFICER</span>
         </div>
       </div>
     </header>

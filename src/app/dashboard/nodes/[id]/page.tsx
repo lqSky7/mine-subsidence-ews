@@ -5,12 +5,7 @@ import Link from "next/link";
 import { useTelemetryContext } from "@/components/layout/telemetry-provider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Compass,
-  Radio,
-  ArrowLeft,
-  Flame,
-} from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { TiltInclinometer3D } from "@/components/industrial/TiltInclinometer3D";
 import { AestheticMultiMetricChart, AestheticMiniSparkline } from "@/components/charts";
 import type { TelemetryDataPoint } from "@/types";
@@ -68,7 +63,7 @@ export default function NodeDetailPage({ params }: { params: Promise<{ id: strin
         <div className="flex items-center gap-3">
           <Link href="/dashboard/nodes">
             <Button size="sm" variant="outline" className="size-9 p-0 rounded-xl bg-white dark:bg-slate-900">
-              <ArrowLeft className="size-4" />
+              <Icon icon="solar:arrow-left-linear" className="size-4" />
             </Button>
           </Link>
           <div>
@@ -111,7 +106,7 @@ export default function NodeDetailPage({ params }: { params: Promise<{ id: strin
                 MQ2 Gas Sensor
               </span>
               <div className="size-7 rounded-xl bg-orange-100 dark:bg-orange-950/60 text-orange-600 flex items-center justify-center">
-                <Flame className="size-3.5" />
+                <Icon icon="solar:flame-bold-duotone" className="size-4 text-orange-600" />
               </div>
             </div>
             <div className="mt-2 flex items-baseline gap-1">
@@ -140,7 +135,7 @@ export default function NodeDetailPage({ params }: { params: Promise<{ id: strin
                 Wall Clearance
               </span>
               <div className="size-7 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-600 flex items-center justify-center">
-                <Radio className="size-3.5" />
+                <Icon icon="solar:radar-2-bold-duotone" className="size-4 text-blue-600" />
               </div>
             </div>
             <div className="mt-2 flex items-baseline gap-1">
@@ -169,7 +164,7 @@ export default function NodeDetailPage({ params }: { params: Promise<{ id: strin
                 MPU 1 (Horizontal)
               </span>
               <div className="size-7 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-600 flex items-center justify-center">
-                <Compass className="size-3.5" />
+                <Icon icon="solar:compass-bold-duotone" className="size-4 text-purple-600" />
               </div>
             </div>
             <div className="mt-2 flex items-baseline gap-1">
@@ -198,7 +193,7 @@ export default function NodeDetailPage({ params }: { params: Promise<{ id: strin
                 MPU 2 (Vertical)
               </span>
               <div className="size-7 rounded-xl bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 flex items-center justify-center">
-                <Compass className="size-3.5" />
+                <Icon icon="solar:compass-bold-duotone" className="size-4 text-indigo-600" />
               </div>
             </div>
             <div className="mt-2 flex items-baseline gap-1">

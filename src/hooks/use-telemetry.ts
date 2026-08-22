@@ -71,7 +71,7 @@ export interface TelemetryState {
 
   // Actions
   setSelectedNodeId: (id: string) => void;
-  acknowledgeAlarm: (alarmId: string, notes?: string) => Promise<void>;
+  acknowledgeAlarm: (alarmId: string, officerName?: string, notes?: string) => Promise<void>;
   setThresholds: (thresholds: Partial<AlertThresholdConfig>) => Promise<void>;
   triggerActuatorTest: (actuator: "buzzer" | "ledMatrix", pattern?: LedMatrixPattern) => Promise<void>;
   fetchNodeHistory: (nodeId: string, points?: number) => Promise<TelemetryDataPoint[]>;
@@ -183,17 +183,18 @@ export function useTelemetry(): TelemetryState {
 
   // Acknowledge Alarm Handler
   const handleAcknowledgeAlarm = useCallback(
-    async (alarmId: string, notes?: string) => {
+    async (alarmId: string, officerName?: string, notes?: string) => {
+      const by = officerName || "CONTROL_ROOM_OPERATOR";
       try {
         await fetch(`${API_BASE}/alarms/${alarmId}/acknowledge`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ by: "CONTROL_ROOM_OPERATOR", notes }),
+          body: JSON.stringify({ by, notes }),
         });
         setAlarms((prev) =>
           prev.map((a) =>
             a.id === alarmId
-              ? { ...a, state: "ACKNOWLEDGED", acknowledgedBy: "CONTROL_ROOM_OPERATOR", notes }
+              ? { ...a, state: "ACKNOWLEDGED", acknowledgedBy: by, notes }
               : a
           )
         );

@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
 import { AestheticChartTooltip } from "./ChartTooltip";
-import { Layers } from "lucide-react";
 
 interface ComponentCostItem {
   name: string;

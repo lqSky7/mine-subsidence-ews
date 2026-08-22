@@ -6,18 +6,7 @@ import { useTelemetryContext } from "@/components/layout/telemetry-provider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Compass,
-  Activity,
-  AlertTriangle,
-  Flame,
-  Volume2,
-  VolumeX,
-  Radio,
-  Zap,
-  ArrowUpRight,
-  CircleDot,
-} from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { TiltInclinometer3D } from "@/components/industrial/TiltInclinometer3D";
 import { LedMatrixDisplay } from "@/components/industrial/LedMatrixDisplay";
 import {
@@ -185,7 +174,7 @@ export default function CommandCenterPage() {
       {/* Critical Hazard Alert Banner */}
       {hasCriticalHazard && (
         <div className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-2xl p-4 flex items-start gap-3 shadow-xs">
-          <AlertTriangle className="size-5 text-rose-600 shrink-0 mt-0.5" />
+          <Icon icon="solar:danger-triangle-bold" className="size-5 text-rose-600 shrink-0 mt-0.5" />
           <div className="flex-1 text-xs">
             <span className="font-bold text-rose-900 dark:text-rose-200 text-sm block">
               CRITICAL HAZARD ALERT: Safety Threshold Breached
@@ -224,7 +213,7 @@ export default function CommandCenterPage() {
                 MQ2 Gas Level
               </span>
               <div className="size-7 rounded-xl bg-orange-100 dark:bg-orange-950/60 flex items-center justify-center text-orange-600">
-                <Flame className="size-3.5" />
+                <Icon icon="solar:flame-bold-duotone" className="size-4" />
               </div>
             </div>
             <div className="mt-2.5 flex items-baseline gap-1">
@@ -269,7 +258,7 @@ export default function CommandCenterPage() {
                 Wall Clearance
               </span>
               <div className="size-7 rounded-xl bg-blue-100 dark:bg-blue-950/60 flex items-center justify-center text-blue-600">
-                <Radio className="size-3.5" />
+                <Icon icon="solar:radar-2-bold-duotone" className="size-4" />
               </div>
             </div>
             <div className="mt-2.5 flex items-baseline gap-1">
@@ -317,7 +306,7 @@ export default function CommandCenterPage() {
                 MPU 1 (Horizontal)
               </span>
               <div className="size-7 rounded-xl bg-purple-100 dark:bg-purple-950/60 flex items-center justify-center text-purple-600">
-                <Compass className="size-3.5" />
+                <Icon icon="solar:compass-bold-duotone" className="size-4" />
               </div>
             </div>
             <div className="mt-2.5 flex items-baseline gap-1">
@@ -345,7 +334,7 @@ export default function CommandCenterPage() {
                 MPU 2 (Vertical)
               </span>
               <div className="size-7 rounded-xl bg-indigo-100 dark:bg-indigo-950/60 flex items-center justify-center text-indigo-600">
-                <Compass className="size-3.5" />
+                <Icon icon="solar:compass-bold-duotone" className="size-4" />
               </div>
             </div>
             <div className="mt-2.5 flex items-baseline gap-1">
@@ -373,7 +362,7 @@ export default function CommandCenterPage() {
                 Micro-Vibration
               </span>
               <div className="size-7 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 flex items-center justify-center text-emerald-600">
-                <Activity className="size-3.5" />
+                <Icon icon="solar:graph-up-bold-duotone" className="size-4" />
               </div>
             </div>
             <div className="mt-2.5 flex items-baseline gap-1">
@@ -456,14 +445,14 @@ export default function CommandCenterPage() {
             <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                  <Zap className="size-4 text-orange-600" />
+                  <Icon icon="solar:bolt-bold-duotone" className="size-4 text-orange-600" />
                   Alert Actuators & Outputs
                 </CardTitle>
                 <Link
                   href="/dashboard/outputs"
                   className="text-[11px] font-semibold text-orange-600 hover:text-orange-700 flex items-center gap-1"
                 >
-                  Full View <ArrowUpRight className="size-3" />
+                  Full View <Icon icon="solar:arrow-right-up-linear" className="size-3" />
                 </Link>
               </div>
             </CardHeader>
@@ -487,7 +476,11 @@ export default function CommandCenterPage() {
                         : "bg-slate-200 dark:bg-slate-800 text-slate-500"
                     }`}
                   >
-                    {tel?.actuators?.buzzerActive ? <Volume2 className="size-4" /> : <VolumeX className="size-4" />}
+                    {tel?.actuators?.buzzerActive ? (
+                      <Icon icon="solar:volume-loud-bold-duotone" className="size-4 text-rose-700" />
+                    ) : (
+                      <Icon icon="solar:volume-cross-bold-duotone" className="size-4 text-slate-500" />
+                    )}
                   </div>
                   <div>
                     <span className="text-xs font-bold text-slate-900 dark:text-slate-100 block">
@@ -535,8 +528,9 @@ export default function CommandCenterPage() {
                     >
                       <div>
                         <div className="flex items-center gap-1.5">
-                          <CircleDot
-                            className={`size-3 ${
+                          <Icon
+                            icon="solar:record-circle-bold-duotone"
+                            className={`size-3.5 ${
                               a.severity === "CRITICAL" ? "text-rose-600" : "text-amber-500"
                             }`}
                           />

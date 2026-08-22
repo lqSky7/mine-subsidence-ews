@@ -13,10 +13,10 @@ import {
 } from "recharts";
 import { AestheticChartTooltip } from "./ChartTooltip";
 import { Alarm } from "@/types";
-import { ShieldAlert, AlertTriangle, Info, CheckCircle2 } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 
 interface AestheticIncidentDistributionChartProps {
-  alarms: Alarm[];
+  alarms?: Alarm[];
   height?: number;
   className?: string;
 }
@@ -97,11 +97,11 @@ export function AestheticIncidentDistributionChart({
         {/* Severity Badges */}
         <div className="flex items-center gap-2 text-xs">
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 font-bold">
-            <ShieldAlert className="size-3.5" />
+            <Icon icon="solar:shield-warning-bold-duotone" className="size-3.5" />
             <span>{severityTotals.critical} Critical</span>
           </div>
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-amber-700 dark:text-amber-300 font-bold">
-            <AlertTriangle className="size-3.5" />
+            <Icon icon="solar:danger-triangle-bold" className="size-3.5" />
             <span>{severityTotals.warning} Warning</span>
           </div>
         </div>
@@ -135,7 +135,7 @@ export function AestheticIncidentDistributionChart({
               <Tooltip
                 content={
                   <AestheticChartTooltip
-                    formatter={(val, name) => `${val} events`}
+                    formatter={(val) => `${val} events`}
                   />
                 }
               />

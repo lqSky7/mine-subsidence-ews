@@ -4,16 +4,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Flame,
-  ArrowRight,
-  ShieldCheck,
-  Compass,
-  Radio,
-  Activity,
-  Volume2,
-  Cpu,
-} from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 
 export default function LandingPage() {
   return (
@@ -23,7 +14,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="size-9 rounded-xl bg-orange-600 flex items-center justify-center text-white shadow-lg shadow-orange-500/20">
-              <Flame className="size-5" />
+              <Icon icon="solar:fire-bold-duotone" className="size-5" />
             </div>
             <div>
               <span className="font-bold text-base tracking-tight block text-white">Mine EWS</span>
@@ -35,8 +26,8 @@ export default function LandingPage() {
 
           <div className="flex items-center gap-3">
             <Link href="/dashboard">
-              <Button size="sm" className="bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-xl text-xs h-9 px-4">
-                Launch Command Center <ArrowRight className="size-3.5 ml-1.5" />
+              <Button size="sm" className="bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-xl text-xs h-9 px-4 gap-1.5">
+                Launch Command Center <Icon icon="solar:arrow-right-linear" className="size-3.5" />
               </Button>
             </Link>
           </div>
@@ -63,8 +54,8 @@ export default function LandingPage() {
 
           <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
             <Link href="/dashboard">
-              <Button size="lg" className="bg-orange-600 hover:bg-orange-500 text-white font-bold h-11 px-6 rounded-xl shadow-lg shadow-orange-600/25 text-sm">
-                Open Command Center <ArrowRight className="size-4 ml-2" />
+              <Button size="lg" className="bg-orange-600 hover:bg-orange-500 text-white font-bold h-11 px-6 rounded-xl shadow-lg shadow-orange-600/25 text-sm gap-2">
+                Open Command Center <Icon icon="solar:arrow-right-linear" className="size-4" />
               </Button>
             </Link>
             <Link href="/dashboard/hardware">
@@ -87,7 +78,7 @@ export default function LandingPage() {
           <Card className="bg-slate-900/60 border-slate-800 rounded-2xl text-slate-200 shadow-sm">
             <CardContent className="p-6 space-y-3">
               <div className="size-10 rounded-xl bg-orange-500/10 text-orange-400 flex items-center justify-center">
-                <Flame className="size-5" />
+                <Icon icon="solar:flame-bold-duotone" className="size-5 text-orange-400" />
               </div>
               <h3 className="text-base font-bold text-white">MQ2 Flammable Gas Sensor</h3>
               <p className="text-xs text-slate-400 leading-relaxed font-normal">
@@ -99,7 +90,7 @@ export default function LandingPage() {
           <Card className="bg-slate-900/60 border-slate-800 rounded-2xl text-slate-200 shadow-sm">
             <CardContent className="p-6 space-y-3">
               <div className="size-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center">
-                <Radio className="size-5" />
+                <Icon icon="solar:radar-2-bold-duotone" className="size-5 text-blue-400" />
               </div>
               <h3 className="text-base font-bold text-white">Ultrasound Wall Distance</h3>
               <p className="text-xs text-slate-400 leading-relaxed font-normal">
@@ -111,7 +102,7 @@ export default function LandingPage() {
           <Card className="bg-slate-900/60 border-slate-800 rounded-2xl text-slate-200 shadow-sm">
             <CardContent className="p-6 space-y-3">
               <div className="size-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center">
-                <Compass className="size-5" />
+                <Icon icon="solar:compass-bold-duotone" className="size-5 text-purple-400" />
               </div>
               <h3 className="text-base font-bold text-white">Dual Gy87 Inclinometers</h3>
               <p className="text-xs text-slate-400 leading-relaxed font-normal">
@@ -123,7 +114,7 @@ export default function LandingPage() {
           <Card className="bg-slate-900/60 border-slate-800 rounded-2xl text-slate-200 shadow-sm">
             <CardContent className="p-6 space-y-3">
               <div className="size-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
-                <Activity className="size-5" />
+                <Icon icon="solar:graph-up-bold-duotone" className="size-5 text-amber-400" />
               </div>
               <h3 className="text-base font-bold text-white">Micro-Vibration Sensor</h3>
               <p className="text-xs text-slate-400 leading-relaxed font-normal">
@@ -135,7 +126,7 @@ export default function LandingPage() {
           <Card className="bg-slate-900/60 border-slate-800 rounded-2xl text-slate-200 shadow-sm">
             <CardContent className="p-6 space-y-3">
               <div className="size-10 rounded-xl bg-rose-500/10 text-rose-400 flex items-center justify-center">
-                <Volume2 className="size-5" />
+                <Icon icon="solar:volume-loud-bold-duotone" className="size-5 text-rose-400" />
               </div>
               <h3 className="text-base font-bold text-white">Audible Siren Actuator</h3>
               <p className="text-xs text-slate-400 leading-relaxed font-normal">
@@ -147,7 +138,7 @@ export default function LandingPage() {
           <Card className="bg-slate-900/60 border-slate-800 rounded-2xl text-slate-200 shadow-sm">
             <CardContent className="p-6 space-y-3">
               <div className="size-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
-                <Cpu className="size-5" />
+                <Icon icon="solar:cpu-bolt-bold-duotone" className="size-5 text-emerald-400" />
               </div>
               <h3 className="text-base font-bold text-white">8x8 Flash LED Matrix</h3>
               <p className="text-xs text-slate-400 leading-relaxed font-normal">

@@ -5,7 +5,7 @@ import { useTelemetryContext } from "@/components/layout/telemetry-provider";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Volume2, VolumeX, Grid3X3, Zap, CheckCircle2, AlertTriangle, Shield, Inbox } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { LedMatrixDisplay } from "@/components/industrial/LedMatrixDisplay";
 import type { LedMatrixPattern } from "@/types";
 
@@ -39,7 +39,7 @@ export default function OutputsPage() {
         <div>
           <div className="flex items-center gap-2">
             <div className="size-8 rounded-xl bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-400 flex items-center justify-center shadow-xs">
-              <Volume2 className="size-4.5" />
+              <Icon icon="solar:volume-loud-bold-duotone" className="size-4.5" />
             </div>
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
@@ -84,7 +84,7 @@ export default function OutputsPage() {
       {!node ? (
         <Card className="border-dashed border-slate-200 dark:border-slate-800 p-12 text-center">
           <div className="size-12 rounded-full bg-slate-100 dark:bg-slate-800 mx-auto flex items-center justify-center text-slate-400 mb-3">
-            <Inbox className="size-6" />
+            <Icon icon="solar:inbox-line-linear" className="size-6" />
           </div>
           <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
             No Actuator Outputs Available
@@ -103,7 +103,7 @@ export default function OutputsPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                      <Grid3X3 className="size-4 text-orange-600" />
+                      <Icon icon="solar:widget-2-bold-duotone" className="size-4 text-orange-600" />
                       8x8 Flash LED Matrix Display
                     </CardTitle>
                     <CardDescription className="text-xs">
@@ -130,10 +130,10 @@ export default function OutputsPage() {
                   </span>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {[
-                      { id: "NORMAL_CHECK", label: "Checkmark", icon: CheckCircle2, color: "text-emerald-600" },
-                      { id: "WARNING_PULSE", label: "Warning Box", icon: AlertTriangle, color: "text-amber-600" },
-                      { id: "DANGER_FLASH", label: "Hazard X", icon: AlertTriangle, color: "text-rose-600" },
-                      { id: "EVACUATE_ARROW", label: "Evac Arrow", icon: Shield, color: "text-blue-600" },
+                      { id: "NORMAL_CHECK", label: "Checkmark", icon: "solar:check-circle-bold-duotone", color: "text-emerald-600" },
+                      { id: "WARNING_PULSE", label: "Warning Box", icon: "solar:danger-triangle-bold", color: "text-amber-600" },
+                      { id: "DANGER_FLASH", label: "Hazard X", icon: "solar:danger-triangle-bold", color: "text-rose-600" },
+                      { id: "EVACUATE_ARROW", label: "Evac Arrow", icon: "solar:shield-warning-bold-duotone", color: "text-blue-600" },
                     ].map((pat) => (
                       <Button
                         key={pat.id}
@@ -144,7 +144,7 @@ export default function OutputsPage() {
                           testPattern === pat.id ? "bg-orange-600 hover:bg-orange-700 text-white font-bold" : ""
                         }`}
                       >
-                        <pat.icon className={`size-3.5 ${testPattern === pat.id ? "text-white" : pat.color}`} />
+                        <Icon icon={pat.icon} className={`size-3.5 ${testPattern === pat.id ? "text-white" : pat.color}`} />
                         {pat.label}
                       </Button>
                     ))}
@@ -160,7 +160,7 @@ export default function OutputsPage() {
             <Card className="rounded-2xl border-slate-200/80 dark:border-slate-800 shadow-xs">
               <CardHeader className="pb-3 bg-slate-50/70 dark:bg-slate-900/40 border-b border-slate-100 dark:border-slate-800">
                 <CardTitle className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                  <Volume2 className="size-4 text-orange-600" />
+                  <Icon icon="solar:volume-loud-bold-duotone" className="size-4 text-orange-600" />
                   High-Decibel Piezo Siren
                 </CardTitle>
                 <CardDescription className="text-xs">
@@ -184,9 +184,9 @@ export default function OutputsPage() {
                       }`}
                     >
                       {tel?.actuators?.buzzerActive ? (
-                        <Volume2 className="size-5" />
+                        <Icon icon="solar:volume-loud-bold-duotone" className="size-5" />
                       ) : (
-                        <VolumeX className="size-5" />
+                        <Icon icon="solar:volume-cross-bold-duotone" className="size-5" />
                       )}
                     </div>
                     <div>

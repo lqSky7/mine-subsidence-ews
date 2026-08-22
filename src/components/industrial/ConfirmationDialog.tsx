@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 
 export interface ConfirmationDialogProps {
   open: boolean;
@@ -24,28 +24,6 @@ export interface ConfirmationDialogProps {
   isDestructive?: boolean;
 }
 
-/**
- * Industrial SCADA-style Confirmation Dialog
- * 
- * Follows Ignition/Siemens HMI confirmation patterns:
- * - Clear action description
- * - Prominent warning/status icons
- * - Bold confirm/cancel buttons
- * - Light industrial theme
- * 
- * @example
- * ```tsx
- * <ConfirmationDialog
- *   open={showDialog}
- *   onOpenChange={setShowDialog}
- *   title="Start Motor?"
- *   description="Motor will accelerate to setpoint speed. Ensure area is clear."
- *   confirmLabel="START MOTOR"
- *   onConfirm={() => startMotor()}
- *   variant="default"
- * />
- * ```
- */
 export function ConfirmationDialog({
   open,
   onOpenChange,
@@ -56,7 +34,6 @@ export function ConfirmationDialog({
   onConfirm,
   onCancel,
   variant = "default",
-  isDestructive = false,
 }: ConfirmationDialogProps) {
   const handleConfirm = () => {
     onConfirm();
@@ -71,65 +48,65 @@ export function ConfirmationDialog({
   // Icon and colors based on variant
   const variantConfig = {
     default: {
-      icon: CheckCircle2,
+      icon: "solar:check-circle-bold-duotone",
       iconColor: "text-emerald-600",
-      bgColor: "bg-emerald-50",
-      borderColor: "border-emerald-400",
-      buttonColor: "bg-emerald-600 hover:bg-emerald-700 border-emerald-700",
+      bgColor: "bg-emerald-50 dark:bg-emerald-950/40",
+      borderColor: "border-emerald-300 dark:border-emerald-800",
+      buttonColor: "bg-emerald-600 hover:bg-emerald-700",
     },
     warning: {
-      icon: AlertTriangle,
+      icon: "solar:danger-triangle-bold",
       iconColor: "text-amber-600",
-      bgColor: "bg-amber-50",
-      borderColor: "border-amber-400",
-      buttonColor: "bg-amber-600 hover:bg-amber-700 border-amber-700",
+      bgColor: "bg-amber-50 dark:bg-amber-950/40",
+      borderColor: "border-amber-300 dark:border-amber-800",
+      buttonColor: "bg-amber-600 hover:bg-amber-700",
     },
     danger: {
-      icon: XCircle,
+      icon: "solar:close-circle-bold-duotone",
       iconColor: "text-rose-600",
-      bgColor: "bg-rose-50",
-      borderColor: "border-rose-400",
-      buttonColor: "bg-rose-600 hover:bg-rose-700 border-rose-700",
+      bgColor: "bg-rose-50 dark:bg-rose-950/40",
+      borderColor: "border-rose-300 dark:border-rose-800",
+      buttonColor: "bg-rose-600 hover:bg-rose-700",
     },
   };
 
   const config = variantConfig[variant];
-  const Icon = config.icon;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
-        className="bg-white border-2 border-slate-400 shadow-2xl max-w-md"
+        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl max-w-md rounded-2xl"
         showCloseButton={false}
       >
         <DialogHeader className="space-y-4">
           {/* Icon Banner */}
-          <div className={`flex items-center justify-center p-4 ${config.bgColor} border-2 ${config.borderColor} rounded-lg`}>
-            <Icon className={`size-12 ${config.iconColor}`} />
+          <div className={`flex items-center justify-center p-4 ${config.bgColor} border ${config.borderColor} rounded-xl`}>
+            <Icon icon={config.icon} className={`size-12 ${config.iconColor}`} />
           </div>
 
           {/* Title */}
-          <DialogTitle className="text-2xl font-bold text-center text-slate-900  uppercase tracking-wider">
+          <DialogTitle className="text-xl font-bold text-center text-slate-900 dark:text-slate-100 tracking-tight">
             {title}
           </DialogTitle>
 
           {/* Description */}
-          <DialogDescription className="text-center text-slate-700 font-medium text-base">
+          <DialogDescription className="text-center text-slate-600 dark:text-slate-400 font-medium text-sm">
             {description}
           </DialogDescription>
         </DialogHeader>
 
         {/* Action Buttons */}
-        <DialogFooter className="grid grid-cols-2 gap-3 pt-4 -mx-0 -mb-0 border-t-0 bg-transparent p-0">
+        <DialogFooter className="grid grid-cols-2 gap-3 pt-4 border-t-0 bg-transparent p-0">
           <Button
+            variant="outline"
             onClick={handleCancel}
-            className="h-12 bg-slate-600 hover:bg-slate-700 text-white font-bold  border-2 border-slate-700 shadow-md tracking-widest"
+            className="h-10 text-xs font-semibold"
           >
             {cancelLabel}
           </Button>
           <Button
             onClick={handleConfirm}
-            className={`h-12 text-white font-bold  border-2 shadow-md tracking-widest ${config.buttonColor}`}
+            className={`h-10 text-xs font-bold text-white ${config.buttonColor}`}
           >
             {confirmLabel}
           </Button>

@@ -13,6 +13,7 @@ interface ThresholdSliderProps {
   max: number;
   step?: number;
   unit?: string;
+  color?: "amber" | "rose" | "emerald" | string;
   warningZone?: number;
   criticalZone?: number;
   onChange: (value: number) => void;
@@ -27,21 +28,22 @@ export function ThresholdSlider({
   max,
   step = 1,
   unit = "",
+  color,
   warningZone,
   criticalZone,
   onChange,
   className,
 }: ThresholdSliderProps) {
-  const isCritical = criticalZone !== undefined && value >= criticalZone;
-  const isWarning = !isCritical && warningZone !== undefined && value >= warningZone;
+  const isCritical = color === "rose" || (criticalZone !== undefined && value >= criticalZone);
+  const isWarning = color === "amber" || (!isCritical && warningZone !== undefined && value >= warningZone);
 
   return (
-    <div className={cn("space-y-2 p-3 bg-white rounded-xl border border-slate-200/80 shadow-xs", className)}>
+    <div className={cn("space-y-2 p-3.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-xs", className)}>
       <div className="flex items-center justify-between">
         <div>
-          <Label className="text-xs font-bold text-slate-800">{label}</Label>
+          <Label className="text-xs font-bold text-slate-800 dark:text-slate-200">{label}</Label>
           {description && (
-            <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">{description}</p>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">{description}</p>
           )}
         </div>
         <div className="flex items-baseline gap-1">

@@ -13,7 +13,7 @@ import {
 } from "recharts";
 import { AestheticChartTooltip } from "./ChartTooltip";
 import { Badge } from "@/components/ui/badge";
-import { Flame, Radio, Compass, ShieldAlert, Layers, Inbox } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import type { TelemetryDataPoint } from "@/types";
 
 export interface NodeHistoryDataPoint {
@@ -110,7 +110,7 @@ export function AestheticMultiMetricChart({
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 font-medium"
               }`}
             >
-              <Layers className="size-3 inline-block mr-1" />
+              <Icon icon="solar:layers-minimalistic-bold-duotone" className="size-3.5 inline-block mr-1" />
               All Correlated
             </button>
             <button
@@ -121,7 +121,7 @@ export function AestheticMultiMetricChart({
                   : "text-slate-600 dark:text-slate-400 hover:text-orange-600 font-medium"
               }`}
             >
-              <Flame className="size-3 inline-block mr-1" />
+              <Icon icon="solar:flame-bold-duotone" className="size-3.5 inline-block mr-1" />
               Gas Focus
             </button>
             <button
@@ -132,7 +132,7 @@ export function AestheticMultiMetricChart({
                   : "text-slate-600 dark:text-slate-400 hover:text-blue-600 font-medium"
               }`}
             >
-              <Radio className="size-3 inline-block mr-1" />
+              <Icon icon="solar:radar-2-bold-duotone" className="size-3.5 inline-block mr-1" />
               Clearance
             </button>
             <button
@@ -143,7 +143,7 @@ export function AestheticMultiMetricChart({
                   : "text-slate-600 dark:text-slate-400 hover:text-purple-600 font-medium"
               }`}
             >
-              <Compass className="size-3 inline-block mr-1" />
+              <Icon icon="solar:compass-bold-duotone" className="size-3.5 inline-block mr-1" />
               Tilt
             </button>
           </div>
@@ -157,7 +157,7 @@ export function AestheticMultiMetricChart({
             }`}
             title="Toggle Safety Limit Bands"
           >
-            <ShieldAlert className="size-4" />
+            <Icon icon="solar:shield-warning-bold-duotone" className="size-4" />
           </button>
         </div>
       </div>
@@ -176,7 +176,7 @@ export function AestheticMultiMetricChart({
             <span className="text-[10px] font-bold text-orange-700 dark:text-orange-400 uppercase tracking-wider">
               MQ2 Gas Peak
             </span>
-            <Flame className="size-3.5 text-orange-500" />
+            <Icon icon="solar:flame-bold-duotone" className="size-3.5 text-orange-500" />
           </div>
           <div className="flex items-baseline gap-1 mt-1">
             <span className="text-xl font-bold text-slate-900 dark:text-slate-100 tabular-nums">
@@ -198,7 +198,7 @@ export function AestheticMultiMetricChart({
             <span className="text-[10px] font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wider">
               Min Wall Clearance
             </span>
-            <Radio className="size-3.5 text-blue-500" />
+            <Icon icon="solar:radar-2-bold-duotone" className="size-3.5 text-blue-500" />
           </div>
           <div className="flex items-baseline gap-1 mt-1">
             <span className="text-xl font-bold text-slate-900 dark:text-slate-100 tabular-nums">
@@ -220,7 +220,7 @@ export function AestheticMultiMetricChart({
             <span className="text-[10px] font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider">
               Max Incline Tilt
             </span>
-            <Compass className="size-3.5 text-purple-500" />
+            <Icon icon="solar:compass-bold-duotone" className="size-3.5 text-purple-500" />
           </div>
           <div className="flex items-baseline gap-1 mt-1">
             <span className="text-xl font-bold text-slate-900 dark:text-slate-100 tabular-nums">
@@ -237,7 +237,7 @@ export function AestheticMultiMetricChart({
           {!hasData ? (
             <div className="h-full w-full flex flex-col items-center justify-center border border-dashed border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/40 dark:bg-slate-900/20 text-center p-6">
               <div className="size-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 mb-2">
-                <Inbox className="size-5" />
+                <Icon icon="solar:inbox-line-linear" className="size-5" />
               </div>
               <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">
                 Awaiting Telemetry Stream

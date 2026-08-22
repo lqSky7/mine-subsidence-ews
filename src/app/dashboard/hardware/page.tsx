@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Layers } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { AestheticHardwareCostDonut } from "@/components/charts";
 
 export default function HardwarePage() {
@@ -72,21 +72,21 @@ export default function HardwarePage() {
         <div>
           <div className="flex items-center gap-2.5">
             <div className="size-9 rounded-xl bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-300 flex items-center justify-center shadow-xs">
-              <Layers className="size-5" />
+              <Icon icon="solar:layers-minimalistic-bold-duotone" className="size-5" />
             </div>
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
                 ESP Sensor Station Hardware BOM & Architecture
               </h1>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Single/Multi-Node Station Specification · Dual Gy87 MPU + Ultrasound + MQ2 + Vibration + Buzzer + 8x8 LED Matrix
+                Component Bill of Materials (BOM) & Microcontroller Interface Mapping
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Cost & Summary Cards */}
+      {/* Overview Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card className="border-slate-200/80 dark:border-slate-800 shadow-xs bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900">
           <CardHeader className="pb-2">

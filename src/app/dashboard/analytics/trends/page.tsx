@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { TrendingUp, Flame, Radio, Compass, Activity, Download, Layers } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import type { TelemetryDataPoint } from "@/types";
 
 export default function TrendsPage() {
@@ -86,7 +86,6 @@ export default function TrendsPage() {
             warningLabel: `WARNING (${thresholds.gasPpmWarning} ppm)`,
             criticalLabel: `CRITICAL DANGER (${thresholds.gasPpmCritical} ppm)`,
           } as ThresholdZone,
-          icon: <Flame className="size-4 text-orange-600" />,
         };
       case "wallDistanceCm":
         return {
@@ -99,7 +98,6 @@ export default function TrendsPage() {
             criticalLabel: `COLLAPSE DANGER (${thresholds.wallDistanceMinCriticalCm} cm)`,
             inverted: true,
           } as ThresholdZone,
-          icon: <Radio className="size-4 text-blue-600" />,
         };
       case "tiltMpu1":
         return {
@@ -111,7 +109,6 @@ export default function TrendsPage() {
             warningLabel: `INCLINE WARN (${thresholds.tiltDegWarning}°)`,
             criticalLabel: `STRUCTURAL RISK (${thresholds.tiltDegCritical}°)`,
           } as ThresholdZone,
-          icon: <Compass className="size-4 text-purple-600" />,
         };
       case "tiltMpu2":
         return {
@@ -123,7 +120,6 @@ export default function TrendsPage() {
             warningLabel: `INCLINE WARN (${thresholds.tiltDegWarning}°)`,
             criticalLabel: `STRUCTURAL RISK (${thresholds.tiltDegCritical}°)`,
           } as ThresholdZone,
-          icon: <Compass className="size-4 text-indigo-600" />,
         };
       case "vibrationIntensity":
         return {
@@ -135,7 +131,6 @@ export default function TrendsPage() {
             warningLabel: `VIBRATION SPIKE (${thresholds.vibrationIntensityThreshold}%)`,
             criticalLabel: `SEVERE IMPACT (90%)`,
           } as ThresholdZone,
-          icon: <Activity className="size-4 text-emerald-600" />,
         };
     }
   }, [metric, thresholds]);
@@ -167,7 +162,7 @@ export default function TrendsPage() {
         <div>
           <div className="flex items-center gap-2">
             <div className="size-8 rounded-xl bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-400 flex items-center justify-center shadow-xs">
-              <TrendingUp className="size-4.5" />
+              <Icon icon="solar:chart-2-bold-duotone" className="size-4.5" />
             </div>
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
@@ -195,27 +190,27 @@ export default function TrendsPage() {
             <SelectContent>
               <SelectItem value="gasPpm">
                 <span className="flex items-center gap-2">
-                  <Flame className="size-3.5 text-orange-500" /> MQ2 Gas (ppm)
+                  <Icon icon="solar:flame-bold-duotone" className="size-3.5 text-orange-500" /> MQ2 Gas (ppm)
                 </span>
               </SelectItem>
               <SelectItem value="wallDistanceCm">
                 <span className="flex items-center gap-2">
-                  <Radio className="size-3.5 text-blue-500" /> Wall Clearance (cm)
+                  <Icon icon="solar:radar-2-bold-duotone" className="size-3.5 text-blue-500" /> Wall Clearance (cm)
                 </span>
               </SelectItem>
               <SelectItem value="tiltMpu1">
                 <span className="flex items-center gap-2">
-                  <Compass className="size-3.5 text-purple-500" /> MPU-1 Horizontal Tilt (°)
+                  <Icon icon="solar:compass-bold-duotone" className="size-3.5 text-purple-500" /> MPU-1 Horizontal Tilt (°)
                 </span>
               </SelectItem>
               <SelectItem value="tiltMpu2">
                 <span className="flex items-center gap-2">
-                  <Compass className="size-3.5 text-indigo-500" /> MPU-2 Vertical Tilt (°)
+                  <Icon icon="solar:compass-bold-duotone" className="size-3.5 text-indigo-500" /> MPU-2 Vertical Tilt (°)
                 </span>
               </SelectItem>
               <SelectItem value="vibrationIntensity">
                 <span className="flex items-center gap-2">
-                  <Activity className="size-3.5 text-emerald-500" /> Vibration Intensity (%)
+                  <Icon icon="solar:graph-up-bold-duotone" className="size-3.5 text-emerald-500" /> Vibration Intensity (%)
                 </span>
               </SelectItem>
             </SelectContent>

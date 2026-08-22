@@ -28,7 +28,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { AlertTriangle, MessageSquare, Bell } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import type { Alarm, AlarmSeverity, AlarmState } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -40,118 +40,127 @@ export default function AlarmsPage() {
   const [categoryFilter, setCategoryFilter] = useState<string>("ALL");
   const [searchTerm, setSearchTerm] = useState("");
 
-  const [selectedAlarm, setSelectedAlarm] = useState<Alarm | null>(null);
+  const [selectedAlarmForAck, setSelectedAlarmForAck] = useState<Alarm | null>(null);
+  const [ackOfficerName, setAckOfficerName] = useState("");
   const [ackNotes, setAckNotes] = useState("");
 
   const filteredAlarms = useMemo(() => {
-    return alarms.filter((alarm) => {
-      const matchSeverity = severityFilter === "ALL" || alarm.severity === severityFilter;
-      const matchState = stateFilter === "ALL" || alarm.state === stateFilter;
-      const matchCategory = categoryFilter === "ALL" || alarm.category === categoryFilter;
+    return alarms.filter((a) => {
+      const matchSeverity = severityFilter === "ALL" || a.severity === severityFilter;
+      const matchState = stateFilter === "ALL" || a.state === stateFilter;
+      const matchCategory = categoryFilter === "ALL" || a.category === categoryFilter;
       const matchSearch =
-        alarm.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        alarm.sourceLabel.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        alarm.source.toLowerCase().includes(searchTerm.toLowerCase());
+        a.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        a.sourceLabel.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        a.id.toLowerCase().includes(searchTerm.toLowerCase());
+
       return matchSeverity && matchState && matchCategory && matchSearch;
     });
   }, [alarms, severityFilter, stateFilter, categoryFilter, searchTerm]);
 
+  const activeCriticalCount = alarms.filter(
+    (a) => a.state === "ACTIVE" && a.severity === "CRITICAL"
+  ).length;
+  const activeWarningCount = alarms.filter(
+    (a) => a.state === "ACTIVE" && a.severity === "WARNING"
+  ).length;
+
   const handleOpenAckDialog = (alarm: Alarm) => {
-    setSelectedAlarm(alarm);
+    setSelectedAlarmForAck(alarm);
+    setAckOfficerName("");
     setAckNotes("");
   };
 
   const handleConfirmAck = () => {
-    if (selectedAlarm) {
-      acknowledgeAlarm(selectedAlarm.id, ackNotes);
-      setSelectedAlarm(null);
-    }
+    if (!selectedAlarmForAck) return;
+    acknowledgeAlarm(selectedAlarmForAck.id, ackOfficerName || "Safety Officer", ackNotes);
+    setSelectedAlarmForAck(null);
   };
 
   return (
-    <div className="space-y-6 pb-12 font-sans text-slate-800">
+    <div className="space-y-6 pb-16 font-sans text-slate-800 dark:text-slate-200">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/70">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/70 dark:border-slate-800">
         <div>
           <div className="flex items-center gap-2">
-            <div className="size-8 rounded-xl bg-rose-100 text-rose-800 flex items-center justify-center shadow-xs">
-              <Bell className="size-4.5" />
+            <div className="size-8 rounded-xl bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 flex items-center justify-center shadow-xs">
+              <Icon icon="solar:bell-bold-duotone" className="size-4.5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-                Early Warning Alerts & Hazard Logs
-              </h1>
-              <p className="text-xs text-slate-500">
-                Real-Time MQ2 Gas, Wall Clearance, Dual MPU Tilt & Vibration Hazard Alarms
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+                  Early Warning Safety Alerts
+                </h1>
+                {activeCriticalCount > 0 && (
+                  <Badge variant="destructive" className="text-[10px] font-bold animate-pulse">
+                    {activeCriticalCount} CRITICAL
+                  </Badge>
+                )}
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Multi-Sensor Threshold Trigger Log & Real-Time Incident Response
               </p>
             </div>
           </div>
         </div>
+
+        {/* Quick Summary Pills */}
+        <div className="flex items-center gap-2 text-xs">
+          <div className="px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 flex items-center gap-2">
+            <span className="size-2 rounded-full bg-rose-500 animate-ping" />
+            <span className="font-bold text-rose-800 dark:text-rose-300 tabular-nums">
+              {activeCriticalCount} Critical
+            </span>
+          </div>
+          <div className="px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 flex items-center gap-2">
+            <span className="size-2 rounded-full bg-amber-500" />
+            <span className="font-bold text-amber-800 dark:text-amber-300 tabular-nums">
+              {activeWarningCount} Warnings
+            </span>
+          </div>
+        </div>
       </div>
 
-      {/* Filter Toolbar */}
-      <Card className="border-slate-200/80 shadow-xs">
-        <CardContent className="p-4 flex flex-wrap gap-4 items-end justify-between">
-          <div className="flex-1 min-w-[200px] max-w-sm">
-            <Label htmlFor="search" className="text-xs font-semibold text-slate-600">
-              Search Alert Logs
-            </Label>
-            <Input
-              id="search"
-              placeholder="Filter by description, node ID, chamber..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="mt-1 text-xs h-9 bg-slate-50 border-slate-200"
-            />
-          </div>
+      {/* Filter and Search Bar */}
+      <Card className="border-slate-200/80 dark:border-slate-800 shadow-xs">
+        <CardContent className="p-4 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex-1 min-w-[220px] max-w-sm relative">
+              <Icon icon="solar:magnifer-linear" className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Input
+                placeholder="Search alerts by station, hazard type..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 text-xs h-9 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800"
+              />
+            </div>
 
-          {/* Severity */}
-          <div>
-            <Label className="text-xs font-semibold text-slate-600">Severity</Label>
-            <div className="flex gap-1.5 mt-1">
-              {["ALL", "CRITICAL", "WARNING", "INFO"].map((sev) => (
+            {/* Severity Filter */}
+            <div className="flex items-center gap-1.5 text-xs">
+              <span className="text-slate-400 font-semibold mr-1">Severity:</span>
+              {(["ALL", "CRITICAL", "WARNING"] as const).map((sev) => (
                 <Button
                   key={sev}
-                  variant={severityFilter === sev ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setSeverityFilter(sev as any)}
-                  className="h-8 text-xs font-semibold"
+                  variant={severityFilter === sev ? "default" : "outline"}
+                  onClick={() => setSeverityFilter(sev)}
+                  className="h-7 px-2.5 text-xs font-semibold rounded-lg"
                 >
                   {sev}
                 </Button>
               ))}
             </div>
-          </div>
 
-          {/* Category */}
-          <div>
-            <Label className="text-xs font-semibold text-slate-600">Sensor Category</Label>
-            <div className="flex flex-wrap gap-1.5 mt-1">
-              {["ALL", "GAS", "WALL_DISTANCE", "TILT_MPU1", "TILT_MPU2", "VIBRATION"].map((cat) => (
-                <Button
-                  key={cat}
-                  variant={categoryFilter === cat ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setCategoryFilter(cat)}
-                  className="h-8 text-xs font-semibold"
-                >
-                  {cat === "WALL_DISTANCE" ? "Wall Dist" : cat}
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          {/* State */}
-          <div>
-            <Label className="text-xs font-semibold text-slate-600">State</Label>
-            <div className="flex gap-1.5 mt-1">
-              {["ALL", "ACTIVE", "ACKNOWLEDGED", "RESOLVED"].map((st) => (
+            {/* State Filter */}
+            <div className="flex items-center gap-1.5 text-xs">
+              <span className="text-slate-400 font-semibold mr-1">State:</span>
+              {(["ALL", "ACTIVE", "ACKNOWLEDGED", "RESOLVED"] as const).map((st) => (
                 <Button
                   key={st}
-                  variant={stateFilter === st ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setStateFilter(st as any)}
-                  className="h-8 text-xs font-semibold"
+                  variant={stateFilter === st ? "default" : "outline"}
+                  onClick={() => setStateFilter(st)}
+                  className="h-7 px-2.5 text-xs font-semibold rounded-lg"
                 >
                   {st}
                 </Button>
@@ -161,21 +170,21 @@ export default function AlarmsPage() {
         </CardContent>
       </Card>
 
-      {/* Alarm Table */}
-      <Card className="border-slate-200/80 shadow-xs overflow-hidden">
+      {/* Alarms Table */}
+      <Card className="border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
         <CardContent className="p-0">
           <Table>
-            <TableHeader className="bg-slate-50/80 border-b border-slate-200">
+            <TableHeader className="bg-slate-50/80 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800">
               <TableRow>
-                <TableHead className="w-[100px]">Alarm ID</TableHead>
-                <TableHead className="w-[170px]">Timestamp</TableHead>
-                <TableHead className="w-[110px]">Severity</TableHead>
-                <TableHead className="w-[140px]">Sensor Type</TableHead>
+                <TableHead className="w-[110px]">Alert ID</TableHead>
+                <TableHead className="w-[160px]">Timestamp</TableHead>
+                <TableHead className="w-[100px]">Severity</TableHead>
+                <TableHead className="w-[140px]">Hazard Category</TableHead>
                 <TableHead className="w-[180px]">Station Node</TableHead>
-                <TableHead className="w-[110px]">Trigger Value</TableHead>
+                <TableHead className="w-[120px]">Trigger Value</TableHead>
                 <TableHead>Safety Description</TableHead>
-                <TableHead className="w-[120px]">State</TableHead>
-                <TableHead className="w-[90px] text-right">Actions</TableHead>
+                <TableHead className="w-[130px]">Status</TableHead>
+                <TableHead className="w-[80px] text-right">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -193,15 +202,15 @@ export default function AlarmsPage() {
                       "text-xs transition-colors",
                       alarm.state === "ACTIVE"
                         ? alarm.severity === "CRITICAL"
-                          ? "bg-rose-50/40 hover:bg-rose-50/60"
-                          : "bg-amber-50/40 hover:bg-amber-50/60"
-                        : "hover:bg-slate-50"
+                          ? "bg-rose-50/40 dark:bg-rose-950/20 hover:bg-rose-50/60 dark:hover:bg-rose-950/40"
+                          : "bg-amber-50/40 dark:bg-amber-950/20 hover:bg-amber-50/60 dark:hover:bg-amber-950/40"
+                        : "hover:bg-slate-50 dark:hover:bg-slate-800/40"
                     )}
                   >
-                    <TableCell className="font-bold text-slate-900">
+                    <TableCell className="font-bold text-slate-900 dark:text-slate-100 tabular-nums">
                       {alarm.id}
                     </TableCell>
-                    <TableCell className="text-slate-500 text-[11px] font-medium">
+                    <TableCell className="text-slate-500 dark:text-slate-400 text-[11px] font-medium">
                       {new Date(alarm.timestamp).toLocaleString()}
                     </TableCell>
                     <TableCell>
@@ -215,22 +224,22 @@ export default function AlarmsPage() {
                         }
                         className={cn(
                           "text-[10px] font-bold",
-                          alarm.severity === "WARNING" && "bg-amber-100 text-amber-900 border-amber-300"
+                          alarm.severity === "WARNING" && "bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950 dark:text-amber-300"
                         )}
                       >
                         {alarm.severity}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-slate-700 font-semibold">
+                    <TableCell className="text-slate-700 dark:text-slate-300 font-semibold">
                       {alarm.category}
                     </TableCell>
-                    <TableCell className="font-medium text-slate-800">
+                    <TableCell className="font-medium text-slate-800 dark:text-slate-200">
                       {alarm.sourceLabel}
                     </TableCell>
-                    <TableCell className="font-bold text-rose-700">
+                    <TableCell className="font-bold text-rose-700 dark:text-rose-400 tabular-nums">
                       {alarm.value}
                     </TableCell>
-                    <TableCell className="font-medium text-slate-700">
+                    <TableCell className="font-medium text-slate-700 dark:text-slate-300">
                       {alarm.description}
                     </TableCell>
                     <TableCell>
@@ -256,19 +265,19 @@ export default function AlarmsPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleOpenAckDialog(alarm)}
-                          className="text-xs h-7 px-2.5 bg-white border-amber-300 text-amber-900 hover:bg-amber-50 font-bold"
+                          className="text-xs h-7 px-2.5 bg-white dark:bg-slate-900 border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 hover:bg-amber-50 font-bold"
                         >
                           Ack
                         </Button>
                       ) : alarm.notes ? (
                         <DropdownMenu>
-                          <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-slate-100 hover:text-slate-900 size-8 outline-none cursor-pointer">
-                            <MessageSquare className="size-3.5 text-muted-foreground" />
+                          <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 size-8 outline-none cursor-pointer">
+                            <Icon icon="solar:chat-round-line-linear" className="size-3.5 text-muted-foreground" />
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-[220px]">
                             <div className="p-2 text-xs">
-                              <span className="font-bold block text-slate-700">Officer Notes:</span>
-                              <p className="mt-1 text-slate-600 font-sans leading-relaxed">{alarm.notes}</p>
+                              <span className="font-bold block text-slate-700 dark:text-slate-300">Officer Notes:</span>
+                              <p className="mt-1 text-slate-600 dark:text-slate-400 font-sans leading-relaxed">{alarm.notes}</p>
                               {alarm.acknowledgedBy && (
                                 <span className="text-[10px] text-slate-400 block mt-1.5 font-medium">
                                   Ack by {alarm.acknowledgedBy}
@@ -278,7 +287,7 @@ export default function AlarmsPage() {
                           </DropdownMenuContent>
                         </DropdownMenu>
                       ) : (
-                        "—"
+                        <span className="text-xs text-slate-400">—</span>
                       )}
                     </TableCell>
                   </TableRow>
@@ -289,55 +298,71 @@ export default function AlarmsPage() {
         </CardContent>
       </Card>
 
-      {/* Acknowledgement Dialog Modal */}
-      <Dialog open={selectedAlarm !== null} onOpenChange={(open) => !open && setSelectedAlarm(null)}>
+      {/* Acknowledge Dialog */}
+      <Dialog open={!!selectedAlarmForAck} onOpenChange={(open) => !open && setSelectedAlarmForAck(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-slate-900">
-              <AlertTriangle className="size-5 text-amber-500" />
-              Acknowledge Hazard Alert {selectedAlarm?.id}
+            <DialogTitle className="flex items-center gap-2 text-rose-700 dark:text-rose-400">
+              <Icon icon="solar:danger-triangle-bold" className="size-5" />
+              Acknowledge Early Warning Hazard
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Confirm safety alert receipt and record mandatory field inspection remarks.
+              Sign off on alert #{selectedAlarmForAck?.id} from {selectedAlarmForAck?.sourceLabel}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-2 text-xs">
-            <div className="p-3.5 bg-slate-50 border rounded-xl space-y-1.5">
-              <div>
-                <span className="text-slate-500">Sensor Location:</span>{" "}
-                <span className="font-bold text-slate-900">{selectedAlarm?.sourceLabel}</span>
-              </div>
-              <div>
-                <span className="text-slate-500">Hazard Description:</span>{" "}
-                <span className="font-medium text-slate-900">{selectedAlarm?.description}</span>
-              </div>
-              <div>
-                <span className="text-slate-500">Trigger Reading:</span>{" "}
-                <span className="font-bold text-rose-700">{selectedAlarm?.value}</span>
-              </div>
+          <div className="space-y-3 py-2 text-xs font-sans">
+            <div className="p-3 bg-rose-50 dark:bg-rose-950/40 rounded-xl border border-rose-200 dark:border-rose-900">
+              <span className="font-bold text-rose-900 dark:text-rose-200 block">
+                {selectedAlarmForAck?.description}
+              </span>
+              <span className="text-rose-700 dark:text-rose-300 font-semibold block mt-0.5">
+                Trigger Reading: {selectedAlarmForAck?.value}
+              </span>
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="notes" className="text-xs font-semibold text-slate-700">
-                Safety Officer Log Remarks / Action Taken
+            <div className="space-y-1">
+              <Label htmlFor="officerName" className="text-xs font-semibold">
+                Officer In-Charge Name
+              </Label>
+              <Input
+                id="officerName"
+                placeholder="e.g. Chief Safety Engineer"
+                value={ackOfficerName}
+                onChange={(e) => setAckOfficerName(e.target.value)}
+                className="text-xs h-9"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="notes" className="text-xs font-semibold">
+                Dispatch / Corrective Action Notes
               </Label>
               <Input
                 id="notes"
-                placeholder="e.g. Ventilation fan speed increased; clearance verified..."
+                placeholder="e.g. Ventilation team dispatched to Chamber 4B"
                 value={ackNotes}
                 onChange={(e) => setAckNotes(e.target.value)}
-                className="text-xs"
+                className="text-xs h-9"
               />
             </div>
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setSelectedAlarm(null)} className="text-xs">
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedAlarmForAck(null)}
+              className="text-xs"
+            >
               Cancel
             </Button>
-            <Button onClick={handleConfirmAck} className="text-xs bg-orange-600 hover:bg-orange-700 text-white font-bold">
-              Confirm Acknowledge
+            <Button
+              size="sm"
+              onClick={handleConfirmAck}
+              className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs"
+            >
+              Sign & Acknowledge Hazard
             </Button>
           </DialogFooter>
         </DialogContent>
