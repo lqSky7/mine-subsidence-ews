@@ -57,7 +57,6 @@ export function AppSidebar() {
           title: "Actuators & Outputs",
           href: "/dashboard/outputs",
           icon: "solar:volume-loud-bold-duotone",
-          badge: "ACTUATORS",
         },
       ],
     },
@@ -108,21 +107,22 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" variant="sidebar">
       <SidebarContent className="pt-3">
         {navigation.map((group) => (
-          <SidebarGroup key={group.label} className="py-2">
-            <SidebarGroupLabel className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-3 mb-1">
+          <SidebarGroup key={group.label} className="py-2 group-data-[collapsible=icon]:py-1">
+            <SidebarGroupLabel className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-3 mb-1 group-data-[collapsible=icon]:hidden">
               {group.label}
             </SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu className="gap-1 px-2">
+              <SidebarMenu className="gap-1.5 px-2 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:items-center">
                 {group.items.map((item) => {
                   const isActive = pathname === item.href;
                   return (
-                    <SidebarMenuItem key={item.title}>
+                    <SidebarMenuItem key={item.title} className="group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
                       <SidebarMenuButton
                         render={<Link href={item.href} />}
                         isActive={isActive}
+                        tooltip={item.title}
                         className={cn(
-                          "w-full h-9 px-3 rounded-xl transition-all duration-150 flex items-center gap-2.5 cursor-pointer text-xs font-semibold",
+                          "w-full h-10 px-3 rounded-xl transition-all duration-150 flex items-center gap-3 cursor-pointer text-xs font-semibold group-data-[collapsible=icon]:size-10 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center",
                           isActive
                             ? "bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 font-bold border border-orange-200/70 dark:border-orange-900/50 shadow-2xs"
                             : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/60 font-medium"
@@ -131,18 +131,15 @@ export function AppSidebar() {
                         <Icon
                           icon={item.icon}
                           className={cn(
-                            "size-4 shrink-0 transition-colors",
+                            "size-5 shrink-0 transition-colors",
                             isActive ? "text-orange-600 dark:text-orange-400" : "text-slate-500 dark:text-slate-400"
                           )}
                         />
-                        <span className="truncate">{item.title}</span>
+                        <span className="truncate group-data-[collapsible=icon]:hidden">{item.title}</span>
                         {item.badge && (
                           <Badge
-                            variant={item.badge === "ACTUATORS" ? "secondary" : "destructive"}
-                            className={cn(
-                              "ml-auto h-5 px-1.5 text-[10px] font-bold shrink-0",
-                              item.badge === "ACTUATORS" && "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-950 dark:text-blue-300"
-                            )}
+                            variant="destructive"
+                            className="ml-auto h-5 px-1.5 text-[10px] font-bold shrink-0 group-data-[collapsible=icon]:hidden"
                           >
                             {item.badge}
                           </Badge>
@@ -157,13 +154,13 @@ export function AppSidebar() {
         ))}
       </SidebarContent>
 
-      <SidebarFooter className="p-3">
-        <div className="p-3 bg-slate-50/90 dark:bg-slate-900/60 rounded-xl border border-slate-200/80 dark:border-slate-800 flex items-center justify-between text-xs font-sans">
+      <SidebarFooter className="p-3 group-data-[collapsible=icon]:p-2">
+        <div className="p-3 group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:justify-center bg-slate-50/90 dark:bg-slate-900/60 rounded-xl border border-slate-200/80 dark:border-slate-800 flex items-center justify-between text-xs font-sans">
           <div className="flex items-center gap-2">
-            <span className={cn("size-2 rounded-full", isConnected ? "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)]" : "bg-slate-400")} />
-            <span className="font-semibold text-slate-700 dark:text-slate-300">{isConnected ? "Multi-Node Active" : "Disconnected"}</span>
+            <span className={cn("size-2.5 rounded-full shrink-0", isConnected ? "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)]" : "bg-slate-400")} />
+            <span className="font-semibold text-slate-700 dark:text-slate-300 group-data-[collapsible=icon]:hidden">{isConnected ? "Multi-Node Active" : "Disconnected"}</span>
           </div>
-          <span className="text-[10px] font-semibold text-slate-500">{nodes.length > 0 ? `${nodes.length} ESPs` : "-"}</span>
+          <span className="text-[10px] font-semibold text-slate-500 group-data-[collapsible=icon]:hidden">{nodes.length > 0 ? `${nodes.length} ESPs` : "-"}</span>
         </div>
       </SidebarFooter>
       <SidebarRail />

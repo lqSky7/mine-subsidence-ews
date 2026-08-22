@@ -7,6 +7,23 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { TiltInclinometer3D } from "@/components/industrial/TiltInclinometer3D";
 import { LedMatrixDisplay } from "@/components/industrial/LedMatrixDisplay";
 import {
@@ -22,12 +39,16 @@ export default function CommandCenterPage() {
     telemetry,
     alarms,
     thresholds,
+    mineHealth,
     selectedNodeId,
     setSelectedNodeId,
     selectedNode,
     selectedTelemetry,
     triggerActuatorTest,
     acknowledgeAlarm,
+    resolveAlarm,
+    resolveActiveAlarms,
+    raiseManualAlarm,
     fetchNodeHistory,
     isConnected,
   } = useTelemetryContext();
@@ -38,6 +59,13 @@ export default function CommandCenterPage() {
   const activeAlarms = alarms.filter((a) => a.state === "ACTIVE");
   const criticalAlarms = activeAlarms.filter((a) => a.severity === "CRITICAL");
   const hasCriticalHazard = criticalAlarms.length > 0;
+
+  // Manual Alarm Dialog State
+  const [isManualAlarmOpen, setIsManualAlarmOpen] = useState(false);
+  const [manualNodeId, setManualNodeId] = useState(selectedNodeId || "ESP-NODE-01");
+  const [manualDesc, setManualDesc] = useState("");
+  const [manualSev, setManualSev] = useState<"CRITICAL" | "WARNING" | "INFO">("CRITICAL");
+  const [isRaising, setIsRaising] = useState(false);
 
   // Real historical data fetched from backend
   const [nodeHistory, setNodeHistory] = useState<TelemetryDataPoint[]>([]);
@@ -117,6 +145,19 @@ export default function CommandCenterPage() {
     });
   }, [nodes, fleetHistoryMap]);
 
+  const handleConfirmManualAlarm = async () => {
+    if (!manualDesc.trim()) return;
+    setIsRaising(true);
+    try {
+      const target = nodes.find((n) => n.id === manualNodeId);
+      await raiseManualAlarm(manualNodeId, manualDesc.trim(), manualSev, "CONTROL_ROOM_OPERATOR", target?.label);
+      setIsManualAlarmOpen(false);
+      setManualDesc("");
+    } finally {
+      setIsRaising(false);
+    }
+  };
+
   return (
     <div className="space-y-6 pb-16 font-sans text-slate-800 dark:text-slate-200">
       {/* Header & Station Selector */}
@@ -142,12 +183,31 @@ export default function CommandCenterPage() {
           </p>
         </div>
 
-        {/* Multi-Node Station Switcher */}
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Station Node:</span>
-          {nodes.length > 0 ? (
-            <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
-              {nodes.map((n) => (
+        {/* Action Controls & Multi-Node Station Switcher */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Button
+            size="sm"
+            onClick={() => setIsManualAlarmOpen(true)}
+            className="h-8 px-3 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-xl gap-1.5 shadow-xs"
+          >
+            <Icon icon="solar:danger-triangle-bold" className="size-3.5" /> Raise Manual Alarm
+          </Button>
+
+          {activeAlarms.length > 0 && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => resolveActiveAlarms("Control Room Officer", "Mass hazard resolution")}
+              className="h-8 px-3 text-xs font-semibold rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 gap-1.5"
+            >
+              <Icon icon="solar:check-circle-bold-duotone" className="size-3.5 text-emerald-600" /> Clear Active
+            </Button>
+          )}
+
+          <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+            <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 px-1.5">Station:</span>
+            {nodes.length > 0 ? (
+              nodes.map((n) => (
                 <Button
                   key={n.id}
                   size="sm"
@@ -161,39 +221,124 @@ export default function CommandCenterPage() {
                 >
                   {n.id}
                 </Button>
-              ))}
-            </div>
-          ) : (
-            <div className="text-xs font-medium text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl">
-              — No Active Nodes Connected —
-            </div>
-          )}
+              ))
+            ) : (
+              <div className="text-xs font-medium text-slate-400 px-2 py-0.5">
+                No Nodes Online
+              </div>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* AI Mine Heartbeat & Geotechnical Risk Score Banner */}
+      {mineHealth && (
+        <Card className="border-slate-200/80 dark:border-slate-800 bg-gradient-to-r from-slate-900 via-slate-900 to-slate-950 text-white rounded-2xl shadow-xs overflow-hidden">
+          <CardContent className="p-5 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
+            <div className="flex items-start gap-4">
+              <div className="size-12 rounded-2xl bg-orange-500/20 border border-orange-500/30 flex items-center justify-center text-orange-400 shrink-0 shadow-lg shadow-orange-500/10">
+                <Icon icon="solar:heart-pulse-bold-duotone" className="size-7 animate-pulse text-orange-400" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-xs font-bold text-orange-400 uppercase tracking-widest">
+                    AI Mine Heartbeat & Safety Index
+                  </span>
+                  <Badge
+                    className={`text-[10px] font-bold ${
+                      mineHealth.riskLevel === "LOW"
+                        ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+                        : mineHealth.riskLevel === "MODERATE"
+                        ? "bg-amber-500/20 text-amber-300 border-amber-500/40"
+                        : "bg-rose-500/20 text-rose-300 border-rose-500/40 animate-pulse"
+                    }`}
+                  >
+                    RISK: {mineHealth.riskLevel}
+                  </Badge>
+                  <span className="text-[10px] text-slate-400 font-mono">
+                    Model: {mineHealth.modelVersion}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
+                  {mineHealth.summary || "Real-time geotechnical stability model running across all active sensor telemetry arrays."}
+                </p>
+                {mineHealth.contributingFactors && mineHealth.contributingFactors.length > 0 && (
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {mineHealth.contributingFactors.map((f, i) => (
+                      <span key={i} className="text-[10px] bg-slate-800/80 px-2 py-0.5 rounded-md text-slate-300 border border-slate-700 flex items-center gap-1">
+                        <Icon icon="solar:danger-triangle-bold" className="size-2.5 text-amber-400" />
+                        {f.factor} (Impact: -{f.impact} pts)
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4 shrink-0 bg-slate-800/60 border border-slate-700/80 p-3.5 rounded-2xl">
+              <div className="text-right">
+                <span className="text-[10px] text-slate-400 uppercase font-semibold block">Safety Health</span>
+                <span className="text-3xl font-extrabold tracking-tight tabular-nums text-white">
+                  {mineHealth.overallScore}<span className="text-xs font-normal text-slate-400">/100</span>
+                </span>
+              </div>
+              <div className="w-16 bg-slate-700 rounded-full h-2 overflow-hidden">
+                <div
+                  className={`h-full ${
+                    mineHealth.overallScore >= 75
+                      ? "bg-emerald-500"
+                      : mineHealth.overallScore >= 50
+                      ? "bg-amber-500"
+                      : "bg-rose-500"
+                  }`}
+                  style={{ width: `${Math.min(100, Math.max(0, mineHealth.overallScore))}%` }}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Critical Hazard Alert Banner */}
       {hasCriticalHazard && (
         <div className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-2xl p-4 flex items-start gap-3 shadow-xs">
           <Icon icon="solar:danger-triangle-bold" className="size-5 text-rose-600 shrink-0 mt-0.5" />
           <div className="flex-1 text-xs">
-            <span className="font-bold text-rose-900 dark:text-rose-200 text-sm block">
-              CRITICAL HAZARD ALERT: Safety Threshold Breached
-            </span>
-            <div className="mt-1.5 space-y-1">
-              {criticalAlarms.slice(0, 3).map((a) => (
-                <div key={a.id} className="flex justify-between items-center text-rose-800 dark:text-rose-300 font-medium">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-rose-900 dark:text-rose-200 text-sm block">
+                CRITICAL HAZARD ALERT: Safety Threshold Breached ({criticalAlarms.length} Active)
+              </span>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => resolveActiveAlarms("Safety Officer", "Resolved critical hazards")}
+                className="h-6 px-2.5 text-[10px] font-bold bg-rose-600 text-white hover:bg-rose-700 border-none"
+              >
+                Resolve All Active
+              </Button>
+            </div>
+            <div className="mt-2 space-y-1.5">
+              {criticalAlarms.slice(0, 4).map((a) => (
+                <div key={a.id} className="flex justify-between items-center text-rose-800 dark:text-rose-300 font-medium bg-white/60 dark:bg-slate-900/60 p-1.5 rounded-lg border border-rose-200/60 dark:border-rose-900/60">
                   <span>
                     [{a.sourceLabel}] {a.description}
                   </span>
                   <div className="flex items-center gap-2">
-                    <span className="font-bold tabular-nums">{a.value}</span>
+                    <span className="font-bold tabular-nums text-rose-900 dark:text-rose-100">{a.value}</span>
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => acknowledgeAlarm(a.id)}
-                      className="h-6 px-2 text-[10px] bg-white dark:bg-slate-900 border-rose-300 dark:border-rose-800 text-rose-900 dark:text-rose-200 hover:bg-rose-100 font-bold"
+                      onClick={() => acknowledgeAlarm(a.id, "Safety Officer")}
+                      className="h-6 px-2 text-[10px] bg-white dark:bg-slate-900 border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 hover:bg-amber-100 font-bold"
                     >
                       Ack
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => resolveAlarm(a.id, "Safety Officer", "Resolved via Command Center")}
+                      className="h-6 px-2 text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+                    >
+                      Resolve
                     </Button>
                   </div>
                 </div>
@@ -577,6 +722,95 @@ export default function CommandCenterPage() {
           criticalLabel: `CRITICAL (${thresholds.gasPpmCritical} ppm)`,
         }}
       />
+
+      {/* Raise Manual Emergency Alarm Dialog */}
+      <Dialog open={isManualAlarmOpen} onOpenChange={setIsManualAlarmOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-rose-600 dark:text-rose-400">
+              <Icon icon="solar:danger-triangle-bold" className="size-5" />
+              Raise Manual Emergency Hazard Alarm
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              Remotely trigger an emergency alert and siren/LED pattern across selected mine stations.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2 text-xs font-sans">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold">Target Node / Area</Label>
+                <Select value={manualNodeId} onValueChange={(val) => val && setManualNodeId(val)}>
+                  <SelectTrigger className="text-xs h-9">
+                    <SelectValue placeholder="Select Target Station" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="FLEET_WIDE">Mine-Wide (All Stations)</SelectItem>
+                    {nodes.map((n) => (
+                      <SelectItem key={n.id} value={n.id}>
+                        {n.id} ({n.label})
+                      </SelectItem>
+                    ))}
+                    {nodes.length === 0 && (
+                      <>
+                        <SelectItem value="ESP-NODE-01">ESP-NODE-01</SelectItem>
+                        <SelectItem value="ESP-NODE-02">ESP-NODE-02</SelectItem>
+                      </>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold">Severity Tier</Label>
+                <Select value={manualSev} onValueChange={(val) => val && setManualSev(val as typeof manualSev)}>
+                  <SelectTrigger className="text-xs h-9">
+                    <SelectValue placeholder="Severity Tier" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="CRITICAL">CRITICAL (Sirens + Red Matrix)</SelectItem>
+                    <SelectItem value="WARNING">WARNING (Pulse Yellow)</SelectItem>
+                    <SelectItem value="INFO">INFO (Advisory Log)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="manualDesc" className="text-xs font-semibold">
+                Hazard Observation & Reason
+              </Label>
+              <Input
+                id="manualDesc"
+                placeholder="e.g. Geotechnical shift or gas odor observed at working face"
+                value={manualDesc}
+                onChange={(e) => setManualDesc(e.target.value)}
+                className="text-xs h-9"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsManualAlarmOpen(false)}
+              className="text-xs"
+              disabled={isRaising}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleConfirmManualAlarm}
+              disabled={!manualDesc.trim() || isRaising}
+              className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs gap-1.5"
+            >
+              {isRaising ? "Broadcasting Alarm..." : "Trigger Emergency Alarm"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

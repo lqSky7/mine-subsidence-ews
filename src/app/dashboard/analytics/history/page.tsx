@@ -99,7 +99,7 @@ export default function HistoryPage() {
       </div>
 
       {/* Incident Distribution Chart */}
-      <AestheticIncidentDistributionChart />
+      <AestheticIncidentDistributionChart alarms={alarms} />
 
       {/* Filter and Search Bar */}
       <Card className="border-slate-200/80 dark:border-slate-800 shadow-xs">
