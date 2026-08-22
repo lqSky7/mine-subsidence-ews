@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import type { LedMatrixPattern } from "@/types";
+import { cn } from "@/lib/utils";
 
 interface LedMatrixDisplayProps {
   pattern?: LedMatrixPattern;
@@ -14,7 +15,7 @@ interface LedMatrixDisplayProps {
   className?: string;
 }
 
-const PATTERNS: Record<LedMatrixPattern, number[][]> = {
+export const PATTERNS: Record<LedMatrixPattern, number[][]> = {
   IDLE: [
     [0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0],
@@ -84,71 +85,116 @@ export function LedMatrixDisplay({
       }, pattern === "DANGER_FLASH" ? 350 : 600);
       return () => clearInterval(interval);
     }
-    setFlashState(true);
   }, [pattern]);
 
   const matrix = PATTERNS[pattern] || PATTERNS.IDLE;
 
+  const activeDiodeCount = useMemo(() => {
+    let count = 0;
+    matrix.forEach((row) => {
+      row.forEach((val) => {
+        if (val === 1) count++;
+      });
+    });
+    return count;
+  }, [matrix]);
+
+  // Diode sizing based on prop
   const dotSizeClass =
-    size === "sm" ? "size-2.5 rounded-xs" : size === "lg" ? "size-6 rounded-md" : "size-4 rounded-sm";
+    size === "sm"
+      ? "size-2 rounded-xs"
+      : size === "lg"
+      ? "size-5 sm:size-6 rounded-sm"
+      : "size-3.5 sm:size-4 rounded-xs";
+
+  const gapClass = size === "sm" ? "gap-1" : size === "lg" ? "gap-2" : "gap-1.5";
 
   const getDotStyle = (active: boolean) => {
     if (!active || !isActive || !flashState) {
-      return "bg-slate-900/90 border border-slate-800 shadow-inner";
+      return "bg-neutral-900/90 border border-neutral-800/60 shadow-inner";
     }
 
-    if (pattern === "DANGER_FLASH") {
-      return "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.9)] border border-rose-400";
+    if (pattern === "DANGER_FLASH" || pattern === "EVACUATE_ARROW") {
+      return "bg-red-500 border border-red-400 shadow-[0_0_8px_rgba(239,68,68,0.95)]";
     }
     if (pattern === "WARNING_PULSE") {
-      return "bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.9)] border border-amber-300";
+      return "bg-amber-400 border border-amber-300 shadow-[0_0_8px_rgba(251,191,36,0.95)]";
     }
     if (pattern === "NORMAL_CHECK") {
-      return "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)] border border-emerald-300";
+      return "bg-emerald-400 border border-emerald-300 shadow-[0_0_8px_rgba(52,211,153,0.95)]";
     }
-    if (pattern === "EVACUATE_ARROW") {
-      return "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.9)] border border-rose-400";
-    }
-    return "bg-orange-400 shadow-[0_0_6px_rgba(251,146,60,0.8)] border border-orange-300";
+    return "bg-neutral-100 border border-white shadow-[0_0_6px_rgba(255,255,255,0.9)]";
   };
 
   return (
-    <div className={`flex flex-col items-center ${className}`}>
-      {/* 8x8 Hardware Matrix Shell */}
-      <div className="p-3 bg-slate-950 rounded-2xl border-2 border-slate-800 shadow-xl inline-block">
-        <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-800 text-[10px] text-slate-400 font-semibold">
-          <span className="flex items-center gap-1">
-            <span className={`size-1.5 rounded-full ${isActive ? "bg-emerald-500 animate-pulse" : "bg-slate-600"}`} />
-            8x8 FLASH LED
+    <div className={cn("flex flex-col items-center", className)}>
+      {/* Industrial Chassis */}
+      <div className="relative rounded-lg border border-neutral-800 bg-neutral-950 p-3 shadow-lg select-none">
+        {/* Top Hardware Header Strip */}
+        <div className="mb-2.5 flex items-center justify-between border-b border-neutral-800/80 pb-2 text-[10px] font-mono">
+          <div className="flex items-center gap-1.5">
+            <span
+              className={cn(
+                "size-1.5 rounded-full",
+                isActive ? "bg-emerald-500 animate-pulse" : "bg-neutral-600"
+              )}
+            />
+            <span className="font-semibold uppercase tracking-wider text-neutral-300">
+              8×8 FLASH LED
+            </span>
+          </div>
+          <span className="rounded bg-neutral-900 px-1.5 py-0.5 font-bold uppercase tracking-tight text-neutral-400">
+            {pattern}
           </span>
-          <span className="text-slate-400 font-bold uppercase">{pattern}</span>
         </div>
 
-        <div className="grid grid-cols-8 gap-1.5 p-1 bg-black/80 rounded-xl">
+        {/* 8x8 Diode Grid Container */}
+        <div className={cn("grid grid-cols-8 rounded-md bg-black/90 p-1.5", gapClass)}>
           {matrix.map((row, rIdx) =>
             row.map((val, cIdx) => (
               <div
                 key={`${rIdx}-${cIdx}`}
-                className={`${dotSizeClass} transition-all duration-150 ${getDotStyle(val === 1)}`}
+                className={cn(
+                  dotSizeClass,
+                  "transition-all duration-150 ease-out",
+                  getDotStyle(val === 1)
+                )}
               />
             ))
           )}
         </div>
+
+        {/* Sub-telemetry strip for md/lg sizes */}
+        {size !== "sm" && (
+          <div className="mt-2.5 flex items-center justify-between border-t border-neutral-800/80 pt-1.5 text-[9px] font-mono text-neutral-500">
+            <span>MAX7219 / SPI</span>
+            <span>{activeDiodeCount}/64 ACTIVE</span>
+          </div>
+        )}
       </div>
 
+      {/* Interactive Pattern Controls */}
       {interactive && onPatternChange && (
-        <div className="flex flex-wrap items-center justify-center gap-1.5 mt-3">
-          {(Object.keys(PATTERNS) as LedMatrixPattern[]).map((pKey) => (
-            <Button
-              key={pKey}
-              size="sm"
-              variant={pattern === pKey ? "default" : "outline"}
-              onClick={() => onPatternChange(pKey)}
-              className="h-6 px-2 text-[10px] font-bold"
-            >
-              {pKey}
-            </Button>
-          ))}
+        <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5">
+          {(Object.keys(PATTERNS) as LedMatrixPattern[]).map((pKey) => {
+            const isSelected = pattern === pKey;
+            return (
+              <Button
+                key={pKey}
+                size="sm"
+                variant={isSelected ? "default" : "outline"}
+                onClick={() => onPatternChange(pKey)}
+                className={cn(
+                  "h-7 px-2.5 text-[11px] font-mono font-medium transition-all",
+                  isSelected
+                    ? "bg-black text-white dark:bg-white dark:text-black"
+                    : "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-300 dark:hover:bg-neutral-900"
+                )}
+              >
+                {pKey.replace("_", " ")}
+              </Button>
+            );
+          })}
         </div>
       )}
     </div>

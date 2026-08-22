@@ -60,7 +60,7 @@ export function PageHeader({
               render={<Link href={backHref} />}
               size="icon-sm"
               variant="outline"
-              className="rounded-full border-neutral-300 bg-white text-black hover:bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white dark:hover:bg-neutral-900"
+              className="rounded-md border-neutral-300 bg-white text-black hover:bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white dark:hover:bg-neutral-900"
               aria-label="Back"
             >
               <Icon icon="solar:arrow-left-linear" className="size-4" />
@@ -101,7 +101,7 @@ export function StatusBadge({
   return (
     <span
       className={cn(
-        "inline-flex h-6 items-center rounded-full border px-2.5 text-[10px] font-semibold uppercase tracking-normal",
+        "inline-flex h-6 items-center rounded-md border px-2.5 text-[10px] font-semibold uppercase tracking-normal",
         badgeTone[tone],
         className
       )}

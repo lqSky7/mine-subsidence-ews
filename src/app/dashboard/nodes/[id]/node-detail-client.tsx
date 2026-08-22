@@ -231,11 +231,14 @@ export default function NodeDetailClient({ nodeId }: { nodeId: string }) {
       </div>
 
       {/* Dual Inclinometer Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <div className="space-y-2">
-          <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
-            Sensor A: Horizontal MPU (Primary Inclinometer)
-          </span>
+          <div className="flex items-center justify-between text-xs font-semibold">
+            <span className="text-neutral-900 dark:text-neutral-100">Sensor A: Primary Inclinometer</span>
+            <span className="rounded bg-neutral-100 px-2 py-0.5 font-mono text-[9px] font-semibold text-neutral-600 dark:bg-neutral-900 dark:text-neutral-400">
+              HORIZONTAL
+            </span>
+          </div>
           <TiltInclinometer3D
             rollDeg={tel?.imu1?.rollDeg}
             pitchDeg={tel?.imu1?.pitchDeg}
@@ -247,9 +250,12 @@ export default function NodeDetailClient({ nodeId }: { nodeId: string }) {
         </div>
 
         <div className="space-y-2">
-          <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
-            Sensor B: Vertical MPU (Perpendicular Inclinometer)
-          </span>
+          <div className="flex items-center justify-between text-xs font-semibold">
+            <span className="text-neutral-900 dark:text-neutral-100">Sensor B: Orthogonal Inclinometer</span>
+            <span className="rounded bg-neutral-100 px-2 py-0.5 font-mono text-[9px] font-semibold text-neutral-600 dark:bg-neutral-900 dark:text-neutral-400">
+              VERTICAL
+            </span>
+          </div>
           <TiltInclinometer3D
             rollDeg={tel?.imu2?.rollDeg}
             pitchDeg={tel?.imu2?.pitchDeg}

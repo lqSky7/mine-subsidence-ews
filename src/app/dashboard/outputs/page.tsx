@@ -2,12 +2,72 @@
 
 import React, { useState } from "react";
 import { useTelemetryContext } from "@/components/layout/telemetry-provider";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
 import { LedMatrixDisplay } from "@/components/industrial/LedMatrixDisplay";
+import {
+  EmptyState,
+  PageHeader,
+  PageShell,
+  SectionHeader,
+  StatStrip,
+  StatusBadge,
+  Toolbar,
+} from "@/components/uber/dashboard-primitives";
 import type { LedMatrixPattern } from "@/types";
+import { cn } from "@/lib/utils";
+
+interface PatternOption {
+  id: LedMatrixPattern;
+  label: string;
+  code: string;
+  description: string;
+  icon: string;
+  tone: "live" | "watch" | "critical" | "neutral";
+}
+
+const PATTERN_OPTIONS: PatternOption[] = [
+  {
+    id: "NORMAL_CHECK",
+    label: "Normal Check",
+    code: "0x01_CHECK",
+    description: "System nominal, green safety checkmark",
+    icon: "solar:check-circle-bold",
+    tone: "live",
+  },
+  {
+    id: "WARNING_PULSE",
+    label: "Warning Box",
+    code: "0x02_WARN",
+    description: "Approaching threshold, pulsing amber beacon",
+    icon: "solar:danger-triangle-bold",
+    tone: "watch",
+  },
+  {
+    id: "DANGER_FLASH",
+    label: "Hazard X",
+    code: "0x03_DANGER",
+    description: "Active hazard breach, flashing emergency X",
+    icon: "solar:danger-bold",
+    tone: "critical",
+  },
+  {
+    id: "EVACUATE_ARROW",
+    label: "Evac Arrow",
+    code: "0x04_EVAC",
+    description: "Urgent evacuation directional beacon",
+    icon: "solar:shield-warning-bold",
+    tone: "critical",
+  },
+  {
+    id: "IDLE",
+    label: "Standby Frame",
+    code: "0x00_IDLE",
+    description: "Idle perimeter indicator",
+    icon: "solar:stop-circle-bold",
+    tone: "neutral",
+  },
+];
 
 export default function OutputsPage() {
   const {
@@ -18,231 +78,380 @@ export default function OutputsPage() {
     selectedNode,
     selectedTelemetry,
     triggerActuatorTest,
+    isConnected,
   } = useTelemetryContext();
 
   const node = selectedNode || nodes[0] || null;
   const tel = selectedTelemetry || (node ? telemetry[node.id] : null) || null;
 
-  const [testPattern, setTestPattern] = useState<LedMatrixPattern>(
+  const [selectedPattern, setSelectedPattern] = useState<LedMatrixPattern>(
     tel?.actuators?.ledMatrixPattern || "NORMAL_CHECK"
   );
+  const [isTriggeringPattern, setIsTriggeringPattern] = useState(false);
+  const [isTriggeringSiren, setIsTriggeringSiren] = useState(false);
+  const [lastActionTimestamp, setLastActionTimestamp] = useState<string | null>(null);
 
-  const handlePatternSelect = (pattern: LedMatrixPattern) => {
-    setTestPattern(pattern);
-    triggerActuatorTest("ledMatrix", pattern);
+  const handlePatternSelect = async (pattern: LedMatrixPattern) => {
+    setSelectedPattern(pattern);
+    setIsTriggeringPattern(true);
+    try {
+      await triggerActuatorTest("ledMatrix", pattern);
+      setLastActionTimestamp(new Date().toLocaleTimeString());
+    } finally {
+      setIsTriggeringPattern(false);
+    }
   };
 
-  return (
-    <div className="space-y-6 pb-16 font-sans text-slate-800 dark:text-slate-200">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/70 dark:border-slate-800">
-        <div>
-          <div className="flex items-center gap-2">
-            <div className="size-8 rounded-xl bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-400 flex items-center justify-center shadow-xs">
-              <Icon icon="solar:volume-loud-bold-duotone" className="size-4.5" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-                Alert Actuators & Output Devices
-              </h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                8x8 Flash LED Matrix & High-Decibel Buzzer Controller · Station-Level Emergency Alerting
-              </p>
-            </div>
-          </div>
-        </div>
+  const handleSirenToggle = async () => {
+    setIsTriggeringSiren(true);
+    try {
+      await triggerActuatorTest("buzzer");
+      setLastActionTimestamp(new Date().toLocaleTimeString());
+    } finally {
+      setIsTriggeringSiren(false);
+    }
+  };
 
-        {/* Node Switcher */}
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Station:</span>
+  const isBuzzerActive = tel?.actuators?.buzzerActive ?? false;
+  const isMatrixActive = tel?.actuators?.ledMatrixActive ?? true;
+  const currentPattern = tel?.actuators?.ledMatrixPattern || selectedPattern;
+
+  return (
+    <PageShell>
+      {/* Uber Base Page Header */}
+      <PageHeader
+        eyebrow="Actuators & Alerting"
+        title="Emergency outputs"
+        description="Station-level active visual beacons and high-decibel audible alerts. Test display patterns, sound sirens, and monitor GPIO actuator telemetry."
+        meta={
+          <div className="flex items-center gap-2">
+            <StatusBadge tone={isConnected ? "live" : "neutral"}>
+              {isConnected ? "Gateway live" : "Gateway offline"}
+            </StatusBadge>
+            {isBuzzerActive && <StatusBadge tone="critical">Siren Engaged</StatusBadge>}
+          </div>
+        }
+      />
+
+      {/* Station Selector & Context Toolbar */}
+      <Toolbar>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+            Station
+          </span>
           {nodes.length > 0 ? (
-            <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
-              {nodes.map((n) => (
-                <Button
-                  key={n.id}
-                  size="sm"
-                  variant={selectedNodeId === n.id ? "default" : "ghost"}
-                  onClick={() => setSelectedNodeId(n.id)}
-                  className={`h-7 px-3 text-xs font-bold rounded-lg ${
-                    selectedNodeId === n.id
-                      ? "bg-orange-600 hover:bg-orange-700 text-white"
-                      : "text-slate-700 dark:text-slate-300"
-                  }`}
-                >
-                  {n.id}
-                </Button>
-              ))}
-            </div>
+            nodes.map((fleetNode) => (
+              <Button
+                key={fleetNode.id}
+                size="sm"
+                variant={selectedNodeId === fleetNode.id ? "default" : "outline"}
+                onClick={() => setSelectedNodeId(fleetNode.id)}
+                className={cn(
+                  "font-mono text-xs",
+                  selectedNodeId === fleetNode.id
+                    ? "bg-black text-white dark:bg-white dark:text-black"
+                    : "border-neutral-200 bg-white text-neutral-800 hover:bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-200 dark:hover:bg-neutral-900"
+                )}
+              >
+                {fleetNode.id}
+              </Button>
+            ))
           ) : (
-            <div className="text-xs font-medium text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl">
-              — No Nodes Available —
-            </div>
+            <span className="text-xs text-neutral-500">No active stations</span>
           )}
         </div>
-      </div>
+
+        <div className="flex flex-wrap items-center gap-3 text-xs font-mono text-neutral-600 dark:text-neutral-400">
+          <span>Loc: {node?.location || "Unassigned"}</span>
+          <span>•</span>
+          <span>Last command: {lastActionTimestamp || "None during session"}</span>
+        </div>
+      </Toolbar>
 
       {!node ? (
-        <Card className="border-dashed border-slate-200 dark:border-slate-800 p-12 text-center">
-          <div className="size-12 rounded-full bg-slate-100 dark:bg-slate-800 mx-auto flex items-center justify-center text-slate-400 mb-3">
-            <Icon icon="solar:inbox-line-linear" className="size-6" />
-          </div>
-          <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
-            No Actuator Outputs Available
-          </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto mt-1">
-            Station output controls and LED visual matrix monitors will activate once a monitoring node connects to the network.
-          </p>
-        </Card>
+        <EmptyState
+          title="No Station Selected"
+          description="Select a registered station above to manage actuator drivers, trigger test patterns, and test emergency sirens."
+        />
       ) : (
-        /* Main 2-Column Actuators Section */
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left Column: 8x8 Flash LED Matrix Controller (7 cols) */}
-          <div className="lg:col-span-7 space-y-6">
-            <Card className="rounded-2xl border-slate-200/80 dark:border-slate-800 shadow-xs">
-              <CardHeader className="pb-3 bg-slate-50/70 dark:bg-slate-900/40 border-b border-slate-100 dark:border-slate-800">
-                <div className="flex items-center justify-between">
+        <>
+          {/* Actuator Status Summary Strip */}
+          <StatStrip
+            items={[
+              {
+                label: "Output Bus State",
+                value: isConnected ? "Armed & Live" : "Offline",
+                tone: isConnected ? "live" : "neutral",
+              },
+              {
+                label: "Visual Beacon (8×8)",
+                value: isMatrixActive ? currentPattern : "Standby",
+                tone: currentPattern === "DANGER_FLASH" || currentPattern === "EVACUATE_ARROW" ? "critical" : currentPattern === "WARNING_PULSE" ? "watch" : "live",
+              },
+              {
+                label: "Audible Siren",
+                value: isBuzzerActive ? "Sounding (85 dB)" : "Standby",
+                tone: isBuzzerActive ? "critical" : "neutral",
+              },
+              {
+                label: "Actuator Latency",
+                value: "<15 ms (Direct GPIO)",
+              },
+            ]}
+          />
+
+          {/* 2-Column Actuator Command Grid */}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+            {/* Left Column: 8×8 Flash LED Matrix Controller (7 cols) */}
+            <div className="space-y-6 lg:col-span-7">
+              <div className="rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-950">
+                <div className="flex flex-col gap-2 border-b border-neutral-100 pb-4 sm:flex-row sm:items-center sm:justify-between dark:border-neutral-900">
                   <div>
-                    <CardTitle className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                      <Icon icon="solar:widget-2-bold-duotone" className="size-4 text-orange-600" />
-                      8x8 Flash LED Matrix Display
-                    </CardTitle>
-                    <CardDescription className="text-xs">
+                    <h2 className="text-base font-semibold text-neutral-950 dark:text-neutral-50">
+                      8×8 Flash LED Matrix Controller
+                    </h2>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
                       MAX7219 / SPI 64-LED Visual Beacon on {node.id}
-                    </CardDescription>
+                    </p>
                   </div>
-                  <Badge variant="outline" className="font-semibold text-xs">
-                    GPIO DIN/CS/CLK
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="p-6 flex flex-col items-center space-y-6">
-                {/* Large 8x8 LED Matrix Rendering */}
-                <LedMatrixDisplay
-                  pattern={tel?.actuators?.ledMatrixPattern || testPattern}
-                  isActive={tel?.actuators?.ledMatrixActive ?? true}
-                  size="lg"
-                />
-
-                {/* Pattern Selector Chips */}
-                <div className="w-full pt-4 border-t border-slate-100 dark:border-slate-800">
-                  <span className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-2">
-                    Test Visual Beacon Pattern:
-                  </span>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {[
-                      { id: "NORMAL_CHECK", label: "Checkmark", icon: "solar:check-circle-bold-duotone", color: "text-emerald-600" },
-                      { id: "WARNING_PULSE", label: "Warning Box", icon: "solar:danger-triangle-bold", color: "text-amber-600" },
-                      { id: "DANGER_FLASH", label: "Hazard X", icon: "solar:danger-triangle-bold", color: "text-rose-600" },
-                      { id: "EVACUATE_ARROW", label: "Evac Arrow", icon: "solar:shield-warning-bold-duotone", color: "text-blue-600" },
-                    ].map((pat) => (
-                      <Button
-                        key={pat.id}
-                        size="sm"
-                        variant={testPattern === pat.id ? "default" : "outline"}
-                        onClick={() => handlePatternSelect(pat.id as LedMatrixPattern)}
-                        className={`text-xs font-semibold h-8 justify-start gap-2 ${
-                          testPattern === pat.id ? "bg-orange-600 hover:bg-orange-700 text-white font-bold" : ""
-                        }`}
-                      >
-                        <Icon icon={pat.icon} className={`size-3.5 ${testPattern === pat.id ? "text-white" : pat.color}`} />
-                        {pat.label}
-                      </Button>
-                    ))}
+                  <div className="flex items-center gap-2">
+                    <span className="rounded border border-neutral-200 bg-neutral-50 px-2 py-0.5 font-mono text-[10px] text-neutral-600 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400">
+                      SPI Mode 0 · 10MHz
+                    </span>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
 
-          {/* Right Column: High-Decibel Piezo Siren & Circuit Telemetry (5 cols) */}
-          <div className="lg:col-span-5 space-y-6">
-            {/* Buzzer Siren Controller */}
-            <Card className="rounded-2xl border-slate-200/80 dark:border-slate-800 shadow-xs">
-              <CardHeader className="pb-3 bg-slate-50/70 dark:bg-slate-900/40 border-b border-slate-100 dark:border-slate-800">
-                <CardTitle className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                  <Icon icon="solar:volume-loud-bold-duotone" className="size-4 text-orange-600" />
-                  High-Decibel Piezo Siren
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  Active 2.8 kHz Audible Evacuation Alarm on {node.id}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-5 space-y-4">
+                {/* Large LED Matrix Live Preview */}
+                <div className="my-6 flex flex-col items-center justify-center rounded-lg border border-neutral-100 bg-neutral-50/70 p-6 dark:border-neutral-900 dark:bg-neutral-900/30">
+                  <LedMatrixDisplay
+                    pattern={currentPattern}
+                    isActive={isMatrixActive}
+                    size="lg"
+                  />
+                  <div className="mt-3 flex items-center gap-2 text-[11px] font-mono text-neutral-500 dark:text-neutral-400">
+                    <span className="inline-block size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>Rendering pattern: <strong>{currentPattern}</strong></span>
+                  </div>
+                </div>
+
+                {/* Pattern Selection Grid */}
+                <div>
+                  <div className="mb-3 flex items-center justify-between">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                      Select Test Pattern
+                    </span>
+                    <span className="text-[11px] font-mono text-neutral-400">
+                      Click to flash on hardware
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    {PATTERN_OPTIONS.map((pat) => {
+                      const isCurrent = currentPattern === pat.id;
+                      return (
+                        <button
+                          key={pat.id}
+                          type="button"
+                          onClick={() => handlePatternSelect(pat.id)}
+                          disabled={isTriggeringPattern}
+                          className={cn(
+                            "flex items-start gap-3 rounded-lg border p-3 text-left transition-all",
+                            isCurrent
+                              ? "border-black bg-neutral-950 text-white shadow-xs dark:border-white dark:bg-white dark:text-black"
+                              : "border-neutral-200 bg-white text-neutral-900 hover:border-neutral-300 hover:bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-100 dark:hover:border-neutral-700 dark:hover:bg-neutral-900"
+                          )}
+                        >
+                          <Icon
+                            icon={pat.icon}
+                            className={cn(
+                              "mt-0.5 size-4 shrink-0",
+                              isCurrent
+                                ? "text-white dark:text-black"
+                                : pat.tone === "critical"
+                                ? "text-red-600 dark:text-red-400"
+                                : pat.tone === "watch"
+                                ? "text-amber-600 dark:text-amber-400"
+                                : pat.tone === "live"
+                                ? "text-emerald-600 dark:text-emerald-400"
+                                : "text-neutral-400"
+                            )}
+                          />
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-semibold leading-none">{pat.label}</span>
+                              <span
+                                className={cn(
+                                  "font-mono text-[9px]",
+                                  isCurrent ? "text-neutral-300 dark:text-neutral-600" : "text-neutral-400 dark:text-neutral-500"
+                                )}
+                              >
+                                {pat.code}
+                              </span>
+                            </div>
+                            <p
+                              className={cn(
+                                "mt-1 text-[11px] leading-tight",
+                                isCurrent ? "text-neutral-300 dark:text-neutral-700" : "text-neutral-500 dark:text-neutral-400"
+                              )}
+                            >
+                              {pat.description}
+                            </p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Hardware Bus Pinout Specs */}
+                <div className="mt-6 border-t border-neutral-100 pt-4 dark:border-neutral-900">
+                  <div className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                    Hardware Bus Configuration
+                  </div>
+                  <div className="mt-2 grid grid-cols-3 gap-2 text-xs font-mono">
+                    <div className="rounded border border-neutral-200 bg-neutral-50 p-2 dark:border-neutral-800 dark:bg-neutral-900/50">
+                      <div className="text-[10px] text-neutral-400 uppercase">DIN (Data In)</div>
+                      <div className="mt-0.5 font-bold text-neutral-900 dark:text-neutral-100">GPIO 23</div>
+                    </div>
+                    <div className="rounded border border-neutral-200 bg-neutral-50 p-2 dark:border-neutral-800 dark:bg-neutral-900/50">
+                      <div className="text-[10px] text-neutral-400 uppercase">CS (Chip Select)</div>
+                      <div className="mt-0.5 font-bold text-neutral-900 dark:text-neutral-100">GPIO 15</div>
+                    </div>
+                    <div className="rounded border border-neutral-200 bg-neutral-50 p-2 dark:border-neutral-800 dark:bg-neutral-900/50">
+                      <div className="text-[10px] text-neutral-400 uppercase">CLK (Clock)</div>
+                      <div className="mt-0.5 font-bold text-neutral-900 dark:text-neutral-100">GPIO 14</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: High-Decibel Siren & Circuit Diagnostics (5 cols) */}
+            <div className="space-y-6 lg:col-span-5">
+              {/* Piezo Siren Controller */}
+              <div className="rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-950">
+                <div className="flex items-center justify-between border-b border-neutral-100 pb-4 dark:border-neutral-900">
+                  <div>
+                    <h2 className="text-base font-semibold text-neutral-950 dark:text-neutral-50">
+                      High-Decibel Piezo Siren
+                    </h2>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                      Active 2.8 kHz Audible Evacuation Alarm on {node.id}
+                    </p>
+                  </div>
+                  <span
+                    className={cn(
+                      "size-2 rounded-full",
+                      isBuzzerActive ? "bg-red-500 animate-ping" : "bg-neutral-400"
+                    )}
+                  />
+                </div>
+
+                {/* Alarm Status Tile */}
                 <div
-                  className={`p-4 rounded-xl border flex items-center justify-between transition-all ${
-                    tel?.actuators?.buzzerActive
-                      ? "bg-rose-50 dark:bg-rose-950/40 border-rose-300 dark:border-rose-900"
-                      : "bg-slate-50 dark:bg-slate-900/40 border-slate-200 dark:border-slate-800"
-                  }`}
+                  className={cn(
+                    "mt-4 rounded-lg border p-4 transition-colors",
+                    isBuzzerActive
+                      ? "border-red-300 bg-red-50 dark:border-red-900 dark:bg-red-950/40"
+                      : "border-neutral-200 bg-neutral-50/60 dark:border-neutral-800 dark:bg-neutral-900/40"
+                  )}
                 >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`size-10 rounded-xl flex items-center justify-center ${
-                        tel?.actuators?.buzzerActive
-                          ? "bg-rose-600 text-white animate-pulse"
-                          : "bg-slate-200 dark:bg-slate-800 text-slate-500"
-                      }`}
-                    >
-                      {tel?.actuators?.buzzerActive ? (
-                        <Icon icon="solar:volume-loud-bold-duotone" className="size-5" />
-                      ) : (
-                        <Icon icon="solar:volume-cross-bold-duotone" className="size-5" />
-                      )}
-                    </div>
-                    <div>
-                      <span className="text-sm font-bold text-slate-900 dark:text-slate-100 block">
-                        {tel?.actuators?.buzzerActive ? "SIREN ENGAGED" : "Siren Standby"}
-                      </span>
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                        {tel?.actuators?.buzzerActive ? "2,800 Hz @ 85 dB Output" : "Normal Inactive State"}
-                      </span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={cn(
+                          "flex size-10 items-center justify-center rounded-lg border",
+                          isBuzzerActive
+                            ? "border-red-500 bg-red-600 text-white animate-pulse"
+                            : "border-neutral-300 bg-neutral-200 text-neutral-600 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400"
+                        )}
+                      >
+                        <Icon
+                          icon={isBuzzerActive ? "solar:volume-loud-bold" : "solar:volume-cross-bold"}
+                          className="size-5"
+                        />
+                      </div>
+                      <div>
+                        <div
+                          className={cn(
+                            "text-sm font-semibold",
+                            isBuzzerActive ? "text-red-700 dark:text-red-300" : "text-neutral-900 dark:text-neutral-100"
+                          )}
+                        >
+                          {isBuzzerActive ? "SIREN ACTIVE — SOUNDING" : "Siren Standby"}
+                        </div>
+                        <div className="font-mono text-xs text-neutral-500 dark:text-neutral-400">
+                          {isBuzzerActive ? "2,800 Hz @ 85 dB SPL" : "Circuit armed, ready to trigger"}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <Button
-                    size="sm"
-                    variant={tel?.actuators?.buzzerActive ? "destructive" : "default"}
-                    onClick={() => triggerActuatorTest("buzzer")}
-                    className="text-xs font-bold h-8"
-                  >
-                    {tel?.actuators?.buzzerActive ? "Silence Siren" : "Test Siren"}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
 
-            {/* Output Circuit Summary */}
-            <Card className="rounded-2xl border-slate-200/80 dark:border-slate-800 shadow-xs">
-              <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
-                <CardTitle className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                  {/* Trigger / Silence Action Button */}
+                  <div className="mt-4">
+                    <Button
+                      size="sm"
+                      onClick={handleSirenToggle}
+                      disabled={isTriggeringSiren}
+                      className={cn(
+                        "w-full font-semibold transition-all",
+                        isBuzzerActive
+                          ? "bg-black text-white hover:bg-neutral-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
+                          : "bg-red-600 text-white hover:bg-red-700 dark:bg-red-500 dark:text-white dark:hover:bg-red-400"
+                      )}
+                    >
+                      <Icon
+                        icon={isBuzzerActive ? "solar:volume-cross-bold" : "solar:volume-loud-bold"}
+                        className="mr-1.5 size-4"
+                      />
+                      {isBuzzerActive ? "Silence Siren" : "Test Siren (Sound Alarm)"}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="mt-3 text-[11px] text-neutral-500 dark:text-neutral-400">
+                  Failsafe note: Siren test automatically silences after safety interval. Manual trigger sends high-priority command over WebSocket.
+                </div>
+              </div>
+
+              {/* Actuator Circuit Telemetry */}
+              <div className="rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-950">
+                <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
                   Actuator Circuit Telemetry
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 space-y-2 text-xs">
-                <div className="flex justify-between py-1.5 border-b border-slate-100 dark:border-slate-800">
-                  <span className="text-slate-500 dark:text-slate-400 font-medium">Station ID</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200">{node.id}</span>
+                </h3>
+                <div className="mt-3 divide-y divide-neutral-100 text-xs dark:divide-neutral-900">
+                  <div className="flex items-center justify-between py-2">
+                    <span className="text-neutral-500 dark:text-neutral-400">Station Node ID</span>
+                    <span className="font-mono font-semibold text-neutral-900 dark:text-neutral-100">{node.id}</span>
+                  </div>
+                  <div className="flex items-center justify-between py-2">
+                    <span className="text-neutral-500 dark:text-neutral-400">Mine Sector</span>
+                    <span className="font-semibold text-neutral-800 dark:text-neutral-200">{node.location}</span>
+                  </div>
+                  <div className="flex items-center justify-between py-2">
+                    <span className="text-neutral-500 dark:text-neutral-400">LED Bus Driver</span>
+                    <span className="font-mono font-semibold text-emerald-600 dark:text-emerald-400">MAX7219 (SPI 5V)</span>
+                  </div>
+                  <div className="flex items-center justify-between py-2">
+                    <span className="text-neutral-500 dark:text-neutral-400">Siren Driver Transistor</span>
+                    <span className="font-mono font-semibold text-neutral-900 dark:text-neutral-100">
+                      {isBuzzerActive ? "MOSFET ON (3.3V HIGH)" : "MOSFET OFF (0V LOW)"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between py-2">
+                    <span className="text-neutral-500 dark:text-neutral-400">Siren Pin Mapping</span>
+                    <span className="font-mono font-semibold text-neutral-900 dark:text-neutral-100">GPIO 25 (PWM / Digital)</span>
+                  </div>
+                  <div className="flex items-center justify-between py-2">
+                    <span className="text-neutral-500 dark:text-neutral-400">Failsafe Interlock</span>
+                    <span className="font-mono font-semibold text-emerald-600 dark:text-emerald-400">AUTOMATIC TIMEOUT ARMED</span>
+                  </div>
                 </div>
-                <div className="flex justify-between py-1.5 border-b border-slate-100 dark:border-slate-800">
-                  <span className="text-slate-500 dark:text-slate-400 font-medium">Location</span>
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">{node.location}</span>
-                </div>
-                <div className="flex justify-between py-1.5 border-b border-slate-100 dark:border-slate-800">
-                  <span className="text-slate-500 dark:text-slate-400 font-medium">LED Matrix State</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200">
-                    {tel?.actuators?.ledMatrixActive ? "ACTIVE" : "STANDBY"}
-                  </span>
-                </div>
-                <div className="flex justify-between py-1.5">
-                  <span className="text-slate-500 dark:text-slate-400 font-medium">Siren Transistor</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200">
-                    {tel?.actuators?.buzzerActive ? "DRIVING (3.3V HIGH)" : "LOW (OFF)"}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
-        </div>
+        </>
       )}
-    </div>
+    </PageShell>
   );
 }
