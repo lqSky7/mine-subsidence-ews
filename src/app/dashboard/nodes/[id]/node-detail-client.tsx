@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
 import { TiltInclinometer3D } from "@/components/industrial/TiltInclinometer3D";
 import { UltrasoundDistanceWidget } from "@/components/industrial/UltrasoundDistanceWidget";
+import { ThermometerWidget } from "@/components/industrial/ThermometerWidget";
 import { AestheticMultiMetricChart, AestheticMiniSparkline } from "@/components/charts";
 import type { TelemetryDataPoint } from "@/types";
 
@@ -29,7 +30,7 @@ export default function NodeDetailClient({ nodeId }: { nodeId: string }) {
       if (isMounted) setHistoryData(hist);
     }
     load();
-    const interval = setInterval(load, 3000);
+    const interval = setInterval(load, 4000);
     return () => {
       isMounted = false;
       clearInterval(interval);
@@ -51,6 +52,10 @@ export default function NodeDetailClient({ nodeId }: { nodeId: string }) {
   );
   const mpu2History: number[] = useMemo(
     () => historyData.map((d) => Number(d.tiltMpu2) || 0).filter((v) => !isNaN(v)),
+    [historyData]
+  );
+  const tempHistory: number[] = useMemo(
+    () => historyData.map((d) => Number(d.temperatureC) || 0).filter((v) => !isNaN(v)),
     [historyData]
   );
 
@@ -226,6 +231,37 @@ export default function NodeDetailClient({ nodeId }: { nodeId: string }) {
             <div className="mt-2 flex items-center justify-between text-[10px] text-slate-500">
               <span>R: {tel?.imu2?.rollDeg !== undefined ? `${tel.imu2.rollDeg.toFixed(1)}°` : "—"} · P: {tel?.imu2?.pitchDeg !== undefined ? `${tel.imu2.pitchDeg.toFixed(1)}°` : "—"}</span>
               <span>Z: {tel?.imu2?.accelZ !== undefined ? `${tel.imu2.accelZ.toFixed(1)} m/s²` : "—"}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 5: Environment (DHT11 Temperature & Humidity) */}
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                Environment (DHT11)
+              </span>
+              <div className="size-7 rounded-md bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center border border-emerald-200 dark:border-emerald-800">
+                <Icon icon="solar:thermometer-bold-duotone" className="size-4 text-emerald-700 dark:text-emerald-300" />
+              </div>
+            </div>
+            <div className="mt-2 flex items-baseline gap-1">
+              <span className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100 tabular-nums">
+                {tel?.environment?.temperatureC !== undefined && tel.environment.temperatureC !== null
+                  ? tel.environment.temperatureC.toFixed(1)
+                  : "—"}
+              </span>
+              {tel?.environment?.temperatureC !== undefined && tel.environment.temperatureC !== null && (
+                <span className="text-xs font-semibold text-slate-500">°C</span>
+              )}
+            </div>
+          </div>
+          <div className="mt-3">
+            <AestheticMiniSparkline data={tempHistory} color="#059669" height={28} />
+            <div className="mt-2 flex items-center justify-between text-[10px] text-slate-500">
+              <span>Humidity: <strong className="text-slate-700 dark:text-slate-300">{tel?.environment?.humidityPct !== undefined && tel.environment.humidityPct !== null ? `${tel.environment.humidityPct.toFixed(1)}%` : "—"}</strong></span>
+              <span>DHT11 Calibrated</span>
             </div>
           </div>
         </div>
