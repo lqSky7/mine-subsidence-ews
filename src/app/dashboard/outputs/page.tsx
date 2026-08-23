@@ -78,6 +78,7 @@ export default function OutputsPage() {
     selectedNode,
     selectedTelemetry,
     triggerActuatorTest,
+    resumeAutomaticLedControl,
     isConnected,
   } = useTelemetryContext();
 
@@ -89,12 +90,17 @@ export default function OutputsPage() {
   );
   const [isTriggeringPattern, setIsTriggeringPattern] = useState(false);
   const [isTriggeringSiren, setIsTriggeringSiren] = useState(false);
+  const [isResumingAuto, setIsResumingAuto] = useState(false);
   const [lastActionTimestamp, setLastActionTimestamp] = useState<string | null>(null);
 
   const handlePatternSelect = async (pattern: LedMatrixPattern) => {
     setSelectedPattern(pattern);
     setIsTriggeringPattern(true);
     try {
+      // Selecting a test pattern permanently halts the backend's automated
+      // severity-driven matrix logic for this node — only this explicit
+      // selection (or a later one) will be sent to the physical 8x8 RGB
+      // matrix until "Resume Automatic Control" is used below.
       await triggerActuatorTest("ledMatrix", pattern);
       setLastActionTimestamp(new Date().toLocaleTimeString());
     } finally {
@@ -112,9 +118,20 @@ export default function OutputsPage() {
     }
   };
 
+  const handleResumeAuto = async () => {
+    setIsResumingAuto(true);
+    try {
+      await resumeAutomaticLedControl(node?.id);
+      setLastActionTimestamp(new Date().toLocaleTimeString());
+    } finally {
+      setIsResumingAuto(false);
+    }
+  };
+
   const isBuzzerActive = tel?.actuators?.buzzerActive ?? false;
   const isMatrixActive = tel?.actuators?.ledMatrixActive ?? true;
   const currentPattern = tel?.actuators?.ledMatrixPattern || selectedPattern;
+  const isManualOverrideActive = tel?.actuators?.userOverride ?? false;
 
   return (
     <PageShell>
@@ -182,6 +199,11 @@ export default function OutputsPage() {
                 tone: currentPattern === "DANGER_FLASH" || currentPattern === "EVACUATE_ARROW" ? "critical" : currentPattern === "WARNING_PULSE" ? "watch" : "live",
               },
               {
+                label: "Matrix Control Mode",
+                value: isManualOverrideActive ? "Manual Override" : "Automatic",
+                tone: isManualOverrideActive ? "watch" : "live",
+              },
+              {
                 label: "Audible Siren",
                 value: isBuzzerActive ? "Sounding (85 dB)" : "Standby",
                 tone: isBuzzerActive ? "critical" : "neutral",
@@ -227,6 +249,33 @@ export default function OutputsPage() {
                   </div>
                 </div>
 
+                {/* Manual Override Banner: shown once an operator has locked the matrix
+                    via "Select Test Pattern" below, halting the automated severity-driven
+                    logic on the backend until explicitly resumed. */}
+                {isManualOverrideActive && (
+                  <div className="mb-6 flex flex-col gap-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-amber-900 sm:flex-row sm:items-center sm:justify-between dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
+                    <div className="flex items-start gap-2">
+                      <Icon icon="solar:lock-keyhole-bold" className="mt-0.5 size-4 shrink-0" />
+                      <div>
+                        <div className="text-xs font-semibold">Manual Override Active</div>
+                        <div className="text-[11px] leading-snug opacity-90">
+                          Automated severity-driven matrix updates are halted for {node.id}. Only the
+                          pattern selected below is being sent to the physical 8×8 RGB matrix.
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleResumeAuto}
+                      disabled={isResumingAuto}
+                      className="shrink-0 border-amber-400 bg-white text-amber-900 hover:bg-amber-100 dark:border-amber-800 dark:bg-neutral-950 dark:text-amber-200 dark:hover:bg-amber-950/50"
+                    >
+                      {isResumingAuto ? "Resuming\u2026" : "Resume Automatic Control"}
+                    </Button>
+                  </div>
+                )}
+
                 {/* Pattern Selection Grid */}
                 <div>
                   <div className="mb-3 flex items-center justify-between">
@@ -234,7 +283,7 @@ export default function OutputsPage() {
                       Select Test Pattern
                     </span>
                     <span className="text-[11px] font-mono text-neutral-400">
-                      Click to flash on hardware
+                      {isManualOverrideActive ? "Manual override \u2014 halts automatic logic" : "Click to flash on hardware"}
                     </span>
                   </div>
 

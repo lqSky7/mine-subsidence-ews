@@ -123,6 +123,9 @@ export interface TelemetryState {
   ) => Promise<{ alarm: Alarm } | null>;
   setThresholds: (thresholds: Partial<AlertThresholdConfig>) => Promise<void>;
   triggerActuatorTest: (actuator: "buzzer" | "ledMatrix", pattern?: LedMatrixPattern) => Promise<void>;
+  // Clears a manual LED matrix override (permanent or time-boxed) and resumes the
+  // backend's automated severity-driven pattern logic for the given node.
+  resumeAutomaticLedControl: (nodeId?: string) => Promise<void>;
   fetchNodeHistory: (nodeId: string, points?: number) => Promise<TelemetryDataPoint[]>;
   fetchHealthHistory: (limit?: number) => Promise<MineHealthScore[]>;
   fetchPhotos: (limit?: number) => Promise<MinePhoto[]>;
@@ -639,6 +642,61 @@ export function useTelemetry(): TelemetryState {
     [selectedNodeId, telemetry, pollBackendData]
   );
 
+  // Clears a manual LED matrix override so the backend resumes automatically driving
+  // the pattern from live sensor severity. Used by the "Resume Automatic Control"
+  // action shown once an operator has locked the matrix via "Select Test Pattern".
+  const handleResumeAutomaticLedControl = useCallback(
+    async (nodeId?: string) => {
+      const targetNodeId = nodeId || selectedNodeId;
+
+      try {
+        const res = await fetch(`${API_BASE}/commands`, {
+          method: "POST",
+          headers: {
+            ...DEFAULT_FETCH_HEADERS,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            type: "LED_AUTO",
+            targetNodeId,
+            issuedBy: "CONTROL_ROOM_OPERATOR",
+          }),
+        });
+
+        if (res.ok) {
+          // Drop any optimistic shield so the next poll/socket update (which will
+          // carry the freshly-recomputed automatic pattern) isn't clobbered.
+          if (pendingActuatorOverrideRef.current?.nodeId === targetNodeId) {
+            pendingActuatorOverrideRef.current = null;
+          }
+
+          setTelemetry((prev) => {
+            const current = prev[targetNodeId];
+            if (!current) return prev;
+            return {
+              ...prev,
+              [targetNodeId]: {
+                ...current,
+                actuators: {
+                  buzzerActive: current.actuators?.buzzerActive ?? false,
+                  buzzerFrequencyHz: current.actuators?.buzzerFrequencyHz,
+                  ledMatrixPattern: current.actuators?.ledMatrixPattern ?? "NORMAL_CHECK",
+                  ledMatrixActive: current.actuators?.ledMatrixActive ?? true,
+                  userOverride: false,
+                  userOverrideUntil: undefined,
+                },
+              },
+            };
+          });
+          pollBackendData();
+        }
+      } catch {
+        // network error
+      }
+    },
+    [selectedNodeId, pollBackendData]
+  );
+
   // Fetch real node historical points for graphs
   const handleFetchNodeHistory = useCallback(
     async (nodeId: string, points = 50): Promise<TelemetryDataPoint[]> => {
@@ -879,6 +937,7 @@ export function useTelemetry(): TelemetryState {
     raiseManualAlarm: handleRaiseManualAlarm,
     setThresholds: handleSetThresholds,
     triggerActuatorTest: handleTriggerActuatorTest,
+    resumeAutomaticLedControl: handleResumeAutomaticLedControl,
     fetchNodeHistory: handleFetchNodeHistory,
     fetchHealthHistory: handleFetchHealthHistory,
     fetchPhotos: handleFetchPhotos,
