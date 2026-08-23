@@ -31,12 +31,12 @@ export const NODE_BASELINES: Record<string, TiltCalibrationConfig> = {
     imu2Baseline: { ax: -1.140, ay: 1.061, az: 10.242 },
   },
   "ESP-NODE-02": {
-    imu1Baseline: { ax: 1.317, ay: 8.954, az: 6.766 },
-    imu2Baseline: { ax: 1.317, ay: 8.954, az: 6.766 },
+    imu1Baseline: { ax: 2.835, ay: -0.227, az: -7.276 },
+    imu2Baseline: { ax: 2.835, ay: -0.227, az: -7.276 },
   },
   "esp32_sensor_node_2": {
-    imu1Baseline: { ax: 1.317, ay: 8.954, az: 6.766 },
-    imu2Baseline: { ax: 1.317, ay: 8.954, az: 6.766 },
+    imu1Baseline: { ax: 2.835, ay: -0.227, az: -7.276 },
+    imu2Baseline: { ax: 2.835, ay: -0.227, az: -7.276 },
   },
 };
 
