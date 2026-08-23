@@ -166,18 +166,14 @@ export function clearStoredCalibration(nodeId: string): void {
 
 /**
  * Applies calibration across a full NodeTelemetry payload.
+ * The backend sanitises and zero-calibrates all raw accelerometer streams
+ * before broadcasting. The frontend directly consumes clean telemetry.
  */
 export function calibrateTelemetry(
-  tel: NodeTelemetry,
-  customConfig?: Partial<TiltCalibrationConfig>
+  tel: NodeTelemetry
 ): NodeTelemetry {
-  const stored = getStoredCalibration(tel.nodeId);
-  const nodeBaselines = NODE_BASELINES[tel.nodeId];
-  const imu1Base = customConfig?.imu1Baseline ?? stored?.imu1Baseline ?? nodeBaselines?.imu1Baseline;
-  const imu2Base = customConfig?.imu2Baseline ?? stored?.imu2Baseline ?? nodeBaselines?.imu2Baseline;
-
-  const imu1 = calibrateImuReading(tel.imu1 ?? tel.mpu1, "imu1", imu1Base);
-  const imu2 = calibrateImuReading(tel.imu2 ?? tel.mpu2, "imu2", imu2Base);
+  const imu1 = tel.imu1 ?? tel.mpu1 ?? null;
+  const imu2 = tel.imu2 ?? tel.mpu2 ?? null;
 
   return {
     ...tel,
@@ -190,22 +186,8 @@ export function calibrateTelemetry(
 
 /**
  * Calibrates a TelemetryDataPoint for charts and sparklines.
+ * Directly returns backend provided data points.
  */
 export function calibrateHistoryPoint(point: TelemetryDataPoint): TelemetryDataPoint {
-  let tiltMpu1 = point.tiltMpu1;
-  let tiltMpu2 = point.tiltMpu2;
-
-  // If history point has raw uncalibrated tilt values (> 45 deg)
-  if (typeof tiltMpu1 === "number" && tiltMpu1 > 45) {
-    tiltMpu1 = round(Math.abs(tiltMpu1 - 82.38), 2);
-  }
-  if (typeof tiltMpu2 === "number" && tiltMpu2 > 45) {
-    tiltMpu2 = round(Math.abs(tiltMpu2 - 87.58), 2);
-  }
-
-  return {
-    ...point,
-    tiltMpu1,
-    tiltMpu2,
-  };
+  return point;
 }
