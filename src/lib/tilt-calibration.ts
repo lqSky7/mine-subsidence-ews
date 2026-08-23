@@ -21,6 +21,21 @@ export const DEFAULT_TILT_CALIBRATION: TiltCalibrationConfig = {
   imu2Baseline: { ax: 9.934, ay: -2.832, az: 1.970 },
 };
 
+export const NODE_BASELINES: Record<string, TiltCalibrationConfig> = {
+  "ESP-NODE-01": {
+    imu1Baseline: { ax: 10.003, ay: -2.393, az: -2.236 },
+    imu2Baseline: { ax: 9.934, ay: -2.832, az: 1.970 },
+  },
+  "ESP-NODE-02": {
+    imu1Baseline: { ax: 1.317, ay: 8.954, az: 6.766 },
+    imu2Baseline: { ax: 1.317, ay: 8.954, az: 6.766 },
+  },
+  "esp32_sensor_node_2": {
+    imu1Baseline: { ax: 1.317, ay: 8.954, az: 6.766 },
+    imu2Baseline: { ax: 1.317, ay: 8.954, az: 6.766 },
+  },
+};
+
 function round(n: number, dp = 2): number {
   const factor = 10 ** dp;
   return Math.round(n * factor) / factor;
@@ -155,8 +170,9 @@ export function calibrateTelemetry(
   customConfig?: Partial<TiltCalibrationConfig>
 ): NodeTelemetry {
   const stored = getStoredCalibration(tel.nodeId);
-  const imu1Base = customConfig?.imu1Baseline ?? stored?.imu1Baseline;
-  const imu2Base = customConfig?.imu2Baseline ?? stored?.imu2Baseline;
+  const nodeBaselines = NODE_BASELINES[tel.nodeId];
+  const imu1Base = customConfig?.imu1Baseline ?? stored?.imu1Baseline ?? nodeBaselines?.imu1Baseline;
+  const imu2Base = customConfig?.imu2Baseline ?? stored?.imu2Baseline ?? nodeBaselines?.imu2Baseline;
 
   const imu1 = calibrateImuReading(tel.imu1 ?? tel.mpu1, "imu1", imu1Base);
   const imu2 = calibrateImuReading(tel.imu2 ?? tel.mpu2, "imu2", imu2Base);
