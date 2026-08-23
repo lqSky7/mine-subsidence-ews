@@ -432,25 +432,54 @@ export function useTelemetry(): TelemetryState {
   // Actuator Remote Command
   const handleTriggerActuatorTest = useCallback(
     async (actuator: "buzzer" | "ledMatrix", pattern?: LedMatrixPattern) => {
+      const isBuzzer = actuator === "buzzer";
+      const currentBuzzer = telemetry[selectedNodeId]?.actuators?.buzzerActive ?? false;
+      const targetActive = !currentBuzzer;
+
       try {
-        await fetch(`${API_BASE}/commands`, {
+        const res = await fetch(`${API_BASE}/commands`, {
           method: "POST",
           headers: {
             ...DEFAULT_FETCH_HEADERS,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            type: actuator === "buzzer" ? "BUZZER_TEST" : "LED_TEST",
+            type: isBuzzer ? "BUZZER_TEST" : "LED_TEST",
             targetNodeId: selectedNodeId,
             issuedBy: "CONTROL_ROOM_OPERATOR",
-            payload: { pattern: pattern || "DANGER_FLASH" },
+            payload: {
+              active: isBuzzer ? targetActive : true,
+              pattern: pattern || (isBuzzer && targetActive ? "DANGER_FLASH" : "NORMAL_CHECK"),
+              durationMs: isBuzzer && targetActive ? 5000 : 0,
+            },
           }),
         });
+
+        // Optimistically update local telemetry state for snappy feedback
+        if (res.ok) {
+          setTelemetry((prev) => {
+            const current = prev[selectedNodeId];
+            if (!current) return prev;
+            return {
+              ...prev,
+              [selectedNodeId]: {
+                ...current,
+                actuators: {
+                  ...current.actuators,
+                  buzzerActive: isBuzzer ? targetActive : (current.actuators?.buzzerActive ?? false),
+                  ledMatrixPattern: pattern || (isBuzzer && targetActive ? "DANGER_FLASH" : current.actuators?.ledMatrixPattern || "NORMAL_CHECK"),
+                  ledMatrixActive: current.actuators?.ledMatrixActive ?? true,
+                },
+              },
+            };
+          });
+          pollBackendData();
+        }
       } catch {
         // network error
       }
     },
-    [selectedNodeId]
+    [selectedNodeId, telemetry, pollBackendData]
   );
 
   // Fetch real node historical points for graphs

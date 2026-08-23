@@ -167,7 +167,7 @@ export function LedMatrixDisplay({
         {/* Sub-telemetry strip for md/lg sizes */}
         {size !== "sm" && (
           <div className="mt-2.5 flex items-center justify-between border-t border-neutral-800/80 pt-1.5 text-[9px] font-mono text-neutral-500">
-            <span>MAX7219 / SPI</span>
+            <span>WS2812 RGB (8×8) · 64-BIT</span>
             <span>{activeDiodeCount}/64 ACTIVE</span>
           </div>
         )}

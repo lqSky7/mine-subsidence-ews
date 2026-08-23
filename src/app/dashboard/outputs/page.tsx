@@ -201,15 +201,15 @@ export default function OutputsPage() {
                 <div className="flex flex-col gap-2 border-b border-neutral-100 pb-4 sm:flex-row sm:items-center sm:justify-between dark:border-neutral-900">
                   <div>
                     <h2 className="text-base font-semibold text-neutral-950 dark:text-neutral-50">
-                      8×8 Flash LED Matrix Controller
+                      64-bit (8×8) WS2812 RGB LED Matrix Controller
                     </h2>
                     <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                      MAX7219 / SPI 64-LED Visual Beacon on {node.id}
+                      WS2812B 800 kHz High-Speed Single-Wire TrueColor Visual Beacon on {node.id}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="rounded border border-neutral-200 bg-neutral-50 px-2 py-0.5 font-mono text-[10px] text-neutral-600 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400">
-                      SPI Mode 0 · 10MHz
+                      WS2812B · GPIO 15 · 24-bit RGB
                     </span>
                   </div>
                 </div>
@@ -298,15 +298,15 @@ export default function OutputsPage() {
                   <div className="mt-2 grid grid-cols-3 gap-2 text-xs font-mono">
                     <div className="rounded border border-neutral-200 bg-neutral-50 p-2 dark:border-neutral-800 dark:bg-neutral-900/50">
                       <div className="text-[10px] text-neutral-400 uppercase">DIN (Data In)</div>
-                      <div className="mt-0.5 font-bold text-neutral-900 dark:text-neutral-100">GPIO 23</div>
+                      <div className="mt-0.5 font-bold text-emerald-600 dark:text-emerald-400">GPIO 15 (Pin 15)</div>
                     </div>
                     <div className="rounded border border-neutral-200 bg-neutral-50 p-2 dark:border-neutral-800 dark:bg-neutral-900/50">
-                      <div className="text-[10px] text-neutral-400 uppercase">CS (Chip Select)</div>
-                      <div className="mt-0.5 font-bold text-neutral-900 dark:text-neutral-100">GPIO 15</div>
+                      <div className="text-[10px] text-neutral-400 uppercase">Power VCC</div>
+                      <div className="mt-0.5 font-bold text-neutral-900 dark:text-neutral-100">+5.0V DC</div>
                     </div>
                     <div className="rounded border border-neutral-200 bg-neutral-50 p-2 dark:border-neutral-800 dark:bg-neutral-900/50">
-                      <div className="text-[10px] text-neutral-400 uppercase">CLK (Clock)</div>
-                      <div className="mt-0.5 font-bold text-neutral-900 dark:text-neutral-100">GPIO 14</div>
+                      <div className="text-[10px] text-neutral-400 uppercase">Timing / Bus</div>
+                      <div className="mt-0.5 font-bold text-neutral-900 dark:text-neutral-100">800 kHz NRZ</div>
                     </div>
                   </div>
                 </div>
@@ -417,17 +417,17 @@ export default function OutputsPage() {
                   </div>
                   <div className="flex items-center justify-between py-2">
                     <span className="text-neutral-500 dark:text-neutral-400">LED Bus Driver</span>
-                    <span className="font-mono font-semibold text-emerald-600 dark:text-emerald-400">MAX7219 (SPI 5V)</span>
+                    <span className="font-mono font-semibold text-emerald-600 dark:text-emerald-400">WS2812B (GPIO 15)</span>
                   </div>
                   <div className="flex items-center justify-between py-2">
                     <span className="text-neutral-500 dark:text-neutral-400">Siren Driver Transistor</span>
                     <span className="font-mono font-semibold text-neutral-900 dark:text-neutral-100">
-                      {isBuzzerActive ? "MOSFET ON (3.3V HIGH)" : "MOSFET OFF (0V LOW)"}
+                      {isBuzzerActive ? "MOSFET ON (3.3V/5V HIGH)" : "MOSFET OFF (0V LOW)"}
                     </span>
                   </div>
                   <div className="flex items-center justify-between py-2">
                     <span className="text-neutral-500 dark:text-neutral-400">Siren Pin Mapping</span>
-                    <span className="font-mono font-semibold text-neutral-900 dark:text-neutral-100">GPIO 25 (PWM / Digital)</span>
+                    <span className="font-mono font-semibold text-emerald-600 dark:text-emerald-400">GPIO 19 (Pin 19 · PWM)</span>
                   </div>
                   <div className="flex items-center justify-between py-2">
                     <span className="text-neutral-500 dark:text-neutral-400">Failsafe Interlock</span>
