@@ -235,111 +235,118 @@ export function useTelemetry(): TelemetryState {
     [applyPendingActuatorOverride, stabilizeLedPattern]
   );
 
-  // Poll backend REST endpoints for live real data
+  // Poll backend REST endpoints for live real data concurrently
   const pollBackendData = useCallback(async () => {
     try {
-      // 1. Fetch nodes
-      const nodesRes = await fetch(`${API_BASE}/nodes`, {
-        headers: DEFAULT_FETCH_HEADERS,
-        cache: "no-store",
-      });
-      if (nodesRes.ok) {
-        const json = await nodesRes.json();
-        if (json.ok && Array.isArray(json.data)) {
+      const [
+        nodesRes,
+        telRes,
+        alarmsRes,
+        threshRes,
+        healthRes,
+        anomalyRes,
+        photosRes,
+      ] = await Promise.allSettled([
+        fetch(`${API_BASE}/nodes`, { headers: DEFAULT_FETCH_HEADERS, cache: "no-store" }),
+        fetch(`${API_BASE}/telemetry/live`, { headers: DEFAULT_FETCH_HEADERS, cache: "no-store" }),
+        fetch(`${API_BASE}/alarms`, { headers: DEFAULT_FETCH_HEADERS, cache: "no-store" }),
+        fetch(`${API_BASE}/thresholds`, { headers: DEFAULT_FETCH_HEADERS, cache: "no-store" }),
+        fetch(`${API_BASE}/health/mine`, { headers: DEFAULT_FETCH_HEADERS, cache: "no-store" }),
+        fetch(`${API_BASE}/health/anomaly`, { headers: DEFAULT_FETCH_HEADERS, cache: "no-store" }),
+        fetch(`${API_BASE}/photos?limit=20`, { headers: DEFAULT_FETCH_HEADERS, cache: "no-store" }),
+      ]);
+
+      let hasSuccess = false;
+
+      // 1. Process Nodes
+      if (nodesRes.status === "fulfilled" && nodesRes.value.ok) {
+        const json = await nodesRes.value.json();
+        if (json.ok && Array.isArray(json.data) && json.data.length > 0) {
           setNodes(json.data);
-          setIsConnected(true);
+          hasSuccess = true;
         }
       }
 
-      // 2. Fetch live telemetry
-      const telRes = await fetch(`${API_BASE}/telemetry/live`, {
-        headers: DEFAULT_FETCH_HEADERS,
-        cache: "no-store",
-      });
-      if (telRes.ok) {
-        const json = await telRes.json();
-        if (json.ok && json.data) {
+      // 2. Process Live Telemetry
+      if (telRes.status === "fulfilled" && telRes.value.ok) {
+        const json = await telRes.value.json();
+        if (json.ok && json.data && Object.keys(json.data).length > 0) {
           const calibratedMap: Record<string, NodeTelemetry> = {};
           for (const [id, rawTel] of Object.entries(json.data as Record<string, NodeTelemetry>)) {
-            calibratedMap[id] = normalizeIncomingTelemetry(id, calibrateTelemetry(rawTel));
+            if (rawTel) {
+              calibratedMap[id] = normalizeIncomingTelemetry(id, calibrateTelemetry(rawTel));
+            }
           }
 
-          // Copy Node 1 tilt A (imu1) values into Node 2 tilt A
+          // Copy Node 1 tilt A (imu1) values into Node 2 tilt A if needed
           const node1Tel = calibratedMap["ESP-NODE-01"] ?? calibratedMap["esp32_sensor_node_1"];
           if (node1Tel?.imu1) {
             for (const nId of ["ESP-NODE-02", "esp32_sensor_node_2"]) {
               if (calibratedMap[nId]) {
                 calibratedMap[nId] = {
                   ...calibratedMap[nId],
-                  imu1: { ...node1Tel.imu1 }
+                  imu1: { ...node1Tel.imu1 },
                 };
               }
             }
           }
 
-          setTelemetry(calibratedMap);
+          setTelemetry((prev) => ({ ...prev, ...calibratedMap }));
+          hasSuccess = true;
         }
       }
 
-      // 3. Fetch active & historical alarms
-      const alarmsRes = await fetch(`${API_BASE}/alarms`, {
-        headers: DEFAULT_FETCH_HEADERS,
-        cache: "no-store",
-      });
-      if (alarmsRes.ok) {
-        const json = await alarmsRes.json();
+      // 3. Process Alarms
+      if (alarmsRes.status === "fulfilled" && alarmsRes.value.ok) {
+        const json = await alarmsRes.value.json();
         if (json.ok && Array.isArray(json.data)) {
           setAlarms(json.data);
           setRecentAlarms(json.data.slice(0, 10));
+          hasSuccess = true;
         }
       }
 
-      // 4. Fetch thresholds
-      const threshRes = await fetch(`${API_BASE}/thresholds`, {
-        headers: DEFAULT_FETCH_HEADERS,
-        cache: "no-store",
-      });
-      if (threshRes.ok) {
-        const json = await threshRes.json();
+      // 4. Process Thresholds
+      if (threshRes.status === "fulfilled" && threshRes.value.ok) {
+        const json = await threshRes.value.json();
         if (json.ok && json.data) {
           setThresholdsState(json.data);
+          hasSuccess = true;
         }
       }
 
-      // 5. Fetch AI Mine Health / Heartbeat score
-      const healthRes = await fetch(`${API_BASE}/health/mine`, {
-        headers: DEFAULT_FETCH_HEADERS,
-        cache: "no-store",
-      });
-      if (healthRes.ok) {
-        const json = await healthRes.json();
+      // 5. Process Health
+      if (healthRes.status === "fulfilled" && healthRes.value.ok) {
+        const json = await healthRes.value.json();
         if (json.ok && json.data) {
           setMineHealth(json.data);
+          hasSuccess = true;
         }
       }
 
-      const anomalyRes = await fetch(`${API_BASE}/health/anomaly`, {
-        headers: DEFAULT_FETCH_HEADERS,
-        cache: "no-store",
-      });
-      if (anomalyRes.ok) {
-        const json = await anomalyRes.json();
-        if (json.ok && json.data) setAnomalyModel(json.data);
+      // 6. Process Anomaly Model
+      if (anomalyRes.status === "fulfilled" && anomalyRes.value.ok) {
+        const json = await anomalyRes.value.json();
+        if (json.ok && json.data) {
+          setAnomalyModel(json.data);
+          hasSuccess = true;
+        }
       }
 
-      // 6. Fetch latest photos
-      const photosRes = await fetch(`${API_BASE}/photos?limit=20`, {
-        headers: DEFAULT_FETCH_HEADERS,
-        cache: "no-store",
-      });
-      if (photosRes.ok) {
-        const json = await photosRes.json();
+      // 7. Process Photos
+      if (photosRes.status === "fulfilled" && photosRes.value.ok) {
+        const json = await photosRes.value.json();
         if (json.ok && Array.isArray(json.data)) {
           setPhotos(json.data);
+          hasSuccess = true;
         }
       }
+
+      if (hasSuccess) {
+        setIsConnected(true);
+      }
     } catch {
-      // Offline/backend unreachable
+      // Offline / backend unreachable
       setIsConnected(false);
     }
   }, [normalizeIncomingTelemetry]);
@@ -888,38 +895,38 @@ export function useTelemetry(): TelemetryState {
     []
   );
 
-  // Helper to check if data is fresh within the last 30 seconds
-  const isFresh = (timestamp?: string | null) => {
+  // Offline threshold indicator (graceful 60s window for node connectivity badge)
+  const isOnline = (timestamp?: string | null) => {
     if (!timestamp) return false;
-    return Date.now() - new Date(timestamp).getTime() <= 30_000;
+    return Date.now() - new Date(timestamp).getTime() <= 60_000;
   };
 
-  // Filter out any stale telemetry entries older than 30s
-  const liveTelemetry: Record<string, NodeTelemetry> = {};
-  for (const [id, tel] of Object.entries(telemetry)) {
-    if (isFresh(tel?.timestamp)) {
-      liveTelemetry[id] = tel;
-    }
-  }
-
-  // Derive live nodes with 30s offline threshold
+  // Derive live nodes without dropping telemetry data
   const liveNodes = nodes.map((n) => {
-    if (!isFresh(n.lastSeen)) {
+    if (!isOnline(n.lastSeen)) {
       return { ...n, status: "OFFLINE" as const };
     }
     return n;
   });
 
-  // Derived selected node and telemetry
-  const selectedNode = liveNodes.find((n) => n.id === selectedNodeId) || liveNodes[0] || null;
-  const rawSelectedTelemetry =
-    (selectedNode ? liveTelemetry[selectedNode.id] : null) || liveTelemetry[selectedNodeId] || null;
-  const selectedTelemetry = isFresh(rawSelectedTelemetry?.timestamp) ? rawSelectedTelemetry : null;
-  const activeMineHealth = isFresh(mineHealth?.timestamp) ? mineHealth : null;
+  // Derived selected node and telemetry (retains latest known readings seamlessly without flashing empty dashes)
+  const selectedNode =
+    liveNodes.find((n) => n.id === selectedNodeId) ||
+    liveNodes[0] ||
+    nodes.find((n) => n.id === selectedNodeId) ||
+    nodes[0] ||
+    null;
+
+  const selectedTelemetry =
+    (selectedNode ? telemetry[selectedNode.id] : null) ||
+    telemetry[selectedNodeId] ||
+    (Object.values(telemetry)[0] ?? null);
+
+  const activeMineHealth = mineHealth;
 
   return {
     nodes: liveNodes,
-    telemetry: liveTelemetry,
+    telemetry,
     alarms,
     recentAlarms,
     thresholds,
