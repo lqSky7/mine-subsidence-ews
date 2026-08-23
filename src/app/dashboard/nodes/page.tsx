@@ -129,11 +129,13 @@ export default function MeshFleetPage() {
                   </div>
                   <StatusBadge tone={riskTone(node.riskSeverity)}>{node.riskSeverity}</StatusBadge>
                 </div>
-                <div className="mt-4 grid grid-cols-2 gap-px overflow-hidden rounded-lg bg-neutral-200 dark:bg-neutral-800">
+                <div className="mt-4 grid grid-cols-3 gap-px overflow-hidden rounded-lg bg-neutral-200 dark:bg-neutral-800">
                   <MetricMini label="Gas" value={tel?.gas?.mq2Ppm !== undefined ? `${tel.gas.mq2Ppm} ppm` : "--"} />
                   <MetricMini label="Wall" value={tel?.ultrasound?.distanceCm !== undefined ? `${tel.ultrasound.distanceCm.toFixed(1)} cm` : "--"} />
+                  <MetricMini label="Temp" value={tel?.environment?.temperatureC !== undefined && tel.environment.temperatureC !== null ? `${tel.environment.temperatureC.toFixed(1)}°C` : "--"} />
                   <MetricMini label="Tilt A" value={tel?.imu1?.totalTiltDeg !== undefined ? `${tel.imu1.totalTiltDeg.toFixed(1)} deg` : "--"} />
                   <MetricMini label="Vibe" value={tel?.vibration?.intensity !== undefined ? `${tel.vibration.intensity}%` : "--"} />
+                  <MetricMini label="Hum" value={tel?.environment?.humidityPct !== undefined && tel.environment.humidityPct !== null ? `${tel.environment.humidityPct.toFixed(1)}%` : "--"} />
                 </div>
               </Link>
             );
@@ -149,6 +151,8 @@ export default function MeshFleetPage() {
                 <TableHead>Risk</TableHead>
                 <TableHead>Gas</TableHead>
                 <TableHead>Wall</TableHead>
+                <TableHead>Temp</TableHead>
+                <TableHead>Humidity</TableHead>
                 <TableHead>Tilt A</TableHead>
                 <TableHead>Tilt B</TableHead>
                 <TableHead>Vibe</TableHead>
@@ -158,7 +162,7 @@ export default function MeshFleetPage() {
             <TableBody>
               {filteredNodes.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="py-10 text-center text-sm text-neutral-500">
+                  <TableCell colSpan={11} className="py-10 text-center text-sm text-neutral-500">
                     No nodes match the current filters.
                   </TableCell>
                 </TableRow>
@@ -184,6 +188,8 @@ export default function MeshFleetPage() {
                       </TableCell>
                       <TableCell className="tabular-nums">{tel?.gas?.mq2Ppm !== undefined ? `${tel.gas.mq2Ppm} ppm` : "--"}</TableCell>
                       <TableCell className="tabular-nums">{tel?.ultrasound?.distanceCm !== undefined ? `${tel.ultrasound.distanceCm.toFixed(1)} cm` : "--"}</TableCell>
+                      <TableCell className="tabular-nums">{tel?.environment?.temperatureC !== undefined && tel.environment.temperatureC !== null ? `${tel.environment.temperatureC.toFixed(1)} °C` : "--"}</TableCell>
+                      <TableCell className="tabular-nums">{tel?.environment?.humidityPct !== undefined && tel.environment.humidityPct !== null ? `${tel.environment.humidityPct.toFixed(1)} %` : "--"}</TableCell>
                       <TableCell className="tabular-nums">{tel?.imu1?.totalTiltDeg !== undefined ? `${tel.imu1.totalTiltDeg.toFixed(1)} deg` : "--"}</TableCell>
                       <TableCell className="tabular-nums">{tel?.imu2?.totalTiltDeg !== undefined ? `${tel.imu2.totalTiltDeg.toFixed(1)} deg` : "--"}</TableCell>
                       <TableCell className="tabular-nums">{tel?.vibration?.intensity !== undefined ? `${tel.vibration.intensity}%` : "--"}</TableCell>

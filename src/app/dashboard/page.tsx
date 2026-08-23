@@ -131,6 +131,14 @@ export default function CommandCenterPage() {
     () => nodeHistory.map((d) => Number(d.vibrationIntensity) || 0).filter((value) => !Number.isNaN(value)),
     [nodeHistory]
   );
+  const tempSparkline = useMemo(
+    () => nodeHistory.map((d) => Number(d.temperatureC) || 0).filter((value) => !Number.isNaN(value)),
+    [nodeHistory]
+  );
+  const humSparkline = useMemo(
+    () => nodeHistory.map((d) => Number(d.humidityPct) || 0).filter((value) => !Number.isNaN(value)),
+    [nodeHistory]
+  );
 
   const fleetSeries: SeriesConfig[] = useMemo(() => {
     const palette = ["#000000", "#5e5e5e", "#afafaf", "#d97706", "#d1242f", "#15803d"];
@@ -295,7 +303,7 @@ export default function CommandCenterPage() {
         />
       </section>
 
-      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7">
         <MetricTile
           label="Gas"
           value={tel?.gas?.mq2Ppm ?? placeholder}
@@ -311,6 +319,22 @@ export default function CommandCenterPage() {
           tone={wallTone}
           sparkline={<AestheticMiniSparkline data={distSparkline} color={wallTone === "critical" ? "#d1242f" : "#5e5e5e"} height={28} />}
           detail={<span>Min {thresholds.wallDistanceMinCriticalCm} cm / delta {tel?.ultrasound?.deltaCm ?? placeholder}</span>}
+        />
+        <MetricTile
+          label="Temp"
+          value={tel?.environment?.temperatureC !== undefined && tel.environment.temperatureC !== null ? tel.environment.temperatureC.toFixed(1) : placeholder}
+          unit={tel?.environment?.temperatureC !== undefined && tel.environment.temperatureC !== null ? "°C" : undefined}
+          tone={tel?.environment?.temperatureC !== undefined && tel.environment.temperatureC !== null && thresholds.tempCWarning && tel.environment.temperatureC >= thresholds.tempCWarning ? "watch" : "neutral"}
+          sparkline={<AestheticMiniSparkline data={tempSparkline} color="#059669" height={28} />}
+          detail={<span>Limit {thresholds.tempCWarning ?? 38} °C / DHT11</span>}
+        />
+        <MetricTile
+          label="Humidity"
+          value={tel?.environment?.humidityPct !== undefined && tel.environment.humidityPct !== null ? tel.environment.humidityPct.toFixed(1) : placeholder}
+          unit={tel?.environment?.humidityPct !== undefined && tel.environment.humidityPct !== null ? "%" : undefined}
+          tone="neutral"
+          sparkline={<AestheticMiniSparkline data={humSparkline} color="#0284c7" height={28} />}
+          detail={<span>Relative Humidity</span>}
         />
         <MetricTile
           label="Tilt A"
