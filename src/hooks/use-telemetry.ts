@@ -34,7 +34,7 @@ const defaultThresholds: AlertThresholdConfig = {
   tempCCritical: 45,
   buzzerEnabled: true,
   ledMatrixEnabled: true,
-  autoTriggerActuatorsOnCritical: true,
+  autoTriggerActuatorsOnCritical: false,
   alertEmailsEnabled: true,
 };
 

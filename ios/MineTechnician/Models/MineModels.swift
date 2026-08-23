@@ -77,6 +77,7 @@ public nonisolated struct NodeTelemetryResponse: Codable, Sendable {
     public let environment: EnvironmentData?
     public let imu1: ImuData?
     public let imu2: ImuData?
+    public let actuators: ActuatorData?
     
     public nonisolated struct GasData: Codable, Sendable {
         public let mq2Ppm: Double?
@@ -97,6 +98,14 @@ public nonisolated struct NodeTelemetryResponse: Codable, Sendable {
         public let totalTiltDeg: Double?
         public let rollDeg: Double?
         public let pitchDeg: Double?
+    }
+    public nonisolated struct ActuatorData: Codable, Sendable {
+        public let buzzerActive: Bool?
+        public let buzzerFrequencyHz: Double?
+        public let ledMatrixPattern: String?
+        public let ledMatrixActive: Bool?
+        public let userOverride: Bool?
+        public let userOverrideUntil: String?
     }
 }
 
@@ -217,4 +226,79 @@ public nonisolated struct MinePhotoResponse: Codable, Identifiable, Sendable, Ha
         (imageUrl?.hasPrefix("data:") ?? false) || (thumbnailUrl?.hasPrefix("data:") ?? false)
     }
 }
+
+// MARK: - Remote Command DTOs
+public nonisolated struct RemoteCommandRequest: Codable, Sendable {
+    public let type: String
+    public let targetNodeId: String
+    public let payload: [String: String]?
+    public let issuedBy: String
+    
+    public init(
+        type: String,
+        targetNodeId: String = "ALL",
+        payload: [String: String]? = nil,
+        issuedBy: String = "Mine Technician (iOS)"
+    ) {
+        self.type = type
+        self.targetNodeId = targetNodeId
+        self.payload = payload
+        self.issuedBy = issuedBy
+    }
+}
+
+public nonisolated struct BuzzerCommandRequest: Codable, Sendable {
+    public let targetNodeId: String
+    public let active: Bool
+    public let durationMs: Int
+    public let frequencyHz: Double
+    public let issuedBy: String
+    
+    public init(
+        targetNodeId: String = "ALL",
+        active: Bool = true,
+        durationMs: Int = 5000,
+        frequencyHz: Double = 2800,
+        issuedBy: String = "Mine Technician (iOS)"
+    ) {
+        self.targetNodeId = targetNodeId
+        self.active = active
+        self.durationMs = durationMs
+        self.frequencyHz = frequencyHz
+        self.issuedBy = issuedBy
+    }
+}
+
+public nonisolated struct RemoteCommandResponse: Codable, Identifiable, Sendable {
+    public let id: String
+    public let type: String
+    public let targetNodeId: String
+    public let status: String
+    public let issuedBy: String
+    public let issuedAt: String?
+    public let deliveredAt: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case id, type, targetNodeId, status, issuedBy, issuedAt, deliveredAt
+    }
+    
+    public init(
+        id: String = "CMD-0",
+        type: String = "BUZZER_START",
+        targetNodeId: String = "ALL",
+        status: String = "PENDING",
+        issuedBy: String = "Mine Technician (iOS)",
+        issuedAt: String? = nil,
+        deliveredAt: String? = nil
+    ) {
+        self.id = id
+        self.type = type
+        self.targetNodeId = targetNodeId
+        self.status = status
+        self.issuedBy = issuedBy
+        self.issuedAt = issuedAt
+        self.deliveredAt = deliveredAt
+    }
+}
+
 

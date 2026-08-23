@@ -164,6 +164,88 @@ public final class MineAPIService: Sendable {
         return resolved
     }
     
+    // MARK: - Remote Actuator & Buzzer API
+    
+    /// Triggers, tests, or silences the piezoelectric acoustic buzzer on a specific ESP node or fleet-wide.
+    @discardableResult
+    public func triggerBuzzer(
+        nodeId: String = "ALL",
+        active: Bool = true,
+        durationMs: Int = 5000,
+        frequencyHz: Double = 2800,
+        issuedBy: String = "Mine Technician (iOS)"
+    ) async throws -> RemoteCommandResponse {
+        let payload = BuzzerCommandRequest(
+            targetNodeId: nodeId,
+            active: active,
+            durationMs: durationMs,
+            frequencyHz: frequencyHz,
+            issuedBy: issuedBy
+        )
+        let bodyData = try encoder.encode(payload)
+        let request = MineAPIConfig.makeRequest(path: "/commands/buzzer", method: "POST", body: bodyData)
+        let (data, response) = try await session.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
+            throw NSError(domain: "MineAPI", code: statusCode, userInfo: [NSLocalizedDescriptionKey: "Failed to trigger buzzer: HTTP \(statusCode)"])
+        }
+        
+        return try decodeResponse(RemoteCommandResponse.self, from: data)
+    }
+    
+    /// Starts the acoustic buzzer siren remotely (default: fleet-wide).
+    @discardableResult
+    public func startBuzzer(
+        nodeId: String = "ALL",
+        durationMs: Int = 120000,
+        issuedBy: String = "Mine Technician (iOS)"
+    ) async throws -> RemoteCommandResponse {
+        return try await triggerBuzzer(
+            nodeId: nodeId,
+            active: true,
+            durationMs: durationMs,
+            frequencyHz: 2800,
+            issuedBy: issuedBy
+        )
+    }
+    
+    /// Stops or silences the acoustic buzzer siren remotely.
+    @discardableResult
+    public func stopBuzzer(
+        nodeId: String = "ALL",
+        issuedBy: String = "Mine Technician (iOS)"
+    ) async throws -> RemoteCommandResponse {
+        return try await triggerBuzzer(
+            nodeId: nodeId,
+            active: false,
+            durationMs: 0,
+            frequencyHz: 2800,
+            issuedBy: issuedBy
+        )
+    }
+    
+    /// Sends a general remote command to the ESP fleet gateway.
+    @discardableResult
+    public func sendCommand(
+        type: String,
+        targetNodeId: String = "ALL",
+        payload: [String: String]? = nil,
+        issuedBy: String = "Mine Technician (iOS)"
+    ) async throws -> RemoteCommandResponse {
+        let cmd = RemoteCommandRequest(type: type, targetNodeId: targetNodeId, payload: payload, issuedBy: issuedBy)
+        let bodyData = try encoder.encode(cmd)
+        let request = MineAPIConfig.makeRequest(path: "/commands", method: "POST", body: bodyData)
+        let (data, response) = try await session.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
+            throw NSError(domain: "MineAPI", code: statusCode, userInfo: [NSLocalizedDescriptionKey: "Failed to send command \(type): HTTP \(statusCode)"])
+        }
+        
+        return try decodeResponse(RemoteCommandResponse.self, from: data)
+    }
+    
     // MARK: - Photos API (Tab 3)
     
     /// Fetches the latest 10 camera inspection photos from the mine.

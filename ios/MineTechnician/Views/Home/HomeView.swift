@@ -76,7 +76,7 @@ public struct HomeView: View {
                         
                         if selectedNodeId != "FLEET", let nodeTel = telemetryMap[selectedNodeId] {
                             // Node Specific Live Metric Badges
-                            HStack(spacing: 10) {
+                            HStack(spacing: 8) {
                                 if let gas = nodeTel.gas?.mq2Ppm {
                                     MetricPill(label: "GAS", value: String(format: "%.0f ppm", gas), isDanger: gas > 500)
                                 }
@@ -85,6 +85,9 @@ public struct HomeView: View {
                                 }
                                 if let tilt = nodeTel.imu1?.totalTiltDeg {
                                     MetricPill(label: "TILT", value: String(format: "%.1f°", tilt), isDanger: tilt > 10)
+                                }
+                                if let buzzerActive = nodeTel.actuators?.buzzerActive {
+                                    MetricPill(label: "BUZZER", value: buzzerActive ? "SOUNDING" : "STANDBY", isDanger: buzzerActive)
                                 }
                             }
                             .transition(.opacity.combined(with: .scale))

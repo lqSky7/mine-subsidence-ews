@@ -1,0 +1,4 @@
+module MineTechnician {
+header "MineTechnician-Swift.h"
+export *
+}
