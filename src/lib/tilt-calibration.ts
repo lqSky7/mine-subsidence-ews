@@ -17,14 +17,18 @@ export interface TiltCalibrationConfig {
  * In this pose, gravity (1G ~ 9.8-10.0 m/s^2) is primarily aligned with the X-axis.
  */
 export const DEFAULT_TILT_CALIBRATION: TiltCalibrationConfig = {
-  imu1Baseline: { ax: 10.833, ay: -1.350, az: -0.530 }, // Sensor A: Horizontal (0° to ground, |G|=10.93 m/s², pitch=82.38°)
-  imu2Baseline: { ax: 10.351, ay: -0.410, az: 0.150 },  // Sensor B: Vertical (90° to ground, |G|=10.36 m/s², pitch=87.58°)
+  imu1Baseline: { ax: -0.902, ay: -10.905, az: 1.334 },
+  imu2Baseline: { ax: -1.140, ay: 1.061, az: 10.242 },
 };
 
 export const NODE_BASELINES: Record<string, TiltCalibrationConfig> = {
   "ESP-NODE-01": {
-    imu1Baseline: { ax: 10.003, ay: -2.393, az: -2.236 },
-    imu2Baseline: { ax: 9.934, ay: -2.832, az: 1.970 },
+    imu1Baseline: { ax: -0.902, ay: -10.905, az: 1.334 },
+    imu2Baseline: { ax: -1.140, ay: 1.061, az: 10.242 },
+  },
+  "esp32_sensor_node_1": {
+    imu1Baseline: { ax: -0.902, ay: -10.905, az: 1.334 },
+    imu2Baseline: { ax: -1.140, ay: 1.061, az: 10.242 },
   },
   "ESP-NODE-02": {
     imu1Baseline: { ax: 1.317, ay: 8.954, az: 6.766 },

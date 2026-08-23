@@ -57,21 +57,18 @@ export function TiltInclinometer3D({
 
   // Compute calibrated angles relative to the active baseline
   const calibrated = useMemo(() => {
-    if (accelX !== undefined && accelY !== undefined && accelZ !== undefined) {
-      return computeCalibratedAngles({ ax: accelX, ay: accelY, az: accelZ }, activeBaseline);
-    }
-    // Fallback if only raw scalar angles were supplied
     if (totalTiltDeg !== undefined) {
-      const nominalBase = slot === "imu2" ? 87.58 : 82.38;
-      const angle = totalTiltDeg > 45 ? Math.abs(totalTiltDeg - nominalBase) : totalTiltDeg;
       return {
         rollDeg: rollDeg ?? 0,
         pitchDeg: pitchDeg ?? 0,
-        totalTiltDeg: angle,
+        totalTiltDeg: totalTiltDeg,
       };
     }
+    if (accelX !== undefined && accelY !== undefined && accelZ !== undefined) {
+      return computeCalibratedAngles({ ax: accelX, ay: accelY, az: accelZ }, activeBaseline);
+    }
     return { rollDeg: 0, pitchDeg: 0, totalTiltDeg: 0 };
-  }, [accelX, accelY, accelZ, activeBaseline, totalTiltDeg, rollDeg, pitchDeg, slot]);
+  }, [accelX, accelY, accelZ, activeBaseline, totalTiltDeg, rollDeg, pitchDeg]);
 
   const activeTotalTilt = calibrated.totalTiltDeg;
   const r = calibrated.rollDeg;
