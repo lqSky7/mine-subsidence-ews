@@ -293,6 +293,7 @@ export default function NodeDetailClient({ nodeId }: { nodeId: string }) {
             accelY={tel?.imu1?.accelY}
             accelZ={tel?.imu1?.accelZ}
             slot="imu1"
+            nodeId={nodeId}
             warningThreshold={thresholds.tiltDegWarning}
             criticalThreshold={thresholds.tiltDegCritical}
           />
@@ -313,6 +314,7 @@ export default function NodeDetailClient({ nodeId }: { nodeId: string }) {
             accelY={tel?.imu2?.accelY}
             accelZ={tel?.imu2?.accelZ}
             slot="imu2"
+            nodeId={nodeId}
             warningThreshold={thresholds.tiltDegWarning}
             criticalThreshold={thresholds.tiltDegCritical}
           />

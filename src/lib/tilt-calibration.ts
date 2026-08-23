@@ -17,8 +17,8 @@ export interface TiltCalibrationConfig {
  * In this pose, gravity (1G ~ 9.8-10.0 m/s^2) is primarily aligned with the X-axis.
  */
 export const DEFAULT_TILT_CALIBRATION: TiltCalibrationConfig = {
-  imu1Baseline: { ax: 10.003, ay: -2.393, az: -2.236 },
-  imu2Baseline: { ax: 9.934, ay: -2.832, az: 1.970 },
+  imu1Baseline: { ax: 10.833, ay: -1.350, az: -0.530 }, // Sensor A: Horizontal (0° to ground, |G|=10.93 m/s², pitch=82.38°)
+  imu2Baseline: { ax: 10.351, ay: -0.410, az: 0.150 },  // Sensor B: Vertical (90° to ground, |G|=10.36 m/s², pitch=87.58°)
 };
 
 export const NODE_BASELINES: Record<string, TiltCalibrationConfig> = {
@@ -120,12 +120,14 @@ export function calibrateImuReading(
   }
 
   // If accelerometer is missing but totalTilt is uncalibrated high (> 45 deg from raw orientation)
-  if (imu.totalTiltDeg > 45) {
+  if (typeof imu.totalTiltDeg === "number" && imu.totalTiltDeg > 45) {
+    const nominalBase = slot === "imu2" ? 87.58 : 82.38;
+    const diff = round(Math.abs(imu.totalTiltDeg - nominalBase), 2);
     return {
       ...imu,
       rollDeg: 0,
-      pitchDeg: 0,
-      totalTiltDeg: 0,
+      pitchDeg: round(wrap180((imu.pitchDeg ?? nominalBase) - nominalBase), 2),
+      totalTiltDeg: diff,
     };
   }
 
@@ -195,10 +197,10 @@ export function calibrateHistoryPoint(point: TelemetryDataPoint): TelemetryDataP
 
   // If history point has raw uncalibrated tilt values (> 45 deg)
   if (typeof tiltMpu1 === "number" && tiltMpu1 > 45) {
-    tiltMpu1 = round(Math.max(0, tiltMpu1 - 150.7), 2);
+    tiltMpu1 = round(Math.abs(tiltMpu1 - 82.38), 2);
   }
   if (typeof tiltMpu2 === "number" && tiltMpu2 > 45) {
-    tiltMpu2 = round(Math.max(0, tiltMpu2 - 89.6), 2);
+    tiltMpu2 = round(Math.abs(tiltMpu2 - 87.58), 2);
   }
 
   return {

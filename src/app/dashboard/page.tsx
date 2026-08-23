@@ -395,6 +395,7 @@ export default function CommandCenterPage() {
                 accelY={tel?.imu1?.accelY}
                 accelZ={tel?.imu1?.accelZ}
                 slot="imu1"
+                nodeId={selectedNodeId}
                 warningThreshold={thresholds.tiltDegWarning}
                 criticalThreshold={thresholds.tiltDegCritical}
               />
@@ -412,6 +413,7 @@ export default function CommandCenterPage() {
                 accelY={tel?.imu2?.accelY}
                 accelZ={tel?.imu2?.accelZ}
                 slot="imu2"
+                nodeId={selectedNodeId}
                 warningThreshold={thresholds.tiltDegWarning}
                 criticalThreshold={thresholds.tiltDegCritical}
               />

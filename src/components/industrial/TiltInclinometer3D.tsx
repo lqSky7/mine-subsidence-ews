@@ -1,10 +1,14 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import {
   computeCalibratedAngles,
   DEFAULT_TILT_CALIBRATION,
+  getStoredCalibration,
+  saveStoredCalibration,
+  clearStoredCalibration,
+  type AccelVector,
 } from "@/lib/tilt-calibration";
 
 interface TiltInclinometer3DProps {
@@ -15,6 +19,7 @@ interface TiltInclinometer3DProps {
   accelY?: number;
   accelZ?: number;
   slot?: "imu1" | "imu2";
+  nodeId?: string;
   warningThreshold?: number;
   criticalThreshold?: number;
   maxAngle?: number; // Full scale display limit (default 15°)
@@ -29,35 +34,48 @@ export function TiltInclinometer3D({
   accelY,
   accelZ,
   slot = "imu1",
+  nodeId = "ESP-NODE-01",
   warningThreshold = 3.0,
   criticalThreshold = 7.0,
   maxAngle = 15,
   className,
 }: TiltInclinometer3DProps) {
-  // If raw acceleration is available and angles are uncalibrated (or totalTiltDeg > 45), calibrate locally
-  const calibratedAngles = useMemo(() => {
-    if (
-      accelX !== undefined &&
-      accelY !== undefined &&
-      accelZ !== undefined &&
-      (totalTiltDeg === undefined || totalTiltDeg > 45 || Math.abs(rollDeg ?? 0) > 45)
-    ) {
-      const baseline =
-        slot === "imu2"
-          ? DEFAULT_TILT_CALIBRATION.imu2Baseline
-          : DEFAULT_TILT_CALIBRATION.imu1Baseline;
-      return computeCalibratedAngles({ ax: accelX, ay: accelY, az: accelZ }, baseline);
-    }
-    return {
-      rollDeg: rollDeg ?? 0,
-      pitchDeg: pitchDeg ?? 0,
-      totalTiltDeg: totalTiltDeg ?? 0,
-    };
-  }, [accelX, accelY, accelZ, totalTiltDeg, rollDeg, pitchDeg, slot]);
+  const [customBaseline, setCustomBaseline] = useState<AccelVector | null>(null);
 
-  const activeTotalTilt = totalTiltDeg !== undefined && totalTiltDeg <= 45 ? totalTiltDeg : calibratedAngles.totalTiltDeg;
-  const r = rollDeg !== undefined && Math.abs(rollDeg) <= 45 ? rollDeg : calibratedAngles.rollDeg;
-  const p = pitchDeg !== undefined && Math.abs(pitchDeg) <= 45 ? pitchDeg : calibratedAngles.pitchDeg;
+  useEffect(() => {
+    const stored = getStoredCalibration(nodeId);
+    const base = slot === "imu2" ? stored?.imu2Baseline : stored?.imu1Baseline;
+    if (base) setCustomBaseline(base);
+  }, [nodeId, slot]);
+
+  const activeBaseline = useMemo(() => {
+    if (customBaseline) return customBaseline;
+    return slot === "imu2"
+      ? DEFAULT_TILT_CALIBRATION.imu2Baseline
+      : DEFAULT_TILT_CALIBRATION.imu1Baseline;
+  }, [customBaseline, slot]);
+
+  // Compute calibrated angles relative to the active baseline
+  const calibrated = useMemo(() => {
+    if (accelX !== undefined && accelY !== undefined && accelZ !== undefined) {
+      return computeCalibratedAngles({ ax: accelX, ay: accelY, az: accelZ }, activeBaseline);
+    }
+    // Fallback if only raw scalar angles were supplied
+    if (totalTiltDeg !== undefined) {
+      const nominalBase = slot === "imu2" ? 87.58 : 82.38;
+      const angle = totalTiltDeg > 45 ? Math.abs(totalTiltDeg - nominalBase) : totalTiltDeg;
+      return {
+        rollDeg: rollDeg ?? 0,
+        pitchDeg: pitchDeg ?? 0,
+        totalTiltDeg: angle,
+      };
+    }
+    return { rollDeg: 0, pitchDeg: 0, totalTiltDeg: 0 };
+  }, [accelX, accelY, accelZ, activeBaseline, totalTiltDeg, rollDeg, pitchDeg, slot]);
+
+  const activeTotalTilt = calibrated.totalTiltDeg;
+  const r = calibrated.rollDeg;
+  const p = calibrated.pitchDeg;
 
   const hasData = (totalTiltDeg !== undefined || accelX !== undefined) && !Number.isNaN(activeTotalTilt);
 
@@ -66,6 +84,24 @@ export function TiltInclinometer3D({
   const isWarning = hasData && activeTotalTilt >= warningThreshold && !isCritical;
 
   const tone = !hasData ? "neutral" : isCritical ? "critical" : isWarning ? "watch" : "live";
+
+  // Handlers for instant zeroing on straight ground
+  const handleZeroNow = useCallback(() => {
+    if (accelX !== undefined && accelY !== undefined && accelZ !== undefined) {
+      const newBase: AccelVector = { ax: accelX, ay: accelY, az: accelZ };
+      setCustomBaseline(newBase);
+      const stored = getStoredCalibration(nodeId) || {};
+      saveStoredCalibration(nodeId, {
+        ...stored,
+        [slot === "imu2" ? "imu2Baseline" : "imu1Baseline"]: newBase,
+      });
+    }
+  }, [accelX, accelY, accelZ, nodeId, slot]);
+
+  const handleResetZero = useCallback(() => {
+    setCustomBaseline(null);
+    clearStoredCalibration(nodeId);
+  }, [nodeId]);
 
   // SVG Geometry calculations
   const size = 200;
@@ -111,7 +147,7 @@ export function TiltInclinometer3D({
           </div>
         </div>
         {hasData && (
-          <div>
+          <div className="flex items-center gap-1.5">
             <span
               className={cn(
                 "inline-flex h-5 items-center rounded-md border px-2 text-[10px] font-mono font-semibold uppercase tracking-normal",
@@ -123,6 +159,24 @@ export function TiltInclinometer3D({
             >
               {isCritical ? "Limit Breach" : isWarning ? "Drift Warning" : "Calibrated Normal"}
             </span>
+            <button
+              onClick={handleZeroNow}
+              title="Set current orientation as 0.0° baseline (Zero Inclinometer)"
+              type="button"
+              className="inline-flex h-5 items-center rounded border border-neutral-200 bg-neutral-50 px-1.5 text-[9px] font-medium text-neutral-700 hover:bg-neutral-100 active:scale-95 transition dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800"
+            >
+              Zero
+            </button>
+            {customBaseline && (
+              <button
+                onClick={handleResetZero}
+                title="Reset to factory mounting baseline"
+                type="button"
+                className="inline-flex h-5 items-center rounded border border-neutral-200 bg-neutral-50 px-1.5 text-[9px] font-medium text-neutral-500 hover:text-neutral-900 active:scale-95 transition dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
+              >
+                Reset
+              </button>
+            )}
           </div>
         )}
       </div>
