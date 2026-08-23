@@ -56,13 +56,13 @@ public struct HomeView: View {
                 Spacer()
                 
                 // Center: Big Live Health Score inside Glass Container
-                if let score = healthScore, score > 0, nodes.contains(where: \.isOnline) {
+                if let score = healthScore, score > 0 {
                     VStack(spacing: 12) {
                         Text(String(format: "%.0f", score))
                             .font(.system(size: 130, weight: .bold, design: .rounded))
                             .foregroundStyle(.white)
                             .contentTransition(.numericText(value: score))
-                            .animation(.easeInOut(duration: 2.0), value: score)
+                            .animation(.easeInOut(duration: 1.0), value: score)
                             .padding(.horizontal, 44)
                             .padding(.vertical, 20)
                             .background(
@@ -88,10 +88,22 @@ public struct HomeView: View {
                                 }
                             }
                             .transition(.opacity.combined(with: .scale))
+                        } else if let node = nodes.first(where: { $0.id == selectedNodeId }), !node.isOnline {
+                            Text("NODE STANDBY / OFFLINE")
+                                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                .foregroundStyle(.white.opacity(0.4))
+                        } else if nodes.contains(where: \.isOnline) {
+                            Text("LIVE TELEMETRY STREAMING")
+                                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                .foregroundStyle(.green.opacity(0.8))
+                        } else {
+                            Text("AWS BACKEND CONNECTED")
+                                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                .foregroundStyle(.white.opacity(0.4))
                         }
                     }
                 } else if !isLoading {
-                    // No live physical data in last 30s -> Show dash
+                    // No health score or unreachable
                     VStack(spacing: 8) {
                         Text("—")
                             .font(.system(size: 130, weight: .bold, design: .rounded))
@@ -107,7 +119,7 @@ public struct HomeView: View {
                                     )
                             )
                         
-                        Text("OFFLINE • NO LIVE TELEMETRY")
+                        Text(isConnected ? "CONNECTING TO TELEMETRY..." : "OFFLINE • CONNECTING TO AWS...")
                             .font(.system(size: 10, weight: .bold, design: .monospaced))
                             .foregroundStyle(.white.opacity(0.4))
                     }
@@ -210,22 +222,28 @@ public struct HomeView: View {
     
     @MainActor
     private func fetchAllLiveData() async {
-        do {
-            async let healthTask = MineAPIService.shared.fetchLatestHealth()
-            async let nodesTask = MineAPIService.shared.fetchNodes()
-            async let telTask = MineAPIService.shared.fetchLiveTelemetry()
-            
-            let (health, fetchedNodes, tel) = try await (healthTask, nodesTask, telTask)
-            
-            withAnimation(.easeInOut(duration: 1.5)) {
-                self.healthScore = health.overallScore
-                self.nodes = fetchedNodes
-                self.telemetryMap = tel
-                self.isConnected = true
-                self.isLoading = false
-            }
-        } catch {
-            self.isConnected = false
+        var hasAnySuccess = false
+        
+        // 1. Fetch Node Fleet
+        if let fetchedNodes = try? await MineAPIService.shared.fetchNodes() {
+            self.nodes = fetchedNodes
+            hasAnySuccess = true
+        }
+        
+        // 2. Fetch Latest Mine Health
+        if let health = try? await MineAPIService.shared.fetchLatestHealth() {
+            self.healthScore = health.overallScore
+            hasAnySuccess = true
+        }
+        
+        // 3. Fetch Live Multi-Sensor Telemetry Map
+        if let tel = try? await MineAPIService.shared.fetchLiveTelemetry() {
+            self.telemetryMap = tel
+            hasAnySuccess = true
+        }
+        
+        withAnimation(.easeInOut(duration: 0.8)) {
+            self.isConnected = hasAnySuccess
             self.isLoading = false
         }
     }

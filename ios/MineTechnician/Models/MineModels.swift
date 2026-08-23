@@ -29,6 +29,42 @@ public nonisolated struct EspNodeResponse: Codable, Identifiable, Sendable, Hash
     public var isOnline: Bool {
         status.uppercased() != "OFFLINE"
     }
+    
+    enum CodingKeys: String, CodingKey {
+        case id, label, location, nodeType, status, riskSeverity, ipAddress, lastSeen
+    }
+    
+    public init(
+        id: String = "ESP-NODE",
+        label: String = "Monitoring Node",
+        location: String = "Mine Section",
+        nodeType: String = "esp32_sensor_node",
+        status: String = "ONLINE",
+        riskSeverity: String = "STABLE",
+        ipAddress: String? = nil,
+        lastSeen: String? = nil
+    ) {
+        self.id = id
+        self.label = label
+        self.location = location
+        self.nodeType = nodeType
+        self.status = status
+        self.riskSeverity = riskSeverity
+        self.ipAddress = ipAddress
+        self.lastSeen = lastSeen
+    }
+    
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decodeIfPresent(String.self, forKey: .id) ?? "ESP-NODE"
+        self.label = try container.decodeIfPresent(String.self, forKey: .label) ?? self.id
+        self.location = try container.decodeIfPresent(String.self, forKey: .location) ?? "Mine Section"
+        self.nodeType = try container.decodeIfPresent(String.self, forKey: .nodeType) ?? "esp32_sensor_node"
+        self.status = try container.decodeIfPresent(String.self, forKey: .status) ?? "ONLINE"
+        self.riskSeverity = try container.decodeIfPresent(String.self, forKey: .riskSeverity) ?? "STABLE"
+        self.ipAddress = try container.decodeIfPresent(String.self, forKey: .ipAddress)
+        self.lastSeen = try container.decodeIfPresent(String.self, forKey: .lastSeen)
+    }
 }
 
 // MARK: - Live Telemetry DTO
