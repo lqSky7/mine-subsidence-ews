@@ -46,16 +46,16 @@ export default function AlertSettingsPage() {
   };
 
   const handleReset = () => {
-    setGasWarn(450);
-    setGasCrit(700);
-    setWallWarn(2.5);
-    setWallCrit(1.5);
-    setTiltWarn(14);
-    setTiltCrit(18);
+    setGasWarn(400);
+    setGasCrit(800);
+    setWallWarn(30);
+    setWallCrit(15);
+    setTiltWarn(3.0);
+    setTiltCrit(7.0);
     setVibThresh(60);
     setBuzzerEnabled(true);
     setLedMatrixEnabled(true);
-    setAutoTrigger(false);
+    setAutoTrigger(true);
     setEmailAlertsEnabled(true);
   };
 
@@ -180,9 +180,9 @@ export default function AlertSettingsPage() {
               label="Convergence Warning Limit (Min cm)"
               description="Triggers watch alert if distance to wall drops below this value"
               value={wallWarn}
-              min={1}
-              max={50}
-              step={0.5}
+              min={10}
+              max={100}
+              step={5}
               unit="cm"
               color="amber"
               onChange={setWallWarn}
@@ -191,9 +191,9 @@ export default function AlertSettingsPage() {
               label="Critical Rock Incursion / Collapse Limit (Min cm)"
               description="Immediate structural breach alarm threshold"
               value={wallCrit}
-              min={0.5}
-              max={30}
-              step={0.5}
+              min={5}
+              max={60}
+              step={5}
               unit="cm"
               color="rose"
               onChange={setWallCrit}
@@ -224,7 +224,7 @@ export default function AlertSettingsPage() {
               description="Deflection angle triggering geotechnical watch status"
               value={tiltWarn}
               min={1.0}
-              max={25.0}
+              max={10.0}
               step={0.5}
               unit="°"
               color="amber"
@@ -235,7 +235,7 @@ export default function AlertSettingsPage() {
               description="Emergency subsidence trigger angle; indicates imminent ground failure"
               value={tiltCrit}
               min={3.0}
-              max={35.0}
+              max={20.0}
               step={0.5}
               unit="°"
               color="rose"
