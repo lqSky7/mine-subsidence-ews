@@ -254,6 +254,35 @@ export default function CommandCenterPage() {
         </div>
       </Toolbar>
 
+      {(activeAlarms.length > 0 || riskTone === "critical" || riskTone === "watch" || tel?.actuators?.ledMatrixPattern === "DANGER_FLASH") && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-500/60 bg-red-500/15 p-3.5 text-xs text-red-700 dark:border-red-500/70 dark:bg-red-950/60 dark:text-red-300 animate-pulse font-semibold shadow-xs">
+          <div className="flex items-center gap-2.5">
+            <span className="relative flex size-2.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
+              <span className="relative inline-flex size-2.5 rounded-full bg-red-600 dark:bg-red-400" />
+            </span>
+            <span className="font-bold tracking-wider uppercase text-red-800 dark:text-red-200">
+              {criticalAlarms.length > 0 ? "Critical Safety Alarm Active" : "Threshold Exceeded — Red Alert"}
+            </span>
+            <span className="hidden sm:inline text-neutral-600 dark:text-neutral-400 font-normal">
+              {activeAlarms[0]?.description ||
+                (tel?.anomaly?.level !== "NORMAL" && tel?.anomaly?.recommendation) ||
+                "Operating limits exceeded. Red beacon flashing."}
+            </span>
+          </div>
+          {activeAlarms.length > 0 && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => resolveActiveAlarms("Control Room Officer", "Mass hazard resolution")}
+              className="h-7 text-[11px] font-bold border-red-300 bg-white text-red-700 hover:bg-red-50 dark:border-red-700 dark:bg-black dark:text-red-300"
+            >
+              Clear Alarm
+            </Button>
+          )}
+        </div>
+      )}
+
       <section className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
         <div className="rounded-lg bg-black p-5 text-white dark:bg-white dark:text-black">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
