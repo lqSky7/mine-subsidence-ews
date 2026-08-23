@@ -110,13 +110,21 @@ export default function NodeDetailClient({ nodeId }: { nodeId: string }) {
               </div>
             </div>
             <div className="mt-2 flex items-baseline gap-1">
-              <span className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100 tabular-nums">{tel?.anomaly?.score?.toFixed(3) ?? "—"}</span>
-              <span className="text-xs font-semibold text-slate-500">score</span>
+              <span className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100 tabular-nums">
+                {tel?.anomaly?.score != null ? tel.anomaly.score.toFixed(3) : "—"}
+              </span>
+              {tel?.anomaly?.score != null && (
+                <span className="text-xs font-semibold text-slate-500">score</span>
+              )}
             </div>
           </div>
           <div className="mt-3 text-[10px] text-slate-500">
-            <p className="font-bold text-slate-700 dark:text-slate-300">{tel?.anomaly?.level ?? "Awaiting model"}</p>
-            <p className="mt-1 line-clamp-2">{tel?.anomaly?.contributors.map((item) => item.feature).join(", ") || "No evidence available"}</p>
+            <p className="font-bold text-slate-700 dark:text-slate-300">{tel?.anomaly?.level ?? "—"}</p>
+            <p className="mt-1 line-clamp-2">
+              {tel?.anomaly?.contributors?.length
+                ? tel.anomaly.contributors.map((item) => item.feature).join(", ")
+                : "—"}
+            </p>
           </div>
         </div>
         {/* Card 1: MQ2 Gas Sensor */}

@@ -278,16 +278,18 @@ export default function CommandCenterPage() {
             <div className="bg-black px-3 py-3 dark:bg-white">
               <div className="text-[11px] font-semibold uppercase text-white/50 dark:text-black/50">Evidence</div>
               <div className="mt-1 text-sm font-medium">
-                {tel?.anomaly?.contributors.map((item) => item.feature).slice(0, 3).join(", ") || "Baseline forming"}
+                {tel?.anomaly?.contributors?.length
+                  ? tel.anomaly.contributors.map((item) => item.feature).slice(0, 3).join(", ")
+                  : "—"}
               </div>
             </div>
             <div className="bg-black px-3 py-3 dark:bg-white">
               <div className="text-[11px] font-semibold uppercase text-white/50 dark:text-black/50">Score</div>
-              <div className="mt-1 text-sm font-medium tabular-nums">{tel?.anomaly?.score.toFixed(3) ?? "No anomaly"}</div>
+              <div className="mt-1 text-sm font-medium tabular-nums">{tel?.anomaly?.score != null ? tel.anomaly.score.toFixed(3) : "—"}</div>
             </div>
             <div className="bg-black px-3 py-3 dark:bg-white">
               <div className="text-[11px] font-semibold uppercase text-white/50 dark:text-black/50">Action</div>
-              <div className="mt-1 text-sm font-medium">{tel?.anomaly?.recommendation || "Continue monitoring"}</div>
+              <div className="mt-1 text-sm font-medium">{tel?.anomaly?.recommendation || (node?.id === "ESP-NODE-02" ? "—" : "Continue monitoring")}</div>
             </div>
           </div>
         </div>
