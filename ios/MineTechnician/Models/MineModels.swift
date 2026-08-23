@@ -1,0 +1,184 @@
+//
+//  MineModels.swift
+//  MineTechnician
+//
+//  Canonical data transfer objects matching backend schemas without dummy data.
+//
+
+import Foundation
+
+// MARK: - Generic Backend API Envelope
+public nonisolated struct APIEnvelope<T: Codable & Sendable>: Codable, Sendable {
+    public let ok: Bool?
+    public let count: Int?
+    public let data: T?
+    public let error: String?
+}
+
+// MARK: - Node Fleet DTO
+public nonisolated struct EspNodeResponse: Codable, Identifiable, Sendable, Hashable {
+    public let id: String
+    public let label: String
+    public let location: String
+    public let nodeType: String
+    public let status: String
+    public let riskSeverity: String
+    public let ipAddress: String?
+    public let lastSeen: String?
+    
+    public var isOnline: Bool {
+        status.uppercased() != "OFFLINE"
+    }
+}
+
+// MARK: - Live Telemetry DTO
+public nonisolated struct NodeTelemetryResponse: Codable, Sendable {
+    public let nodeId: String
+    public let timestamp: String
+    public let gas: GasData?
+    public let ultrasound: UltrasoundData?
+    public let vibration: VibrationData?
+    public let environment: EnvironmentData?
+    public let imu1: ImuData?
+    public let imu2: ImuData?
+    
+    public nonisolated struct GasData: Codable, Sendable {
+        public let mq2Ppm: Double?
+        public let status: String?
+    }
+    public nonisolated struct UltrasoundData: Codable, Sendable {
+        public let distanceCm: Double?
+    }
+    public nonisolated struct VibrationData: Codable, Sendable {
+        public let triggered: Bool?
+        public let intensity: Double?
+    }
+    public nonisolated struct EnvironmentData: Codable, Sendable {
+        public let temperatureC: Double?
+        public let humidityPct: Double?
+    }
+    public nonisolated struct ImuData: Codable, Sendable {
+        public let totalTiltDeg: Double?
+        public let rollDeg: Double?
+        public let pitchDeg: Double?
+    }
+}
+
+// MARK: - Health Score DTO
+public nonisolated struct MineHealthScoreResponse: Codable, Identifiable, Sendable {
+    public let id: String
+    public let timestamp: String
+    public let overallScore: Double
+    public let riskLevel: String
+    public let contributingFactors: [ContributingFactor]?
+    public let modelVersion: String?
+    public let summary: String?
+    
+    public nonisolated struct ContributingFactor: Codable, Sendable {
+        public let factor: String
+        public let impact: Double?
+        public let nodeId: String?
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case id, timestamp, overallScore, riskLevel, contributingFactors, modelVersion, summary
+    }
+    
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(String.self, forKey: .id) ?? "HEALTH"
+        timestamp = try container.decodeIfPresent(String.self, forKey: .timestamp) ?? ISO8601DateFormatter().string(from: Date())
+        
+        if let doubleScore = try? container.decode(Double.self, forKey: .overallScore) {
+            overallScore = doubleScore
+        } else if let intScore = try? container.decode(Int.self, forKey: .overallScore) {
+            overallScore = Double(intScore)
+        } else {
+            overallScore = 0.0
+        }
+        
+        riskLevel = try container.decodeIfPresent(String.self, forKey: .riskLevel) ?? "UNKNOWN"
+        contributingFactors = try? container.decodeIfPresent([ContributingFactor].self, forKey: .contributingFactors)
+        modelVersion = try? container.decodeIfPresent(String.self, forKey: .modelVersion)
+        summary = try? container.decodeIfPresent(String.self, forKey: .summary)
+    }
+}
+
+// MARK: - Alarm DTO
+public nonisolated struct AlarmResponse: Codable, Identifiable, Sendable, Hashable {
+    public let id: String
+    public let timestamp: String
+    public let source: String
+    public let sourceLabel: String?
+    public let severity: String
+    public let category: String?
+    public let value: String?
+    public let description: String
+    public let state: String
+    public let raisedBy: String?
+    public let acknowledgedBy: String?
+    public let resolvedBy: String?
+    public let notes: String?
+    
+    public var isActive: Bool {
+        state.uppercased() == "ACTIVE" || state.uppercased() == "ACKNOWLEDGED"
+    }
+}
+
+public nonisolated struct RaiseAlarmRequest: Codable, Sendable {
+    public let nodeId: String
+    public let nodeLabel: String?
+    public let description: String
+    public let issuedBy: String
+    public let severity: String?
+    
+    public init(
+        nodeId: String = "FLEET_WIDE",
+        nodeLabel: String? = "Mine Wide Emergency",
+        description: String = "Emergency alarm raised by mine technician via mobile app",
+        issuedBy: String = "Mine Technician (iOS)",
+        severity: String = "CRITICAL"
+    ) {
+        self.nodeId = nodeId
+        self.nodeLabel = nodeLabel
+        self.description = description
+        self.issuedBy = issuedBy
+        self.severity = severity
+    }
+}
+
+public nonisolated struct RaiseAlarmResponse: Codable, Sendable {
+    public let alarm: AlarmResponse
+}
+
+public nonisolated struct ResolveAlarmRequest: Codable, Sendable {
+    public let by: String
+    public let notes: String?
+    
+    public init(by: String = "Mine Technician (iOS)", notes: String? = "Dismissed by technician") {
+        self.by = by
+        self.notes = notes
+    }
+}
+
+public nonisolated struct ResolveActiveResponse: Codable, Sendable {
+    public let count: Int?
+    public let resolved: [AlarmResponse]?
+}
+
+// MARK: - Photo DTO
+public nonisolated struct MinePhotoResponse: Codable, Identifiable, Sendable, Hashable {
+    public let id: String
+    public let timestamp: String
+    public let title: String
+    public let imageUrl: String?
+    public let thumbnailUrl: String?
+    public let nodeId: String?
+    public let location: String?
+    public let category: String?
+    
+    public var isDataUri: Bool {
+        (imageUrl?.hasPrefix("data:") ?? false) || (thumbnailUrl?.hasPrefix("data:") ?? false)
+    }
+}
+
