@@ -75,6 +75,24 @@ const DEFAULT_FETCH_HEADERS: HeadersInit = {
   "Accept": "application/json",
 };
 
+// Relative severity of each LED matrix pattern. Used to add hysteresis to
+// incoming telemetry: escalating to a more severe pattern is always applied
+// immediately (safety first), but de-escalating/lateral flapping is debounced
+// so a noisy sensor reading oscillating around a threshold doesn't cause the
+// physical LED matrix to visibly thrash between patterns many times a second.
+const LED_PATTERN_SEVERITY: Record<LedMatrixPattern, number> = {
+  IDLE: 0,
+  NORMAL_CHECK: 1,
+  WARNING_PULSE: 2,
+  DANGER_FLASH: 3,
+  EVACUATE_ARROW: 3,
+};
+
+// Minimum time a non-escalating pattern change must "prove itself" before
+// it's reflected on the display. Comfortably longer than a single telemetry
+// tick, short enough to still feel responsive.
+const LED_PATTERN_MIN_DWELL_MS = 1500;
+
 export interface TelemetryState {
   nodes: EspNode[];
   telemetry: Record<string, NodeTelemetry>;
@@ -137,6 +155,83 @@ export function useTelemetry(): TelemetryState {
   const socketRef = useRef<Socket | null>(null);
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Tracks a just-issued actuator command so that in-flight/late-arriving
+  // polls (REST or socket) don't clobber the optimistic UI state before the
+  // backend/hardware has actually caught up. Without this, a poll landing
+  // right after a click reverts the UI to the stale pre-command state,
+  // which is what made the matrix controller feel unreliable and require
+  // several clicks to "stick".
+  const pendingActuatorOverrideRef = useRef<{
+    nodeId: string;
+    actuators: NonNullable<NodeTelemetry["actuators"]>;
+    expiresAt: number;
+  } | null>(null);
+
+  const applyPendingActuatorOverride = useCallback((nodeId: string, tel: NodeTelemetry): NodeTelemetry => {
+    const pending = pendingActuatorOverrideRef.current;
+    if (!pending || pending.nodeId !== nodeId) return tel;
+    if (Date.now() > pending.expiresAt) {
+      pendingActuatorOverrideRef.current = null;
+      return tel;
+    }
+    return {
+      ...tel,
+      actuators: {
+        ...tel.actuators,
+        ...pending.actuators,
+      },
+    };
+  }, []);
+
+  // Per-node record of the last pattern that was actually accepted/displayed,
+  // and when that happened. Backs the hysteresis logic in
+  // `stabilizeLedPattern` below.
+  const lastLedPatternRef = useRef<Record<string, { pattern: LedMatrixPattern; changedAt: number }>>({});
+
+  const stabilizeLedPattern = useCallback((nodeId: string, incomingPattern: LedMatrixPattern): LedMatrixPattern => {
+    const now = Date.now();
+    const last = lastLedPatternRef.current[nodeId];
+
+    if (!last) {
+      lastLedPatternRef.current[nodeId] = { pattern: incomingPattern, changedAt: now };
+      return incomingPattern;
+    }
+
+    if (incomingPattern === last.pattern) {
+      return last.pattern;
+    }
+
+    const isEscalation = LED_PATTERN_SEVERITY[incomingPattern] >= LED_PATTERN_SEVERITY[last.pattern];
+    const dwellElapsed = now - last.changedAt >= LED_PATTERN_MIN_DWELL_MS;
+
+    if (isEscalation || dwellElapsed) {
+      lastLedPatternRef.current[nodeId] = { pattern: incomingPattern, changedAt: now };
+      return incomingPattern;
+    }
+
+    // Suppress rapid, non-critical flapping (e.g. a sensor bouncing around a
+    // threshold sending WARNING/NORMAL back-to-back within the same second)
+    // until the new pattern has held for the minimum dwell time.
+    return last.pattern;
+  }, []);
+
+  // Combines hysteresis + the just-issued-command shield into a single
+  // pipeline applied to every telemetry snapshot, whether it arrives via
+  // REST polling or the realtime socket.
+  const normalizeIncomingTelemetry = useCallback(
+    (nodeId: string, tel: NodeTelemetry): NodeTelemetry => {
+      let next = tel;
+      if (next.actuators?.ledMatrixPattern) {
+        const stablePattern = stabilizeLedPattern(nodeId, next.actuators.ledMatrixPattern);
+        if (stablePattern !== next.actuators.ledMatrixPattern) {
+          next = { ...next, actuators: { ...next.actuators, ledMatrixPattern: stablePattern } };
+        }
+      }
+      return applyPendingActuatorOverride(nodeId, next);
+    },
+    [applyPendingActuatorOverride, stabilizeLedPattern]
+  );
+
   // Poll backend REST endpoints for live real data
   const pollBackendData = useCallback(async () => {
     try {
@@ -163,7 +258,7 @@ export function useTelemetry(): TelemetryState {
         if (json.ok && json.data) {
           const calibratedMap: Record<string, NodeTelemetry> = {};
           for (const [id, rawTel] of Object.entries(json.data as Record<string, NodeTelemetry>)) {
-            calibratedMap[id] = calibrateTelemetry(rawTel);
+            calibratedMap[id] = normalizeIncomingTelemetry(id, calibrateTelemetry(rawTel));
           }
           setTelemetry(calibratedMap);
         }
@@ -230,7 +325,7 @@ export function useTelemetry(): TelemetryState {
       // Offline/backend unreachable
       setIsConnected(false);
     }
-  }, []);
+  }, [normalizeIncomingTelemetry]);
 
   useEffect(() => {
     // Initial fetch
@@ -267,7 +362,8 @@ export function useTelemetry(): TelemetryState {
 
       socket.on("node_telemetry", (data: NodeTelemetry) => {
         if (data?.nodeId) {
-          setTelemetry((prev) => ({ ...prev, [data.nodeId]: calibrateTelemetry(data) }));
+          const calibrated = normalizeIncomingTelemetry(data.nodeId, calibrateTelemetry(data));
+          setTelemetry((prev) => ({ ...prev, [data.nodeId]: calibrated }));
         }
       });
 
@@ -290,7 +386,7 @@ export function useTelemetry(): TelemetryState {
         socketRef.current.close();
       }
     };
-  }, [pollBackendData]);
+  }, [pollBackendData, normalizeIncomingTelemetry]);
 
   // Acknowledge Alarm Handler
   const handleAcknowledgeAlarm = useCallback(
@@ -457,6 +553,7 @@ export function useTelemetry(): TelemetryState {
       const isBuzzer = actuator === "buzzer";
       const currentBuzzer = telemetry[selectedNodeId]?.actuators?.buzzerActive ?? false;
       const targetActive = !currentBuzzer;
+      const targetNodeId = selectedNodeId;
 
       try {
         const res = await fetch(`${API_BASE}/commands`, {
@@ -467,7 +564,7 @@ export function useTelemetry(): TelemetryState {
           },
           body: JSON.stringify({
             type: isBuzzer ? "BUZZER_TEST" : "LED_TEST",
-            targetNodeId: selectedNodeId,
+            targetNodeId,
             issuedBy: "CONTROL_ROOM_OPERATOR",
             payload: {
               active: isBuzzer ? targetActive : true,
@@ -481,19 +578,41 @@ export function useTelemetry(): TelemetryState {
         // Optimistically update local telemetry state for snappy feedback
         if (res.ok) {
           setTelemetry((prev) => {
-            const current = prev[selectedNodeId];
+            const current = prev[targetNodeId];
             if (!current) return prev;
+
+            const nextActuators = {
+              ...current.actuators,
+              buzzerActive: isBuzzer ? targetActive : (current.actuators?.buzzerActive ?? false),
+              ledMatrixPattern: pattern || (isBuzzer && targetActive ? "DANGER_FLASH" : current.actuators?.ledMatrixPattern || "NORMAL_CHECK"),
+              ledMatrixActive: current.actuators?.ledMatrixActive ?? true,
+              userOverride: true,
+            };
+
+            // Shield this optimistic state from being clobbered by a stale poll
+            // or socket update that hasn't caught up with the command yet. This
+            // is what previously made the controller feel like it "reverted"
+            // and required repeated clicks before a change actually stuck.
+            pendingActuatorOverrideRef.current = {
+              nodeId: targetNodeId,
+              actuators: nextActuators,
+              expiresAt: Date.now() + 6000,
+            };
+
+            // Seed the hysteresis baseline with the operator's explicit
+            // choice so that once the override window ends, telemetry
+            // confirming the same pattern isn't mistaken for "flapping"
+            // and doesn't get suppressed or immediately fought over.
+            lastLedPatternRef.current[targetNodeId] = {
+              pattern: nextActuators.ledMatrixPattern,
+              changedAt: Date.now(),
+            };
+
             return {
               ...prev,
-              [selectedNodeId]: {
+              [targetNodeId]: {
                 ...current,
-                actuators: {
-                  ...current.actuators,
-                  buzzerActive: isBuzzer ? targetActive : (current.actuators?.buzzerActive ?? false),
-                  ledMatrixPattern: pattern || (isBuzzer && targetActive ? "DANGER_FLASH" : current.actuators?.ledMatrixPattern || "NORMAL_CHECK"),
-                  ledMatrixActive: current.actuators?.ledMatrixActive ?? true,
-                  userOverride: true,
-                },
+                actuators: nextActuators,
               },
             };
           });
