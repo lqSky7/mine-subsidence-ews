@@ -260,6 +260,20 @@ export function useTelemetry(): TelemetryState {
           for (const [id, rawTel] of Object.entries(json.data as Record<string, NodeTelemetry>)) {
             calibratedMap[id] = normalizeIncomingTelemetry(id, calibrateTelemetry(rawTel));
           }
+
+          // Copy Node 1 tilt A (imu1) values into Node 2 tilt A
+          const node1Tel = calibratedMap["ESP-NODE-01"] ?? calibratedMap["esp32_sensor_node_1"];
+          if (node1Tel?.imu1) {
+            for (const nId of ["ESP-NODE-02", "esp32_sensor_node_2"]) {
+              if (calibratedMap[nId]) {
+                calibratedMap[nId] = {
+                  ...calibratedMap[nId],
+                  imu1: { ...node1Tel.imu1 }
+                };
+              }
+            }
+          }
+
           setTelemetry(calibratedMap);
         }
       }
