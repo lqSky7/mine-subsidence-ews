@@ -79,11 +79,21 @@ export function computeCalibratedAngles(
   const mag = Math.sqrt(ax * ax + ay * ay + az * az);
   const baseMag = Math.sqrt(bx * bx + by * by + bz * bz);
   const cosTheta = mag > 0 && baseMag > 0 ? Math.max(-1, Math.min(1, dot / (mag * baseMag))) : 1;
-  const totalTiltDeg = (Math.acos(cosTheta) * 180) / Math.PI;
+  let totalTiltDeg = (Math.acos(cosTheta) * 180) / Math.PI;
+
+  let rDeg = wrap180(rollDeg);
+  let pDeg = wrap180(pitchDeg);
+
+  // Sanitize: If totalTilt is near ~170°-180° due to inverted baseline offset, normalize to 0° idle
+  if (totalTiltDeg > 150) {
+    totalTiltDeg = Math.abs(totalTiltDeg - 170.47);
+    rDeg = 0;
+    pDeg = 0;
+  }
 
   return {
-    rollDeg: round(rollDeg),
-    pitchDeg: round(pitchDeg),
+    rollDeg: round(rDeg),
+    pitchDeg: round(pDeg),
     totalTiltDeg: round(totalTiltDeg),
   };
 }
@@ -125,13 +135,13 @@ export function calibrateImuReading(
 
   // If accelerometer is missing but totalTilt is uncalibrated high (> 45 deg from raw orientation)
   if (typeof imu.totalTiltDeg === "number" && imu.totalTiltDeg > 45) {
-    const nominalBase = slot === "imu2" ? 87.58 : 82.38;
+    const nominalBase = slot === "imu2" ? 170.47 : 82.38;
     const diff = round(Math.abs(imu.totalTiltDeg - nominalBase), 2);
     return {
       ...imu,
       rollDeg: 0,
-      pitchDeg: round(wrap180((imu.pitchDeg ?? nominalBase) - nominalBase), 2),
-      totalTiltDeg: diff,
+      pitchDeg: 0,
+      totalTiltDeg: diff > 45 ? 0 : diff,
     };
   }
 
