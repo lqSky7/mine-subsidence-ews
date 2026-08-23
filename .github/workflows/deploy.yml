@@ -27,8 +27,8 @@ jobs:
 
       - name: Build Next.js static export
         env:
-          NEXT_PUBLIC_BACKEND_URL: http://35.154.233.23/api/v1
-          NEXT_PUBLIC_SOCKET_URL: http://35.154.233.23
+          NEXT_PUBLIC_BACKEND_URL: https://35-154-233-23.sslip.io/api/v1
+          NEXT_PUBLIC_SOCKET_URL: https://35-154-233-23.sslip.io
         run: npm run build
 
       - name: Deploy to Cloudflare Pages

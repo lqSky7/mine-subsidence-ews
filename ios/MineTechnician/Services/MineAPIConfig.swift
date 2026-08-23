@@ -8,8 +8,8 @@
 import Foundation
 
 public struct MineAPIConfig {
-    /// Live AWS EC2 production backend URL
-    public static let baseURLString = "http://35.154.233.23"
+    /// Live AWS EC2 HTTPS production backend URL
+    public static let baseURLString = "https://35-154-233-23.sslip.io"
     public static let baseURL = URL(string: baseURLString)!
     public static let apiPrefix = "/api/v1"
     

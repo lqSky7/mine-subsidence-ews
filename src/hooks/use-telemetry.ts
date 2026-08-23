@@ -38,7 +38,7 @@ const defaultThresholds: AlertThresholdConfig = {
   alertEmailsEnabled: true,
 };
 
-const DEFAULT_REMOTE_BACKEND = "http://35.154.233.23";
+const DEFAULT_REMOTE_BACKEND = "https://35-154-233-23.sslip.io";
 
 const getBackendApiUrl = () => {
   if (process.env.NEXT_PUBLIC_BACKEND_URL) {

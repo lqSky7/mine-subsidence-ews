@@ -34,7 +34,7 @@ import { cn } from "@/lib/utils";
 
 const BACKEND_BASE = process.env.NEXT_PUBLIC_BACKEND_URL
   ? process.env.NEXT_PUBLIC_BACKEND_URL.replace("/api/v1", "")
-  : "http://35.154.233.23";
+  : "https://35-154-233-23.sslip.io";
 
 function getFallbackSvgDataUri(photo?: Partial<MinePhoto>): string {
   const category = photo?.category || "TUNNEL";
