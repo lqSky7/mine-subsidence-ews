@@ -13,7 +13,7 @@ import { AestheticMultiMetricChart, AestheticMiniSparkline } from "@/components/
 import type { TelemetryDataPoint } from "@/types";
 
 export default function NodeDetailClient({ nodeId }: { nodeId: string }) {
-  const { nodes, telemetry, fetchNodeHistory } = useTelemetryContext();
+  const { nodes, telemetry, thresholds, fetchNodeHistory } = useTelemetryContext();
 
   const node = nodes.find((n) => n.id === nodeId) || null;
   const tel = telemetry[nodeId] || null;
@@ -292,6 +292,9 @@ export default function NodeDetailClient({ nodeId }: { nodeId: string }) {
             accelX={tel?.imu1?.accelX}
             accelY={tel?.imu1?.accelY}
             accelZ={tel?.imu1?.accelZ}
+            slot="imu1"
+            warningThreshold={thresholds.tiltDegWarning}
+            criticalThreshold={thresholds.tiltDegCritical}
           />
         </div>
 
@@ -309,6 +312,9 @@ export default function NodeDetailClient({ nodeId }: { nodeId: string }) {
             accelX={tel?.imu2?.accelX}
             accelY={tel?.imu2?.accelY}
             accelZ={tel?.imu2?.accelZ}
+            slot="imu2"
+            warningThreshold={thresholds.tiltDegWarning}
+            criticalThreshold={thresholds.tiltDegCritical}
           />
         </div>
       </div>

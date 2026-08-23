@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useId } from "react";
 import { ResponsiveContainer, AreaChart, Area, YAxis } from "recharts";
 
 interface AestheticMiniSparklineProps {
@@ -22,10 +22,11 @@ export function AestheticMiniSparkline({
   strokeWidth = 2,
   className = "",
 }: AestheticMiniSparklineProps) {
+  const reactId = useId();
   if (!data || data.length === 0) {
     return (
       <div
-        className={`w-full flex items-center justify-center border border-dashed border-slate-200 dark:border-slate-800/80 rounded-lg ${className}`}
+        className={`flex items-center justify-center rounded-sm bg-slate-50 dark:bg-slate-900/50 ${className}`}
         style={{ height }}
       >
         <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500">
@@ -40,7 +41,7 @@ export function AestheticMiniSparkline({
   const maxVal = Math.max(...data);
   const padding = (maxVal - minVal) * 0.1 || 1;
 
-  const uniqueId = `${gradientId}-${Math.random().toString(36).substring(2, 7)}`;
+  const uniqueId = `${gradientId}-${reactId.replace(/:/g, "")}`;
 
   return (
     <div className={`w-full overflow-hidden ${className}`} style={{ height }}>

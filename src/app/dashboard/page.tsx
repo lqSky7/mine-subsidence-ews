@@ -394,6 +394,9 @@ export default function CommandCenterPage() {
                 accelX={tel?.imu1?.accelX}
                 accelY={tel?.imu1?.accelY}
                 accelZ={tel?.imu1?.accelZ}
+                slot="imu1"
+                warningThreshold={thresholds.tiltDegWarning}
+                criticalThreshold={thresholds.tiltDegCritical}
               />
             </div>
             <div className="space-y-2">
@@ -408,6 +411,9 @@ export default function CommandCenterPage() {
                 accelX={tel?.imu2?.accelX}
                 accelY={tel?.imu2?.accelY}
                 accelZ={tel?.imu2?.accelZ}
+                slot="imu2"
+                warningThreshold={thresholds.tiltDegWarning}
+                criticalThreshold={thresholds.tiltDegCritical}
               />
             </div>
           </div>

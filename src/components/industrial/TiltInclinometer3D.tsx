@@ -2,6 +2,10 @@
 
 import React, { useMemo } from "react";
 import { cn } from "@/lib/utils";
+import {
+  computeCalibratedAngles,
+  DEFAULT_TILT_CALIBRATION,
+} from "@/lib/tilt-calibration";
 
 interface TiltInclinometer3DProps {
   rollDeg?: number; // X-axis tilt in degrees (-90 to +90)
@@ -10,6 +14,9 @@ interface TiltInclinometer3DProps {
   accelX?: number;
   accelY?: number;
   accelZ?: number;
+  slot?: "imu1" | "imu2";
+  warningThreshold?: number;
+  criticalThreshold?: number;
   maxAngle?: number; // Full scale display limit (default 15°)
   className?: string;
 }
@@ -21,17 +28,42 @@ export function TiltInclinometer3D({
   accelX,
   accelY,
   accelZ,
+  slot = "imu1",
+  warningThreshold = 3.0,
+  criticalThreshold = 7.0,
   maxAngle = 15,
   className,
 }: TiltInclinometer3DProps) {
-  const hasData = totalTiltDeg !== undefined && !Number.isNaN(totalTiltDeg);
+  // If raw acceleration is available and angles are uncalibrated (or totalTiltDeg > 45), calibrate locally
+  const calibratedAngles = useMemo(() => {
+    if (
+      accelX !== undefined &&
+      accelY !== undefined &&
+      accelZ !== undefined &&
+      (totalTiltDeg === undefined || totalTiltDeg > 45 || Math.abs(rollDeg ?? 0) > 45)
+    ) {
+      const baseline =
+        slot === "imu2"
+          ? DEFAULT_TILT_CALIBRATION.imu2Baseline
+          : DEFAULT_TILT_CALIBRATION.imu1Baseline;
+      return computeCalibratedAngles({ ax: accelX, ay: accelY, az: accelZ }, baseline);
+    }
+    return {
+      rollDeg: rollDeg ?? 0,
+      pitchDeg: pitchDeg ?? 0,
+      totalTiltDeg: totalTiltDeg ?? 0,
+    };
+  }, [accelX, accelY, accelZ, totalTiltDeg, rollDeg, pitchDeg, slot]);
 
-  const r = rollDeg ?? 0;
-  const p = pitchDeg ?? 0;
+  const activeTotalTilt = totalTiltDeg !== undefined && totalTiltDeg <= 45 ? totalTiltDeg : calibratedAngles.totalTiltDeg;
+  const r = rollDeg !== undefined && Math.abs(rollDeg) <= 45 ? rollDeg : calibratedAngles.rollDeg;
+  const p = pitchDeg !== undefined && Math.abs(pitchDeg) <= 45 ? pitchDeg : calibratedAngles.pitchDeg;
+
+  const hasData = (totalTiltDeg !== undefined || accelX !== undefined) && !Number.isNaN(activeTotalTilt);
 
   // Severity thresholds
-  const isCritical = hasData && (totalTiltDeg ?? 0) >= 7.0;
-  const isWarning = hasData && (totalTiltDeg ?? 0) >= 3.0 && !isCritical;
+  const isCritical = hasData && activeTotalTilt >= criticalThreshold;
+  const isWarning = hasData && activeTotalTilt >= warningThreshold && !isCritical;
 
   const tone = !hasData ? "neutral" : isCritical ? "critical" : isWarning ? "watch" : "live";
 
@@ -78,16 +110,18 @@ export function TiltInclinometer3D({
             Dual-Axis Inclinometer Target
           </div>
         </div>
-        {hasData && (isCritical || isWarning) && (
+        {hasData && (
           <div>
             <span
               className={cn(
                 "inline-flex h-5 items-center rounded-md border px-2 text-[10px] font-mono font-semibold uppercase tracking-normal",
+                isCritical && "border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/60 dark:text-red-300",
                 isWarning && "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950/60 dark:text-amber-300",
-                isCritical && "border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/60 dark:text-red-300"
+                tone === "live" && "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/60 dark:text-emerald-300",
+                tone === "neutral" && "border-neutral-200 bg-neutral-50 text-neutral-600 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400"
               )}
             >
-              {isCritical ? "Limit Breach" : "Drift Warning"}
+              {isCritical ? "Limit Breach" : isWarning ? "Drift Warning" : "Calibrated Normal"}
             </span>
           </div>
         )}
@@ -353,7 +387,7 @@ export function TiltInclinometer3D({
                   : "text-neutral-950 dark:text-neutral-50"
               )}
             >
-              {hasData ? totalTiltDeg.toFixed(2) : "—"}
+              {hasData ? activeTotalTilt.toFixed(2) : "—"}
             </span>
             <span className="text-xs font-mono text-neutral-500 dark:text-neutral-400">°</span>
           </div>

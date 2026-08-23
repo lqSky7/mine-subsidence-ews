@@ -14,6 +14,13 @@ import type {
   AnomalyModelStatus,
   AlarmSeverity,
 } from "@/types";
+import {
+  calibrateTelemetry,
+  calibrateHistoryPoint,
+  saveStoredCalibration,
+  clearStoredCalibration,
+  type TiltCalibrationConfig,
+} from "@/lib/tilt-calibration";
 
 const defaultThresholds: AlertThresholdConfig = {
   gasPpmWarning: 450,
@@ -31,7 +38,7 @@ const defaultThresholds: AlertThresholdConfig = {
   alertEmailsEnabled: true,
 };
 
-const DEFAULT_REMOTE_BACKEND = "https://commute-overrule-employer.ngrok-free.dev";
+const DEFAULT_REMOTE_BACKEND = "http://35.154.233.23";
 
 const getBackendApiUrl = () => {
   if (process.env.NEXT_PUBLIC_BACKEND_URL) {
@@ -110,6 +117,8 @@ export interface TelemetryState {
   }) => Promise<MinePhoto | null>;
   uploadPhoto: (formData: FormData) => Promise<MinePhoto | null>;
   toggleEmailKillSwitch: (enabled: boolean) => Promise<boolean>;
+  calibrateNodeTilt: (nodeId: string, customConfig?: Partial<TiltCalibrationConfig>) => void;
+  resetNodeTiltCalibration: (nodeId: string) => void;
   refreshAll: () => Promise<void>;
 }
 
@@ -152,7 +161,11 @@ export function useTelemetry(): TelemetryState {
       if (telRes.ok) {
         const json = await telRes.json();
         if (json.ok && json.data) {
-          setTelemetry(json.data);
+          const calibratedMap: Record<string, NodeTelemetry> = {};
+          for (const [id, rawTel] of Object.entries(json.data as Record<string, NodeTelemetry>)) {
+            calibratedMap[id] = calibrateTelemetry(rawTel);
+          }
+          setTelemetry(calibratedMap);
         }
       }
 
@@ -254,7 +267,7 @@ export function useTelemetry(): TelemetryState {
 
       socket.on("node_telemetry", (data: NodeTelemetry) => {
         if (data?.nodeId) {
-          setTelemetry((prev) => ({ ...prev, [data.nodeId]: data }));
+          setTelemetry((prev) => ({ ...prev, [data.nodeId]: calibrateTelemetry(data) }));
         }
       });
 
@@ -493,7 +506,7 @@ export function useTelemetry(): TelemetryState {
         if (res.ok) {
           const json = await res.json();
           if (json.ok && Array.isArray(json.data)) {
-            return json.data;
+            return json.data.map(calibrateHistoryPoint);
           }
         }
       } catch {
@@ -503,6 +516,43 @@ export function useTelemetry(): TelemetryState {
     },
     []
   );
+
+  // Calibrate tilt baseline for a specific node
+  const handleCalibrateNodeTilt = useCallback(
+    (nodeId: string, customConfig?: Partial<TiltCalibrationConfig>) => {
+      if (customConfig) {
+        saveStoredCalibration(nodeId, customConfig);
+      } else {
+        const current = telemetry[nodeId];
+        if (current) {
+          const config: Partial<TiltCalibrationConfig> = {};
+          if (current.imu1?.accelX !== undefined && current.imu1?.accelY !== undefined && current.imu1?.accelZ !== undefined) {
+            config.imu1Baseline = { ax: current.imu1.accelX, ay: current.imu1.accelY, az: current.imu1.accelZ };
+          }
+          if (current.imu2?.accelX !== undefined && current.imu2?.accelY !== undefined && current.imu2?.accelZ !== undefined) {
+            config.imu2Baseline = { ax: current.imu2.accelX, ay: current.imu2.accelY, az: current.imu2.accelZ };
+          }
+          saveStoredCalibration(nodeId, config);
+        }
+      }
+      setTelemetry((prev) => {
+        const current = prev[nodeId];
+        if (!current) return prev;
+        return { ...prev, [nodeId]: calibrateTelemetry(current) };
+      });
+    },
+    [telemetry]
+  );
+
+  // Reset tilt calibration back to factory baseline for a node
+  const handleResetNodeTiltCalibration = useCallback((nodeId: string) => {
+    clearStoredCalibration(nodeId);
+    setTelemetry((prev) => {
+      const current = prev[nodeId];
+      if (!current) return prev;
+      return { ...prev, [nodeId]: calibrateTelemetry(current) };
+    });
+  }, []);
 
   // Fetch Health Score History
   const handleFetchHealthHistory = useCallback(
@@ -691,6 +741,8 @@ export function useTelemetry(): TelemetryState {
     ingestPhoto: handleIngestPhoto,
     uploadPhoto: handleUploadPhoto,
     toggleEmailKillSwitch: handleToggleEmailKillSwitch,
+    calibrateNodeTilt: handleCalibrateNodeTilt,
+    resetNodeTiltCalibration: handleResetNodeTiltCalibration,
     refreshAll: pollBackendData,
   };
 }
