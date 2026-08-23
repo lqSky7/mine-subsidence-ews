@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
 import { TiltInclinometer3D } from "@/components/industrial/TiltInclinometer3D";
+import { UltrasoundDistanceWidget } from "@/components/industrial/UltrasoundDistanceWidget";
 import { AestheticMultiMetricChart, AestheticMiniSparkline } from "@/components/charts";
 import type { TelemetryDataPoint } from "@/types";
 
@@ -229,6 +230,15 @@ export default function NodeDetailClient({ nodeId }: { nodeId: string }) {
           </div>
         </div>
       </div>
+
+      {/* Ultrasound Distance & Clearance Monitor */}
+      <UltrasoundDistanceWidget
+        distanceCm={tel?.ultrasound?.distanceCm}
+        baselineCm={tel?.ultrasound?.baselineCm ?? 225.0}
+        deltaCm={tel?.ultrasound?.deltaCm}
+        approachRateCmPerMin={tel?.ultrasound?.approachRateCmPerMin}
+        nodeId={nodeId}
+      />
 
       {/* Dual Inclinometer Section */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">

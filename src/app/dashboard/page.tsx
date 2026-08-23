@@ -6,6 +6,7 @@ import Link from "next/link";
 import { AestheticAreaTrendChart, AestheticMiniSparkline, SeriesConfig } from "@/components/charts";
 import { LedMatrixDisplay } from "@/components/industrial/LedMatrixDisplay";
 import { TiltInclinometer3D } from "@/components/industrial/TiltInclinometer3D";
+import { UltrasoundDistanceWidget } from "@/components/industrial/UltrasoundDistanceWidget";
 import { useTelemetryContext } from "@/components/layout/telemetry-provider";
 import { Button } from "@/components/ui/button";
 import {
@@ -333,6 +334,23 @@ export default function CommandCenterPage() {
           tone={vibrationTone}
           sparkline={<AestheticMiniSparkline data={vibSparkline} color={vibrationTone === "critical" ? "#d1242f" : "#000000"} height={28} />}
           detail={<span>{tel?.vibration?.eventCount ?? placeholder} pulses / {tel?.vibration?.triggered ? "active" : placeholder}</span>}
+        />
+      </section>
+
+      {/* Ultrasound Distance & Wall Clearance Monitor */}
+      <section className="space-y-3">
+        <SectionHeader
+          title="Ultrasound distance & wall convergence"
+          description="Real-time acoustic HC-SR04 pulse clearance measurement and structural deformation delta."
+        />
+        <UltrasoundDistanceWidget
+          distanceCm={tel?.ultrasound?.distanceCm}
+          baselineCm={tel?.ultrasound?.baselineCm ?? 225.0}
+          deltaCm={tel?.ultrasound?.deltaCm}
+          approachRateCmPerMin={tel?.ultrasound?.approachRateCmPerMin}
+          warningThresholdCm={thresholds.wallDistanceMinWarningCm}
+          criticalThresholdCm={thresholds.wallDistanceMinCriticalCm}
+          nodeId={selectedNodeId}
         />
       </section>
 

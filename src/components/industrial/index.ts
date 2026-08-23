@@ -6,4 +6,5 @@ export * from "./ThermometerWidget";
 export * from "./IndustrialValueDisplay";
 export * from "./ConfirmationDialog";
 export * from "./LedMatrixDisplay";
+export * from "./UltrasoundDistanceWidget";
 export * from "./gauges";
