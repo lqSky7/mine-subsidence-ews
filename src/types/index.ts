@@ -95,6 +95,8 @@ export interface NodeTelemetry {
     buzzerFrequencyHz?: number;
     ledMatrixPattern: LedMatrixPattern;
     ledMatrixActive: boolean;
+    userOverride?: boolean;
+    userOverrideUntil?: string;
   };
 }
 

@@ -442,9 +442,18 @@ export function useTelemetry(): TelemetryState {
     []
   );
 
+  const lastCommandTimeRef = useRef<number>(0);
+
   // Actuator Remote Command
   const handleTriggerActuatorTest = useCallback(
     async (actuator: "buzzer" | "ledMatrix", pattern?: LedMatrixPattern) => {
+      const now = Date.now();
+      if (now - lastCommandTimeRef.current < 2000) {
+        console.warn("[Actuator] Cooldown active: Only 1 command allowed every 2 seconds.");
+        return;
+      }
+      lastCommandTimeRef.current = now;
+
       const isBuzzer = actuator === "buzzer";
       const currentBuzzer = telemetry[selectedNodeId]?.actuators?.buzzerActive ?? false;
       const targetActive = !currentBuzzer;
@@ -464,6 +473,7 @@ export function useTelemetry(): TelemetryState {
               active: isBuzzer ? targetActive : true,
               pattern: pattern || (isBuzzer && targetActive ? "DANGER_FLASH" : "NORMAL_CHECK"),
               durationMs: isBuzzer && targetActive ? 5000 : 0,
+              userOverride: true,
             },
           }),
         });
@@ -482,6 +492,7 @@ export function useTelemetry(): TelemetryState {
                   buzzerActive: isBuzzer ? targetActive : (current.actuators?.buzzerActive ?? false),
                   ledMatrixPattern: pattern || (isBuzzer && targetActive ? "DANGER_FLASH" : current.actuators?.ledMatrixPattern || "NORMAL_CHECK"),
                   ledMatrixActive: current.actuators?.ledMatrixActive ?? true,
+                  userOverride: true,
                 },
               },
             };
